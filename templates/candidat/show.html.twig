@@ -1,11 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Candidat{% endblock %}
+{% block title %}Profil Candidat{% endblock %}
 
 {% block body %}
 <div class="dashboard-container">
     <div class="top-bar">
-        <h1>Détails Candidat</h1>
+        <h1>Profil Candidat: {{ candidat.nom_complet }}</h1>
         <div class="top-actions">
             <a href="{{ path('app_candidat_index') }}" class="btn">
                 <i class="fas fa-arrow-left"></i> Retour
@@ -17,32 +17,106 @@
         </div>
     </div>
 
-    <div class="stat-card" style="text-align: left; max-width: 600px; margin: 0 auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
-            <tbody>
-            <tr>
-                <th>Id candidat</th>
-                <td>{{ candidat.id_candidat }}</td>
-            </tr>
-            <tr>
-                <th>Nom complet</th>
-                <td>{{ candidat.nom_complet }}</td>
-            </tr>
-            <tr>
-                <th>Email contact</th>
-                <td>{{ candidat.email_contact }}</td>
-            </tr>
-            <tr>
-                <th>Chemin cv</th>
-                <td>{{ candidat.chemin_cv }}</td>
-            </tr>
-            <tr>
-                <th>Date ajout</th>
-                <td>{{ candidat.date_ajout ? candidat.date_ajout|date('Y-m-d') : '' }}</td>
-            </tr>
-
-            </tbody>
-        </table>
+    <div style="display:flex; gap:2rem; flex-wrap:wrap;">
+        <div class="stat-card" style="flex:1; min-width: 300px;">
+            <table class="table">
+                <tbody>
+                <tr>
+                    <th>Id candidat</th>
+                    <td>{{ candidat.id_candidat }}</td>
+                </tr>
+                <tr>
+                    <th>Nom complet</th>
+                    <td>{{ candidat.nom_complet }}</td>
+                </tr>
+                <tr>
+                    <th>Email contact</th>
+                    <td>{{ candidat.email_contact }}</td>
+                </tr>
+                <tr>
+                    <th>Score Global IA</th>
+                    <td><span class="badge badge-success">{{ candidat.score_global_ia|default(0) }}</span></td>
+                </tr>
+                <tr>
+                    <th>CV</th>
+                    <td>
+                        {% if candidat.chemin_cv %}
+                            <a href="{{ asset('uploads/cvs/' ~ candidat.chemin_cv) }}" target="_blank" class="badge badge-info">Voir CV</a>
+                        {% else %}
+                            <span class="badge badge-warning">Non fourni</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Date ajout</th>
+                    <td>{{ candidat.date_ajout ? candidat.date_ajout|date('Y-m-d') : '' }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="stat-card" style="flex:1; min-width: 300px; display:flex; flex-direction:column; align-items:center;">
+            <h3 style="margin-bottom:1rem; color:var(--text-main);">Radar de Compétences</h3>
+            <canvas id="skillsRadarChart"></canvas>
+        </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('skillsRadarChart').getContext('2d');
+        const data = {
+            labels: [
+                'Technique', 
+                'Expérience', 
+                'Formation', 
+                'Langues', 
+                'Soft Skills'
+            ],
+            datasets: [{
+                label: 'Score Compétence',
+                data: [
+                    {{ candidat.scoreTechnique|default(0) }},
+                    {{ candidat.scoreExperience|default(0) }},
+                    {{ candidat.scoreFormation|default(0) }},
+                    {{ candidat.scoreLangues|default(0) }},
+                    {{ candidat.scoreSoftSkills|default(0) }}
+                ],
+                backgroundColor: 'rgba(59, 130, 246, 0.4)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(59, 130, 246, 1)'
+            }]
+        };
+
+        const config = {
+            type: 'radar',
+            data: data,
+            options: {
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        pointLabels: {
+                            color: '#94a3b8',
+                            font: { size: 14, family: "'Plus Jakarta Sans', sans-serif" }
+                        },
+                        ticks: {
+                            display: false,
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        };
+        new Chart(ctx, config);
+    });
+</script>
 {% endblock %}
