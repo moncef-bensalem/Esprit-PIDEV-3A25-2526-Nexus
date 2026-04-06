@@ -15,7 +15,12 @@ class DepartementType extends AbstractType
         $builder
             ->add('libelle', TextType::class, [
                 'label' => 'Libellé du Département',
-                'attr' => ['class' => 'form-control']
+                'attr' => ['class' => 'form-control'],
+                'constraints' => [
+                    new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'Le libellé ne peut pas être vide.']),
+                    new \Symfony\Component\Validator\Constraints\Length(['min' => 2, 'max' => 255, 'minMessage' => 'Le libellé doit contenir au moins 2 caractères.']),
+                    new \Symfony\Component\Validator\Constraints\Regex(['pattern' => '/^[A-Za-zÀ-ÿ0-9\s\-&]+$/', 'message' => 'Caractères non autorisés détectés.'])
+                ]
             ])
         ;
     }
