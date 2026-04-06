@@ -1,0 +1,129 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Evaluations{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body { background: #0d1b2a; color: #d6e6f5; font-family: 'Segoe UI', sans-serif; }
+    .topbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 22px 24px 8px;
+    }
+    .topbar-title { font-size: 1.2rem; font-weight: 700; color: #fff; }
+    .btn-create {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 8px 16px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .btn-create:hover { color: #fff; opacity: .95; }
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 18px;
+        padding: 16px 24px 24px;
+    }
+    .evaluation-card {
+        border-radius: 14px;
+        padding: 16px;
+        min-height: 190px;
+        border: 1px solid rgba(255,255,255,0.15);
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        transition: transform .12s ease-in-out, box-shadow .12s ease-in-out;
+    }
+    .evaluation-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+    .decision-favorable { background: #14532d; }
+    .decision-defavorable { background: #7f1d1d; }
+    .decision-arevoir { background: #9a3412; }
+    .card-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .card-meta { font-size: 0.85rem; color: #e2e8f0; line-height: 1.5; }
+    .card-actions {
+        margin-top: auto;
+        display: flex;
+        gap: 8px;
+        padding-top: 12px;
+    }
+    .btn-edit {
+        background: rgba(15,23,42,.45);
+        border: 1px solid rgba(255,255,255,.35);
+        color: #fff;
+        border-radius: 8px;
+        padding: 5px 12px;
+        text-decoration: none;
+        font-size: .8rem;
+    }
+    .btn-edit:hover { color: #fff; background: rgba(15,23,42,.7); }
+    .btn-delete {
+        background: rgba(127,29,29,.55);
+        border: 1px solid rgba(255,255,255,.35);
+        color: #fff;
+        border-radius: 8px;
+        padding: 5px 12px;
+        font-size: .8rem;
+    }
+    .btn-delete:hover { background: rgba(127,29,29,.8); }
+    .flash-wrap { margin: 12px 24px 0; }
+    .empty-state { margin: 36px 24px; color: #9fb4c8; font-size: .95rem; }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include '_sidebar.html.twig' %}
+
+<div class="topbar">
+    <div class="topbar-title">Liste des evaluations</div>
+    <a href="{{ path('evaluation_new') }}" class="btn-create">+ Creer une evaluation</a>
+</div>
+
+<div class="flash-wrap">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ type == 'success' ? 'success' : 'danger' }} alert-dismissible fade show py-2" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
+{% if evaluations is empty %}
+    <div class="empty-state">Aucune evaluation trouvee.</div>
+{% else %}
+<div class="cards-grid">
+    {% for evaluation in evaluations %}
+        {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
+        <div class="evaluation-card {{ decisionClass }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
+            <div class="card-title">Evaluation #{{ evaluation.idEvaluation }}</div>
+            <div class="card-meta">
+                <div>📅 Date creation: {{ evaluation.dateCreation|date('Y-m-d H:i') }}</div>
+                <div>👤 Candidat: {{ evaluation.candidat ? (evaluation.candidat.firstName ~ ' ' ~ evaluation.candidat.lastName) : 'Non assigne' }}</div>
+                <div>📌 Decision: {{ evaluation.decisionPreliminaire }}</div>
+            </div>
+
+            <div class="card-actions">
+                <a href="{{ path('evaluation_edit', {idEvaluation: evaluation.idEvaluation}) }}" class="btn-edit" onclick="event.stopPropagation();">Modifier</a>
+                <form method="post" action="{{ path('evaluation_delete', {idEvaluation: evaluation.idEvaluation}) }}" onsubmit="event.stopPropagation(); return confirm('Supprimer cette evaluation ?');" style="margin:0;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_evaluation_' ~ evaluation.idEvaluation) }}">
+                    <button type="submit" class="btn-delete">Supprimer</button>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
