@@ -13,8 +13,13 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 class ScoreCompetence
 {
     #[ORM\Id]
+<<<<<<< HEAD
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
+=======
+    #[ORM\Column(type: "integer")]
+    #[Assert\Positive(message: "L'identifiant du score doit etre positif.")]
+>>>>>>> 9795c27260ed46eac075f544d87206f72348ecc2
     private ?int $idDetail = null;
 
     // varchar(255), Null: No
@@ -60,6 +65,10 @@ class ScoreCompetence
         $this->idDetail = $value;
         return $this;
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9795c27260ed46eac075f544d87206f72348ecc2
     public function getNomCritere(): string
     {
         return $this->nomCritere;

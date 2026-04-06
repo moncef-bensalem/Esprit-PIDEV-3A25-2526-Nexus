@@ -113,6 +113,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9795c27260ed46eac075f544d87206f72348ecc2
     public function getFirstName(): string
     {
         return $this->firstName;
@@ -164,4 +168,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             $this->createdAt = new \DateTime();
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 9795c27260ed46eac075f544d87206f72348ecc2

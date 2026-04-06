@@ -28,7 +28,11 @@ class Planification
     #[ORM\JoinColumn(name: 'fk_candidature_id', referencedColumnName: 'id_candidature', nullable: true, onDelete: 'CASCADE')]
     private ?Candidature $candidature = null;
 
+<<<<<<< HEAD
     #[ORM\Column(name: "type_event", type: "string", length: 100)]
+=======
+    #[ORM\Column(name: "typeEvent", type: "string", length: 100)]
+>>>>>>> 9795c27260ed46eac075f544d87206f72348ecc2
     #[Assert\NotBlank(message: "Le type d'événement est obligatoire.")]
     #[Assert\Choice(
         choices: ['entretien', 'reunion', 'formation', 'autre'],

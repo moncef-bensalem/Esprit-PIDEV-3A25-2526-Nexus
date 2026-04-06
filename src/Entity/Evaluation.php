@@ -49,7 +49,11 @@ class Evaluation
     #[ORM\Column(type: "date", nullable: true)]
     private ?\DateTimeInterface $reviewDeadline = null;
 
+<<<<<<< HEAD
     // Null: Yes → nullable. Renseigne avec l'utilisateur connecte lorsque celui-ci a ROLE_CANDIDAT ou ROLE_CANDIDATE (sans ROLE_ADMIN).
+=======
+    // Null: Yes → nullable
+>>>>>>> 9795c27260ed46eac075f544d87206f72348ecc2
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsCandidat")]
     #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
     private ?User $candidat = null;
@@ -78,6 +82,10 @@ class Evaluation
         $this->idEvaluation = $value;
         return $this;
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9795c27260ed46eac075f544d87206f72348ecc2
     public function getDateCreation(): \DateTimeInterface
     {
         return $this->dateCreation;
@@ -156,6 +164,10 @@ class Evaluation
             }
         }
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9795c27260ed46eac075f544d87206f72348ecc2
     public function getCandidat(): ?User
     {
         return $this->candidat;
