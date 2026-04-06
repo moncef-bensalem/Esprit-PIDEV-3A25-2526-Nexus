@@ -1,0 +1,63 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'reviewForm'}}) }}
+
+{# Star picker visuel #}
+<div class="mb-4">
+    <label class="form-label fw-semibold">Note <span class="text-danger">*</span></label>
+    <div class="star-picker" style="display:flex; gap:10px; margin-top:6px;">
+        {% for i in 1..5 %}
+        <span class="star-pick"
+              data-value="{{ i }}"
+              style="font-size:2.2rem; cursor:pointer; color:#2a4f6e; transition:color .1s, transform .1s; user-select:none;">★</span>
+        {% endfor %}
+    </div>
+    {{ form_widget(form.rating) }}
+    {{ form_errors(form.rating) }}
+</div>
+
+<div class="mb-3">
+    {{ form_label(form.statut) }}
+    {{ form_widget(form.statut) }}
+    {{ form_errors(form.statut) }}
+</div>
+
+<div class="mb-3">
+    {{ form_label(form.commentaire) }}
+    {{ form_widget(form.commentaire) }}
+    {{ form_errors(form.commentaire) }}
+</div>
+
+<div class="d-flex justify-content-end gap-2 mt-4">
+    <a href="{{ path('review_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    <button type="submit" class="btn btn-success px-4">Enregistrer</button>
+</div>
+
+{{ form_end(form) }}
+
+<script>
+(function () {
+    // Cibler l'input par son attribut name (Symfony génère review[rating])
+    const input = document.querySelector('input[name$="[rating]"]');
+    const stars = document.querySelectorAll('.star-pick');
+    let current = parseInt(input ? input.value : '') || 0;
+
+    function paint(val) {
+        stars.forEach(function(s) {
+            var v = parseInt(s.dataset.value);
+            s.style.color     = v <= val ? '#f59e0b' : '#2a4f6e';
+            s.style.transform = v <= val ? 'scale(1.2)'  : 'scale(1)';
+        });
+    }
+
+    paint(current);
+
+    stars.forEach(function(s) {
+        s.addEventListener('mouseenter', function() { paint(parseInt(s.dataset.value)); });
+        s.addEventListener('mouseleave', function() { paint(current); });
+        s.addEventListener('click', function() {
+            current = parseInt(s.dataset.value);
+            if (input) { input.value = current; }
+            paint(current);
+        });
+    });
+})();
+</script>

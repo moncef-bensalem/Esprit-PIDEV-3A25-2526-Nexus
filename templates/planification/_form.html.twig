@@ -1,0 +1,66 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+<div class="row g-3">
+    <div class="col-md-6">
+        {{ form_label(form.typeEvent) }}
+        {{ form_widget(form.typeEvent) }}
+        {{ form_errors(form.typeEvent) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_label(form.statut) }}
+        {{ form_widget(form.statut) }}
+        {{ form_errors(form.statut) }}
+    </div>
+    <div class="col-md-4">
+        {{ form_label(form.date) }}
+        {{ form_widget(form.date) }}
+        {{ form_errors(form.date) }}
+    </div>
+    <div class="col-md-4">
+        {{ form_label(form.heureDebut) }}
+        {{ form_widget(form.heureDebut) }}
+        {{ form_errors(form.heureDebut) }}
+    </div>
+    <div class="col-md-4">
+        {{ form_label(form.heureFin) }}
+        {{ form_widget(form.heureFin) }}
+        {{ form_errors(form.heureFin) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_label(form.mode) }}
+        {{ form_widget(form.mode) }}
+        {{ form_errors(form.mode) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_label(form.localisation) }}
+        {{ form_widget(form.localisation) }}
+        {{ form_errors(form.localisation) }}
+    </div>
+    <div class="col-12">
+        {{ form_label(form.lienMeeting) }}
+        {{ form_widget(form.lienMeeting) }}
+        {{ form_errors(form.lienMeeting) }}
+    </div>
+    <div class="col-12">
+        {{ form_label(form.description) }}
+        {{ form_widget(form.description) }}
+        {{ form_errors(form.description) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_label(form.candidature) }}
+        {{ form_widget(form.candidature) }}
+        {{ form_errors(form.candidature) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_label(form.user) }}
+        {{ form_widget(form.user) }}
+        {{ form_errors(form.user) }}
+    </div>
+</div>
+
+<div class="d-flex justify-content-end gap-2 mt-4">
+    <a href="{{ path('planification_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    <button type="submit" class="btn btn-primary px-4">Enregistrer</button>
+</div>
+
+{{ form_end(form) }}

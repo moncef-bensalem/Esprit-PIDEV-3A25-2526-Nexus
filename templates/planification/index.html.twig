@@ -1,0 +1,223 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Agenda - Planifications{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<style>
+    body { background-color: #0d1b2a; color: #fff; font-family: 'Segoe UI', sans-serif; }
+
+    .stats-card {
+        border-radius: 12px;
+        padding: 18px 24px;
+        min-width: 160px;
+        border: 2px solid transparent;
+    }
+    .stats-card.blue  { border-color: #4fc3f7; background: rgba(79,195,247,0.08); }
+    .stats-card.green { border-color: #4caf50; background: rgba(76,175,80,0.08); }
+    .stats-card.orange{ border-color: #ffa726; background: rgba(255,167,38,0.08); }
+
+    .stats-number { font-size: 2rem; font-weight: 700; }
+    .stats-label  { font-size: 0.8rem; color: #9ab; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .calendar-wrapper {
+        background: #fff;
+        border-radius: 14px;
+        padding: 20px;
+        color: #333;
+    }
+
+    .top-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .btn-calendriers {
+        background: #1e2d3d;
+        color: #fff;
+        border: 1px solid #3a4f6a;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 0.85rem;
+    }
+    .btn-icon {
+        background: #1e2d3d;
+        color: #fff;
+        border: 1px solid #3a4f6a;
+        border-radius: 6px;
+        padding: 6px 10px;
+    }
+
+    /* FullCalendar overrides */
+    .fc .fc-toolbar-title { font-size: 1.4rem; font-weight: 700; color: #1e2d3d; }
+    .fc .fc-button { background: #f0f4f8 !important; color: #1e2d3d !important; border: 1px solid #d0d9e0 !important; border-radius: 6px !important; }
+    .fc .fc-button-active { background: #1e2d3d !important; color: #fff !important; }
+    .fc .fc-today-button { background: #f0f4f8 !important; }
+    .fc-day-today { background: rgba(79,195,247,0.07) !important; }
+    .fc-daygrid-day:hover { background: #f5f9ff !important; cursor: pointer; }
+    .fc-col-header-cell { font-weight: 600; color: #555; }
+    .fc-daygrid-event { border-radius: 4px; font-size: 0.78rem; }
+    .fc-toolbar { flex-wrap: wrap; gap: 8px; }
+
+    .search-box {
+        background: #f5f7fa;
+        border: 1px solid #dde3ea;
+        border-radius: 20px;
+        padding: 5px 14px;
+        font-size: 0.85rem;
+        color: #555;
+        min-width: 200px;
+    }
+
+    .alert { border-radius: 8px; }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include '_sidebar.html.twig' %}
+<div class="container-fluid py-4 px-4">
+
+    {# Flash messages #}
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ type == 'success' ? 'success' : 'danger' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {# Stats row #}
+    <div class="d-flex gap-3 mb-4 flex-wrap">
+        <div class="stats-card blue">
+            <div class="stats-number">{{ total }}</div>
+            <div class="stats-label">Total planifications</div>
+        </div>
+        <div class="stats-card green">
+            <div class="d-flex align-items-center gap-1"><span style="color:#4caf50">✓</span></div>
+            <div class="stats-number">{{ actifs }}</div>
+            <div class="stats-label">Actifs</div>
+        </div>
+        <div class="stats-card orange">
+            <div class="stats-number">{{ nouveaux }}</div>
+            <div class="stats-label">Nouveaux (7j)</div>
+        </div>
+    </div>
+
+    {# Calendar container #}
+    <div class="calendar-wrapper shadow-sm">
+        <div class="top-bar">
+            <button class="btn-calendriers">Calendriers</button>
+            <a href="{{ path('planification_new') }}" class="btn-icon" title="Ajouter">+</a>
+            <button class="btn-icon" title="Imprimer" onclick="window.print()">🖨</button>
+            <div class="ms-auto">
+                <input type="text" class="search-box" placeholder="🔍 Recherche" id="searchInput">
+            </div>
+        </div>
+
+        <div id="calendar"></div>
+    </div>
+</div>
+
+{# Modal pour ajout rapide #}
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Nouvelle planification</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="modalIframe" src="" style="width:100%; height:520px; border:none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/fr.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+    const addModal   = new bootstrap.Modal(document.getElementById('addModal'));
+    const iframe     = document.getElementById('modalIframe');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'fr',
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,today,next',
+            center: 'title',
+            right: 'timeGridDay,timeGridWeek,dayGridMonth,multiMonthYear'
+        },
+        buttonText: {
+            today: "Aujourd'hui",
+            day: 'Jour',
+            week: 'Semaine',
+            month: 'Mois',
+            year: 'Année'
+        },
+        weekNumbers: true,
+        navLinks: true,
+        editable: false,
+        dayMaxEvents: 3,
+        events: '{{ path('planification_events') }}',
+
+        // Clic sur une date → ouvrir le formulaire d'ajout
+        dateClick: function (info) {
+            const url = '{{ path('planification_new') }}?date=' + info.dateStr + '&modal=1';
+            iframe.src = url;
+            addModal.show();
+        },
+
+        // Clic sur un événement → voir le détail
+        eventClick: function (info) {
+            info.jsEvent.preventDefault();
+            const url = info.event.extendedProps.url;
+            if (url) window.location.href = url;
+        },
+
+        eventDidMount: function (info) {
+            const statut = info.event.extendedProps.statut;
+            if (statut === 'annulé') {
+                info.el.style.textDecoration = 'line-through';
+                info.el.style.opacity = '0.6';
+            }
+        }
+    });
+
+    calendar.render();
+
+    // Recherche simple (filtre les événements affichés)
+    document.getElementById('searchInput').addEventListener('input', function () {
+        const query = this.value.toLowerCase();
+        calendar.getEvents().forEach(function (event) {
+            const match = event.title.toLowerCase().includes(query);
+            event.setProp('display', match || query === '' ? 'auto' : 'none');
+        });
+    });
+
+    // Écouter le message de succès envoyé par l'iframe après sauvegarde
+    window.addEventListener('message', function (e) {
+        if (e.data === 'planification_saved') {
+            addModal.hide();
+            iframe.src = '';
+            calendar.refetchEvents();
+        }
+    });
+
+    // Nettoyer l'iframe à la fermeture du modal
+    document.getElementById('addModal').addEventListener('hidden.bs.modal', function () {
+        iframe.src = '';
+    });
+});
+</script>
+{% endblock %}

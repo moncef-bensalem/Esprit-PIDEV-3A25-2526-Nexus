@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Planifications & Avis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #0d1b2a; color: #c8d8e8; font-family: 'Segoe UI', sans-serif; margin: 0; }
+
+        /* ── Topbar ── */
+        .topbar {
+            background: #111e2e;
+            border-bottom: 1px solid #1e3a52;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .topbar-title { font-size: 1.1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .topbar-title span { color: #4fc3f7; }
+
+        .btn-refresh {
+            background: linear-gradient(135deg, #00bcd4, #0097a7);
+            color: #fff; border: none; border-radius: 20px;
+            padding: 7px 18px; font-size: 0.83rem; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-refresh:hover { background: linear-gradient(135deg, #00acc1, #00838f); }
+
+        .filter-label { font-size: 0.83rem; color: #8aa; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        .filter-label input[type=checkbox] { accent-color: #4fc3f7; width: 15px; height: 15px; }
+
+        .btn-clear { background: #1e3a52; color: #8cc8e8; border: 1px solid #2a4f6e; border-radius: 6px; padding: 6px 14px; font-size: 0.82rem; cursor: pointer; }
+        .btn-clear:hover { background: #254d68; }
+
+        .btn-stats {
+            margin-left: auto;
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+            color: #fff; border: none; border-radius: 8px;
+            padding: 8px 20px; font-size: 0.83rem; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; gap: 7px;
+            text-decoration: none;
+        }
+        .btn-stats:hover { background: linear-gradient(135deg, #6d28d9, #4c1d95); color: #fff; }
+
+        /* ── Grid ── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 24px;
+        }
+
+        /* ── Square card ── */
+        .plan-card {
+            background: #0f2337;
+            border: 1.5px solid #1e3d58;
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            aspect-ratio: 1 / 1;          /* ← carré */
+            min-height: 280px;
+            position: relative;
+            transition: border-color .2s, transform .15s;
+        }
+        .plan-card:hover { border-color: #4fc3f7; transform: translateY(-2px); }
+
+        .plan-card .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .plan-title { font-size: 0.95rem; font-weight: 700; color: #e0f0ff; flex: 1; }
+
+        .badge-statut {
+            font-size: 0.7rem; font-weight: 700; border-radius: 12px;
+            padding: 3px 10px; white-space: nowrap; flex-shrink: 0;
+        }
+        .badge-done       { background: rgba(16,185,129,.18); color: #10b981; border: 1px solid #10b981; }
+        .badge-prevu      { background: rgba(59,130,246,.18); color: #60a5fa; border: 1px solid #60a5fa; }
+        .badge-cancelled  { background: rgba(239,68,68,.18);  color: #f87171; border: 1px solid #f87171; }
+        .badge-followup   { background: rgba(245,158,11,.18); color: #fbbf24; border: 1px solid #fbbf24; }
+        .badge-none       { background: rgba(100,116,139,.18); color: #94a3b8; border: 1px solid #475569; }
+
+        .card-meta { margin-top: 10px; flex: 1; overflow: hidden; }
+        .card-meta .meta-row { display: flex; align-items: flex-start; gap: 6px; font-size: 0.78rem; color: #7a9ab8; margin-bottom: 5px; line-height: 1.4; }
+        .card-meta .meta-row a { color: #4fc3f7; text-decoration: none; word-break: break-all; }
+        .card-meta .meta-desc { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* Stars */
+        .stars { display: flex; gap: 3px; margin-top: 8px; }
+        .star { font-size: 1.1rem; cursor: default; color: #2a4f6e; }
+        .star.filled { color: #f59e0b; }
+
+        /* Buttons */
+        .card-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 12px; flex-wrap: wrap; }
+        .btn-modify  { background: #1e3d58; color: #60a5fa; border: 1px solid #2a5a80; border-radius: 8px; padding: 5px 13px; font-size: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+        .btn-modify:hover  { background: #254d6e; color: #93c5fd; }
+        .btn-delete  { background: rgba(220,38,38,.15); color: #f87171; border: 1px solid #991b1b; border-radius: 8px; padding: 5px 13px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .btn-delete:hover  { background: rgba(220,38,38,.3); }
+        .btn-review  { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid #065f46; border-radius: 8px; padding: 5px 13px; font-size: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+        .btn-review:hover  { background: rgba(16,185,129,.3); color: #6ee7b7; }
+
+        .flash-bar { padding: 10px 24px 0; }
+        .empty-state { text-align: center; color: #4a6a8a; padding: 60px 20px; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+{% include '_sidebar.html.twig' %}
+
+{# ── Topbar ── #}
+<div class="topbar">
+    <div class="topbar-title">📋 Planifications <span>&</span> Avis</div>
+
+    <button class="btn-refresh" onclick="location.reload()">↻ Rafraîchir</button>
+
+    <label class="filter-label">
+        <input type="checkbox" id="filterLow" {% if filter_low %}checked{% endif %}>
+        Filtrer avis ≤ 2 ★
+    </label>
+
+    <button class="btn-clear" onclick="clearFilter()">Effacer filtre</button>
+
+    <a href="{{ path('review_stats') }}" class="btn-stats">📊 Statistiques</a>
+</div>
+
+{# Flash messages #}
+<div class="flash-bar">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ type == 'success' ? 'success' : 'danger' }} alert-dismissible fade show py-2" role="alert" style="border-radius:8px;">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
+{# ── Cards Grid ── #}
+{% if planifications is empty %}
+    <div class="empty-state">Aucune planification trouvée.</div>
+{% else %}
+<div class="cards-grid" id="cardsGrid">
+    {% for p in planifications %}
+        {% set review = p.reviews|first %}
+        {% set rating = review ? review.rating : 0 %}
+
+        <div class="plan-card" data-rating="{{ rating }}">
+
+            {# Header: titre + badge statut #}
+            <div class="card-top">
+                <div class="plan-title">
+                    ✦ {{ p.typeEvent|capitalize }}{% if p.description %} — {{ p.description|slice(0,30) }}{% if p.description|length > 30 %}…{% endif %}{% endif %}
+                </div>
+                {% if review and review.statut %}
+                    {% set s = review.statut %}
+                    <span class="badge-statut {{ s == 'DONE' ? 'badge-done' : (s == 'CANCELLED' ? 'badge-cancelled' : (s == 'NEEDS_FOLLOWUP' ? 'badge-followup' : 'badge-none')) }}">
+                        {{ s == 'DONE' ? 'Terminé' : (s == 'CANCELLED' ? 'Annulé' : 'Suivi nécéssaire') }}
+                    </span>
+                {% elseif p.statut %}
+                    <span class="badge-statut {{ p.statut == 'confirmé' ? 'badge-done' : (p.statut == 'annulé' ? 'badge-cancelled' : 'badge-prevu') }}">
+                        {{ p.statut|capitalize }}
+                    </span>
+                {% else %}
+                    <span class="badge-statut badge-prevu">Prévu</span>
+                {% endif %}
+            </div>
+
+            {# Méta-données #}
+            <div class="card-meta">
+                <div class="meta-row">
+                    📅 Date : {{ p.date ? p.date|date('Y-m-d') : '—' }}
+                    &nbsp;&nbsp;
+                    🕐 {{ p.heureDebut ? p.heureDebut|date('H:i:s') : '--:--' }} → {{ p.heureFin ? p.heureFin|date('H:i:s') : '--:--' }}
+                </div>
+                {% if p.mode %}
+                <div class="meta-row">🔑 Mode : {{ p.mode }}</div>
+                {% endif %}
+                {% if p.description %}
+                <div class="meta-desc">📝 {{ p.description }}</div>
+                {% endif %}
+                {% if p.lienMeeting %}
+                <div class="meta-row">🔗 <a href="{{ p.lienMeeting }}" target="_blank">{{ p.lienMeeting }}</a></div>
+                {% endif %}
+            </div>
+
+            {# Étoiles #}
+            <div class="stars">
+                {% for i in 1..5 %}
+                    <span class="star {{ i <= rating ? 'filled' : '' }}">★</span>
+                {% endfor %}
+            </div>
+
+            {# Actions #}
+            <div class="card-actions">
+                <a href="{{ path('planification_edit', {id: p.idEvent}) }}" class="btn-modify">✏ Modifier</a>
+
+                <form method="post" action="{{ path('planification_delete', {id: p.idEvent}) }}"
+                      onsubmit="return confirm('Supprimer cette planification ?')" style="margin:0">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ p.idEvent) }}">
+                    <button type="submit" class="btn-delete">🗑 Supprimer</button>
+                </form>
+
+                {% if review %}
+                    <a href="{{ path('review_edit', {id: review.id}) }}" class="btn-review">★ Modifier avis</a>
+                {% else %}
+                    <a href="{{ path('review_new', {id: p.idEvent}) }}" class="btn-review">★ Ajouter un avis</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const filterCheckbox = document.getElementById('filterLow');
+    const cards = document.querySelectorAll('.plan-card');
+
+    function applyFilter() {
+        const low = filterCheckbox.checked;
+        cards.forEach(card => {
+            const rating = parseInt(card.dataset.rating || '0');
+            card.style.display = (!low || rating <= 2) ? '' : 'none';
+        });
+    }
+
+    function clearFilter() {
+        filterCheckbox.checked = false;
+        applyFilter();
+    }
+
+    filterCheckbox.addEventListener('change', applyFilter);
+    applyFilter(); // apply on load if checked
+</script>
+</body>
+</html>

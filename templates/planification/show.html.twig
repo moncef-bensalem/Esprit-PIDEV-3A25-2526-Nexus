@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Planification #{{ planification.idEvent }}{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body { background: #f5f7fa; }
+    .detail-card { background: #fff; border-radius: 14px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .badge-statut { font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; }
+    .info-row { display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f0f3f6; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { width: 160px; color: #888; font-size: 0.85rem; flex-shrink: 0; }
+    .info-value { font-weight: 500; color: #222; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container py-5" style="max-width: 700px;">
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <a href="{{ path('planification_index') }}" class="text-decoration-none text-secondary">← Retour au calendrier</a>
+        <div class="d-flex gap-2">
+            <a href="{{ path('planification_edit', {id: planification.idEvent}) }}" class="btn btn-sm btn-outline-primary">Modifier</a>
+            <form method="post" action="{{ path('planification_delete', {id: planification.idEvent}) }}" onsubmit="return confirm('Confirmer la suppression ?')">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ planification.idEvent) }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="detail-card">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h4 class="fw-bold mb-0">{{ planification.typeEvent|capitalize }}</h4>
+            {% if planification.statut %}
+                <span class="badge-statut badge
+                    {% if planification.statut == 'confirmé' %}bg-success
+                    {% elseif planification.statut == 'annulé' %}bg-danger
+                    {% elseif planification.statut == 'terminé' %}bg-secondary
+                    {% else %}bg-warning text-dark{% endif %}">
+                    {{ planification.statut }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="info-row">
+            <div class="info-label">📅 Date</div>
+            <div class="info-value">{{ planification.date ? planification.date|date('d/m/Y') : '-' }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">🕐 Horaire</div>
+            <div class="info-value">{{ planification.heureDebut ? planification.heureDebut|date('H:i') : '-' }} → {{ planification.heureFin ? planification.heureFin|date('H:i') : '-' }}</div>
+        </div>
+        {% if planification.mode %}
+        <div class="info-row">
+            <div class="info-label">📡 Mode</div>
+            <div class="info-value">{{ planification.mode }}</div>
+        </div>
+        {% endif %}
+        {% if planification.localisation %}
+        <div class="info-row">
+            <div class="info-label">📍 Localisation</div>
+            <div class="info-value">{{ planification.localisation }}</div>
+        </div>
+        {% endif %}
+        {% if planification.lienMeeting %}
+        <div class="info-row">
+            <div class="info-label">🔗 Lien Meeting</div>
+            <div class="info-value"><a href="{{ planification.lienMeeting }}" target="_blank">{{ planification.lienMeeting }}</a></div>
+        </div>
+        {% endif %}
+        {% if planification.description %}
+        <div class="info-row">
+            <div class="info-label">📝 Description</div>
+            <div class="info-value">{{ planification.description }}</div>
+        </div>
+        {% endif %}
+        {% if planification.candidature %}
+        <div class="info-row">
+            <div class="info-label">👤 Candidature</div>
+            <div class="info-value">#{{ planification.candidature.idCandidature }}</div>
+        </div>
+        {% endif %}
+        {% if planification.user %}
+        <div class="info-row">
+            <div class="info-label">👥 Responsable</div>
+            <div class="info-value">{{ planification.user.email }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
