@@ -27,7 +27,7 @@
                 <option value="Clôturée" {% if app.request.query.get('statut') == 'Clôturée' %}selected{% endif %}>Clôturée</option>
             </select>
         </div>
-        <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1.5rem; border-radius:2rem;">Filtrer</button>
+
         {% if app.request.query.get('q') or app.request.query.get('statut') %}
             <a href="{{ path('app_offre_emploi_index') }}" class="btn" style="padding: 0.55rem 1rem; border-radius:2rem;">Réinitialiser</a>
         {% endif %}
