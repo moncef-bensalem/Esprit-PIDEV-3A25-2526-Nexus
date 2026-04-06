@@ -48,6 +48,9 @@ class OffreEmploiType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => OffreEmploi::class,
+            'attr' => [
+                'novalidate' => 'novalidate', // disable html5 validation
+            ]
         ]);
     }
 }

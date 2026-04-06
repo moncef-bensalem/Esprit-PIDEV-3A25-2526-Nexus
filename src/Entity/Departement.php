@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: "departement")]
@@ -15,6 +16,8 @@ class Departement
     private int $id_departement;
 
     #[ORM\Column(type: "string", length: 255)]
+    #[Assert\NotBlank(message: "Le libellé du département ne peut pas être vide")]
+    #[Assert\Length(max: 255, maxMessage: "Le libellé est trop long")]
     private string $libelle;
 
     public function getId_departement(): int

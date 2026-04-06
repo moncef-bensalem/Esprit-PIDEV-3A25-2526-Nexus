@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: "candidat")]
@@ -15,10 +16,13 @@ class Candidat
     private string $id_candidat;
 
     #[ORM\Column(type: "string", length: 200)]
+    #[Assert\NotBlank(message: "Le nom complet est obligatoire")]
+    #[Assert\Length(min: 3, max: 200, minMessage: "Le nom doit faire au moins 3 caractères", maxMessage: "Le nom ne peut pas dépasser 200 caractères")]
     private string $nom_complet;
 
     #[ORM\Column(type: "string", length: 255)]
-    
+    #[Assert\NotBlank(message: "L'email est requis")]
+    #[Assert\Email(message: "L'email n'est pas valide.")]
     private string $email_contact;
 
     #[ORM\Column(type: "string", length: 500, nullable: true)]

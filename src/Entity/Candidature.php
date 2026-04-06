@@ -5,6 +5,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Candidat;
 use App\Entity\OffreEmploi;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: "candidature")]
@@ -20,9 +21,12 @@ class Candidature
     private \DateTimeInterface $date_postulation;
 
     #[ORM\Column(type: "string", length: 50)]
+    #[Assert\NotBlank(message: "L'état d'avancement est obligatoire")]
+    #[Assert\Choice(choices: ["RECU", "EN_ENTRETIEN", "OFFRE_FAITE", "REJETE"], message: "Veuillez choisir un état valide")]
     private string $etat_avancement;
 
     #[ORM\Column(type: "decimal", precision: 5, scale: 2, nullable: true)]
+    #[Assert\Range(min: 0, max: 100, notInRangeMessage: "Le score doit être entre 0 et 100")]
     private ?float $score_matching = null;
 
     #[ORM\Column(type: "string", length: 100, nullable: true)]

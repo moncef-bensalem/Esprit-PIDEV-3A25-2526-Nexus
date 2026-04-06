@@ -24,6 +24,9 @@ class DepartementType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Departement::class,
+            'attr' => [
+                'novalidate' => 'novalidate', // disable html5 validation
+            ]
         ]);
     }
 }

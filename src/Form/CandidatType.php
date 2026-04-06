@@ -42,6 +42,9 @@ class CandidatType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Candidat::class,
+            'attr' => [
+                'novalidate' => 'novalidate', // disable html5 validation
+            ]
         ]);
     }
 }

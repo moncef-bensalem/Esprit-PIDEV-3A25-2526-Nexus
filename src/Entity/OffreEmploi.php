@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: "offre_emploi")]
@@ -15,18 +16,22 @@ class OffreEmploi
     private string $id_offre;
 
     #[ORM\Column(type: "string", length: 255)]
+    #[Assert\NotBlank(message: "Le titre du poste est requis")]
+    #[Assert\Length(min: 5, max: 255, minMessage: "Le titre doit faire au moins 5 caractères")]
     private string $titre_poste;
 
     #[ORM\Column(type: "text", nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(type: "string", length: 100)]
+    #[Assert\NotBlank(message: "Le département est requis")]
     private string $departement;
 
     #[ORM\Column(type: "date", nullable: true)]
     private ?\DateTimeInterface $date_cloture = null;
 
     #[ORM\Column(type: "string", length: 50)]
+    #[Assert\NotBlank(message: "Le statut de l'offre est requis")]
     private string $statut_offre;
 
     #[ORM\Column(type: "datetime")]
@@ -40,6 +45,7 @@ class OffreEmploi
     private ?Departement $departementRel = null;
 
     #[ORM\Column(type: "float", nullable: true)]
+    #[Assert\PositiveOrZero(message: "Le salaire ne peut pas être négatif")]
     private ?float $salaire_propose = null;
 
     #[ORM\Column(type: "string", length: 10, nullable: true)]
