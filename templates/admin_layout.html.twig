@@ -20,7 +20,7 @@
                 <li><a href="{{ path('app_kanban_index') }}" class="sidebar-link {% if app.request.get('_route') == 'app_kanban_index' %}active{% endif %}"><i class="fas fa-columns"></i> Pipeline</a></li>
                 <li><a href="{{ path('app_offre_emploi_index') }}" class="sidebar-link {% if 'offre_emploi' in app.request.get('_route') %}active{% endif %}"><i class="fas fa-briefcase"></i> Offres d'emploi</a></li>
                 <li><a href="{{ path('app_candidature_index') }}" class="sidebar-link {% if 'candidature' in app.request.get('_route') %}active{% endif %}"><i class="fas fa-inbox"></i> Candidatures</a></li>
-                <li><a href="{{ path('app_candidat_index') }}" class="sidebar-link {% if 'candidat_' in app.request.get('_route') %}active{% endif %}"><i class="fas fa-users"></i> Talents</a></li>
+
                 <li><a href="{{ path('app_departement_index') }}" class="sidebar-link {% if 'departement' in app.request.get('_route') %}active{% endif %}"><i class="fas fa-building"></i> Départements</a></li>
             </ul>
             <div style="margin-top:auto; padding-top: 1rem; border-top: 1px solid var(--border-color);">
