@@ -33,9 +33,9 @@ class OffreEmploiType extends AbstractType
             ])
             ->add('statut_offre', ChoiceType::class, [
                 'choices' => [
-                    'Brouillon' => 'BROUILLON',
-                    'Publiée' => 'PUBLIEE',
-                    'Clôturée' => 'CLOTUREE'
+                    'Brouillon' => 'Brouillon',
+                    'Publiée' => 'Publiée',
+                    'Clôturée' => 'Clôturée'
                 ],
                 'label' => 'Statut'
             ])

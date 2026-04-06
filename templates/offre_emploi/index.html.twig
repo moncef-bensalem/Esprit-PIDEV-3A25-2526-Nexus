@@ -22,9 +22,9 @@
             <label for="statut">Statut:</label>
             <select name="statut" id="statut" onchange="this.form.submit()" style="border-radius:2rem; padding: 0.5rem 1rem;">
                 <option value="">Tous les statuts</option>
-                <option value="BROUILLON" {% if app.request.query.get('statut') == 'BROUILLON' %}selected{% endif %}>Brouillon</option>
-                <option value="PUBLIEE" {% if app.request.query.get('statut') == 'PUBLIEE' %}selected{% endif %}>Publiée</option>
-                <option value="CLOTUREE" {% if app.request.query.get('statut') == 'CLOTUREE' %}selected{% endif %}>Clôturée</option>
+                <option value="Brouillon" {% if app.request.query.get('statut') == 'Brouillon' %}selected{% endif %}>Brouillon</option>
+                <option value="Publiée" {% if app.request.query.get('statut') == 'Publiée' %}selected{% endif %}>Publiée</option>
+                <option value="Clôturée" {% if app.request.query.get('statut') == 'Clôturée' %}selected{% endif %}>Clôturée</option>
             </select>
         </div>
         <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1.5rem; border-radius:2rem;">Filtrer</button>

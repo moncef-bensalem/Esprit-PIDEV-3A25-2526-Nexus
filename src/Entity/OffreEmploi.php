@@ -22,7 +22,7 @@ class OffreEmploi
     public function __construct()
     {
         $this->candidatures = new ArrayCollection();
-        $this->statut_offre = 'BROUILLON'; // Default state US-12
+        $this->statut_offre = 'Brouillon'; // Default state US-12
     }
 
     #[ORM\Column(type: "string", length: 255)]

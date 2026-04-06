@@ -20,7 +20,7 @@ class PublicFrontendController extends AbstractController
     #[Route('/offres', name: 'app_public_offres', methods: ['GET'])]
     public function offres(EntityManagerInterface $em): Response
     {
-        $offres = $em->getRepository(OffreEmploi::class)->findBy(['statut_offre' => 'PUBLIEE'], ['date_creation' => 'DESC']);
+        $offres = $em->getRepository(OffreEmploi::class)->findBy(['statut_offre' => 'Publiée'], ['date_creation' => 'DESC']);
         
         return $this->render('frontend/offres.html.twig', [
             'offres' => $offres
@@ -31,7 +31,7 @@ class PublicFrontendController extends AbstractController
     public function postuler(string $id_offre, Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
     {
         $offre = $em->getRepository(OffreEmploi::class)->find($id_offre);
-        if (!$offre || $offre->getStatut_offre() !== 'PUBLIEE') {
+        if (!$offre || $offre->getStatut_offre() !== 'Publiée') {
             throw $this->createNotFoundException('Cette offre n\'est plus disponible.');
         }
 
