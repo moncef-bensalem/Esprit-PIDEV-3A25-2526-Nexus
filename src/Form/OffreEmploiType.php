@@ -28,7 +28,8 @@ class OffreEmploiType extends AbstractType
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Description', 
-                'required' => false
+                'required' => true,
+                'constraints' => [new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'La description est requise.'])]
             ])
             ->add('departementRel', EntityType::class, [
                 'class' => Departement::class,
@@ -38,9 +39,10 @@ class OffreEmploiType extends AbstractType
             ])
             ->add('date_cloture', DateType::class, [
                 'widget' => 'single_text',
-                'required' => false,
+                'required' => true,
                 'label' => 'Date de clôture',
                 'constraints' => [
+                    new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'La date de clôture est requise.']),
                     new \Symfony\Component\Validator\Constraints\GreaterThanOrEqual(['value' => 'today', 'message' => 'La date de clôture ne peut pas être dans le passé.'])
                 ]
             ])
@@ -53,20 +55,22 @@ class OffreEmploiType extends AbstractType
                 'label' => 'Statut'
             ])
             ->add('salaire_propose', NumberType::class, [
-                'required' => false, 
+                'required' => true, 
                 'label' => 'Salaire proposé',
                 'constraints' => [
+                    new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'Veuillez saisir un salaire.']),
                     new \Symfony\Component\Validator\Constraints\PositiveOrZero(['message' => 'Le salaire ne peut pas être négatif.'])
                 ]
             ])
             ->add('devise', ChoiceType::class, [
-                'required' => false, 
+                'required' => true, 
                 'label' => 'Devise',
                 'choices' => [
                     'TND' => 'TND',
                     'EUR' => 'EUR',
                     'USD' => 'USD'
-                ]
+                ],
+                'constraints' => [new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'Veuillez sélectionner une devise.'])]
             ])
         ;
     }

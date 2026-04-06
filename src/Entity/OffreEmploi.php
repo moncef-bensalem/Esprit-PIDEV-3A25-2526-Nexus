@@ -31,12 +31,14 @@ class OffreEmploi
     private string $titre_poste;
 
     #[ORM\Column(type: "text", nullable: true)]
+    #[Assert\NotBlank(message: "La description est requise")]
     private ?string $description = null;
 
     #[ORM\Column(type: "string", length: 100)]
     private string $departement;
 
     #[ORM\Column(type: "date", nullable: true)]
+    #[Assert\NotBlank(message: "La date de clôture est requise")]
     #[Assert\GreaterThanOrEqual(value: "today", message: "La date de clôture ne peut pas être dans le passé")]
     private ?\DateTimeInterface $date_cloture = null;
 
@@ -55,10 +57,12 @@ class OffreEmploi
     private ?Departement $departementRel = null;
 
     #[ORM\Column(type: "float", nullable: true)]
+    #[Assert\NotBlank(message: "Le salaire proposé est requis")]
     #[Assert\PositiveOrZero(message: "Le salaire ne peut pas être négatif")]
     private ?float $salaire_propose = null;
 
     #[ORM\Column(type: "string", length: 10, nullable: true)]
+    #[Assert\NotBlank(message: "La devise est requise")]
     private ?string $devise = null;
 
     public function getId_offre(): string
