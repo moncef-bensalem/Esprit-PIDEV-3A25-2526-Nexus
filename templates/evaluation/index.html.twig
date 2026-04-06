@@ -93,23 +93,16 @@
         </div>
 
         <div class="col-md-2">
-            <button type="submit" name="sort" value="score" class="btn btn-primary w-100">
-                Trier par score
-            </button>
-        </div>
-
-        <div class="col-md-2">
-            <button type="submit" name="sort" value="dateCreation" class="btn btn-outline-light w-100">
-                Trier par date
-            </button>
+            <label class="form-label text-white-50 mb-1">Tri</label>
+            <select name="sort" class="form-select">
+                <option value="score" {{ sort == 'score' ? 'selected' : '' }}>Trier par score</option>
+                <option value="dateCreation" {{ sort == 'dateCreation' ? 'selected' : '' }}>Trier par date</option>
+            </select>
         </div>
 
         <div class="col-md-4">
+            <label class="form-label text-white-50 mb-1">Filtres</label>
             <div class="row g-2">
-                <div class="col-12">
-                    <label class="form-label text-white-50 mb-1">Filtres</label>
-                </div>
-
                 <div class="col-md-4">
                     <select name="decision" class="form-select">
                         <option value="">Toutes decisions</option>
@@ -139,10 +132,8 @@
             </div>
         </div>
 
-        <div class="col-12 text-end">
-            <button type="submit" name="sort" value="{{ sort }}" class="btn btn-success">
-                Filtrer
-            </button>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-success w-100">Filtrer</button>
         </div>
     </form>
 </div>
