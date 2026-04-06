@@ -34,8 +34,6 @@ class OffreEmploi
     private ?string $description = null;
 
     #[ORM\Column(type: "string", length: 100)]
-    #[Assert\NotBlank(message: "Le département est requis")]
-    #[Assert\Regex(pattern: "/^[A-Za-zÀ-ÿ0-9\s\-&]+$/", message:"Caractères non autorisés détectés")]
     private string $departement;
 
     #[ORM\Column(type: "date", nullable: true)]
