@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de Bord RH{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Dashboard RH</h1>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Offres Actives</h3>
+            <p>{{ offres_actives }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Candidatures en cours</h3>
+            <p>{{ candidatures_en_cours }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Candidats</h3>
+            <p>{{ total_candidats }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Taux d'offres publiées</h3>
+            <p>{{ taux_conversion }}%</p>
+        </div>
+    </div>
+    
+    <div style="display:flex; gap: 2rem; margin-top: 3rem; flex-wrap: wrap;">
+        <div class="stat-card" style="flex:1; min-width: 300px;">
+            <h3 style="color:var(--text-main); margin-bottom: 2rem; font-size: 1.2rem;">Accès Rapides</h3>
+            <div style="display: flex; flex-direction:column; gap:1rem;">
+                <a href="{{ path('app_offre_emploi_index') }}" class="btn btn-primary" style="justify-content:center;">Gérer les offres d'emploi</a>
+                <a href="{{ path('app_candidature_index') }}" class="btn" style="justify-content:center;">Gérer les candidatures</a>
+                <a href="{{ path('app_candidat_index') }}" class="btn" style="justify-content:center;">Vivier de talents</a>
+                <a href="{{ path('app_departement_index') }}" class="btn" style="justify-content:center;">Départements</a>
+            </div>
+        </div>
+        
+        <div class="stat-card" style="flex:2; min-width: 300px; text-align: left;">
+            <h3 style="color:var(--text-main); margin-bottom: 2rem; font-size: 1.2rem;">Aperçu du système</h3>
+            <p style="color: var(--text-muted); line-height: 1.8; font-size:1.05rem;">
+                Bienvenue sur le module de gestion de recrutement de Nexus.<br><br>
+                Utilisez les accès rapides pour naviguer entre les différentes entités du système. 
+                Toutes les offres et candidatures peuvent être facilement filtrées et triées pour accélérer la gestion du pipeline.
+                <br><br>
+                <i>Conformément aux spécifications (US-12 à US-16), le processus manuel de création d'offres, de suivi de statut, et d'évitement de doublons de candidatures est optimisé.</i>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

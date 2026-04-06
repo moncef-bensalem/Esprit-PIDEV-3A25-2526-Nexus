@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+{% block title %}Postuler: {{ offre.titre_poste }}{% endblock %}
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Postuler à l'offre</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_public_offres') }}" class="btn"><i class="fas fa-arrow-left"></i> Retour aux offres</a>
+        </div>
+    </div>
+    
+    <div class="form-container">
+        <h2 style="margin-bottom: 0.5rem; font-size: 2rem; color: var(--text-main);">{{ offre.titre_poste }}</h2>
+        <p style="color: var(--neon-blue); font-weight: 600; margin-bottom: 2.5rem; letter-spacing: 1px;"><i class="fas fa-building" style="margin-right:0.5rem;"></i> {{ offre.departement }}</p>
+        
+        {% for message in app.flashes('error') %}
+            <div class="badge badge-danger" style="margin-bottom: 2rem; display:block;">{{ message }}</div>
+        {% endfor %}
+
+        {{ form_start(form, {'attr': {'enctype': 'multipart/form-data'}}) }}
+            {{ form_widget(form) }}
+            <button class="btn btn-primary" style="margin-top:2rem; width: 100%; justify-content:center; padding: 1rem;"><i class="fas fa-paper-plane"></i> Soumettre ma candidature (CV)</button>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

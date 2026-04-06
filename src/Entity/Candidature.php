@@ -6,9 +6,11 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Candidat;
 use App\Entity\OffreEmploi;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity]
 #[ORM\Table(name: "candidature")]
+#[UniqueEntity(fields: ['candidat', 'offre_emploi'], message: 'Ce candidat a déjà postulé à cette offre.')]
 class Candidature
 {
 

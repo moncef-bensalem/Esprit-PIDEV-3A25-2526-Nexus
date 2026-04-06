@@ -4,16 +4,26 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity]
 #[ORM\Table(name: "offre_emploi")]
 class OffreEmploi
 {
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "bigint")]
     private string $id_offre;
+
+    #[ORM\OneToMany(mappedBy: 'offre_emploi', targetEntity: Candidature::class, cascade: ['remove'])]
+    private Collection $candidatures;
+
+    public function __construct()
+    {
+        $this->candidatures = new ArrayCollection();
+        $this->statut_offre = 'BROUILLON'; // Default state US-12
+    }
 
     #[ORM\Column(type: "string", length: 255)]
     #[Assert\NotBlank(message: "Le titre du poste est requis")]
@@ -169,6 +179,36 @@ class OffreEmploi
     public function setDevise(?string $value): static
     {
         $this->devise = $value;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Candidature>
+     */
+    public function getCandidatures(): Collection
+    {
+        return $this->candidatures;
+    }
+
+    public function addCandidature(Candidature $candidature): static
+    {
+        if (!$this->candidatures->contains($candidature)) {
+            $this->candidatures->add($candidature);
+            $candidature->setOffreEmploi($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCandidature(Candidature $candidature): static
+    {
+        if ($this->candidatures->removeElement($candidature)) {
+            // set the owning side to null (unless already changed)
+            if ($candidature->getOffreEmploi() === $this) {
+                $candidature->setOffreEmploi(null);
+            }
+        }
+
         return $this;
     }
 

@@ -14,9 +14,25 @@ use Symfony\Component\Routing\Attribute\Route;
 final class OffreEmploiController extends AbstractController
 {
     #[Route(name: 'app_offre_emploi_index', methods: ['GET'])]
-    public function index(EntityManagerInterface $entityManager): Response
+    public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $offreEmplois = $entityManager->getRepository(OffreEmploi::class)->findAll();
+        $search = $request->query->get('q');
+        $statut = $request->query->get('statut');
+        
+        $qb = $entityManager->getRepository(OffreEmploi::class)->createQueryBuilder('o');
+        
+        if ($search) {
+            $qb->andWhere('o.titre_poste LIKE :search OR o.departement LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+        if ($statut) {
+            $qb->andWhere('o.statut_offre = :statut')
+               ->setParameter('statut', $statut);
+        }
+        
+        $qb->orderBy('o.date_creation', 'DESC');
+        
+        $offreEmplois = $qb->getQuery()->getResult();
 
         return $this->render('offre_emploi/index.html.twig', [
             'offre_emplois' => $offreEmplois,

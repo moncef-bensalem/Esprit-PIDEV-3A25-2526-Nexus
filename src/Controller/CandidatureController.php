@@ -14,9 +14,20 @@ use Symfony\Component\Routing\Attribute\Route;
 final class CandidatureController extends AbstractController
 {
     #[Route(name: 'app_candidature_index', methods: ['GET'])]
-    public function index(EntityManagerInterface $entityManager): Response
+    public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $candidatures = $entityManager->getRepository(Candidature::class)->findAll();
+        $etat = $request->query->get('etat');
+        
+        $qb = $entityManager->getRepository(Candidature::class)->createQueryBuilder('c');
+        
+        if ($etat) {
+            $qb->andWhere('c.etat_avancement = :etat')
+               ->setParameter('etat', $etat);
+        }
+        
+        $qb->orderBy('c.date_postulation', 'DESC');
+        
+        $candidatures = $qb->getQuery()->getResult();
 
         return $this->render('candidature/index.html.twig', [
             'candidatures' => $candidatures,

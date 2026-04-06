@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+{% block title %}Portail de Recrutement{% endblock %}
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Portail de Recrutement</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_public_suivi') }}" class="btn">Suivre ma candidature</a>
+        </div>
+    </div>
+    
+    {% for message in app.flashes('error') %}
+        <div class="badge badge-danger" style="margin-bottom: 2rem; display: inline-block;">{{ message }}</div>
+    {% endfor %}
+    {% for message in app.flashes('success') %}
+        <div class="badge badge-success" style="margin-bottom: 2rem; display: inline-block;">{{ message }}</div>
+    {% endfor %}
+
+    <div class="talents-grid">
+        {% for offre in offres %}
+            <div class="talent-card">
+                <div class="avatar-circle theme-blue" style="margin-bottom: 1rem;"><i class="fas fa-briefcase"></i></div>
+                <h3 class="talent-name">{{ offre.titre_poste }}</h3>
+                <p class="talent-poste" style="margin-bottom: 1.5rem;">{{ offre.departement }}</p>
+                
+                <div class="talent-info" style="margin-bottom: 2rem; display: flex; flex-direction:column; gap:0.5rem; text-align:left; width:100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                    <p><i class="fas fa-money-bill" style="color:var(--neon-blue); width:25px;"></i> {{ offre.salaire_propose ? offre.salaire_propose ~ ' ' ~ offre.devise : 'Non spécifié' }}</p>
+                    <p><i class="fas fa-calendar" style="color:var(--neon-purple); width:25px;"></i> Clôture: {{ offre.date_cloture ? offre.date_cloture|date('Y-m-d') : 'Continue' }}</p>
+                </div>
+                
+                <div class="talent-actions" style="margin-top:auto; width: 100%;">
+                    <a href="{{ path('app_public_postuler', {'id_offre': offre.id_offre}) }}" class="btn btn-primary" style="width: 100%; justify-content:center;">Postuler avec CV</a>
+                </div>
+            </div>
+        {% else %}
+            <div class="stat-card" style="grid-column: 1 / -1;">
+                <h3>Aucune offre disponible actuellement.</h3>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
