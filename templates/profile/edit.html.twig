@@ -1,0 +1,161 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon Profil{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body { background-color: #0d1b2a; color: #fff; font-family: 'Segoe UI', sans-serif; }
+    main.container { max-width: 100%; padding-top: 0 !important; }
+    
+    .card-glass {
+        background: #15273b;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: #fff;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+    }
+    
+    .profile-sidebar {
+        background: radial-gradient(circle at top right, rgba(79, 195, 247, 0.1), transparent 70%);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 40px 20px;
+        text-align: center;
+        height: 100%;
+    }
+    
+    .profile-picture {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin: 0 auto 20px auto;
+        background: linear-gradient(135deg, #4fc3f7, #9c27b0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: #fff;
+        font-weight: bold;
+        box-shadow: 0 10px 25px rgba(79, 195, 247, 0.3);
+    }
+    
+    .form-control {
+        background: #0d1b2a;
+        border: 1px solid #1a2f45;
+        color: #fff !important;
+        border-radius: 10px;
+        padding: 14px 18px;
+    }
+    .form-control:focus {
+        background: #0d1b2a;
+        border-color: #4fc3f7;
+        box-shadow: 0 0 0 0.25rem rgba(79, 195, 247, 0.25);
+    }
+    .form-label { color: #9ab; font-weight: 500; font-size: 0.9rem; margin-bottom: 8px; }
+    
+    .btn-glass-primary {
+        background: linear-gradient(135deg, #4fc3f7, #0288d1);
+        border: none;
+        color: #fff;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 14px 28px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-glass-primary:hover {
+        background: linear-gradient(135deg, #29b6f6, #0277bd);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(2, 136, 209, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    {% include '_sidebar.html.twig' %}
+    <div class="container-fluid py-4 px-4" style="margin-left: 70px; max-width: calc(100% - 70px);">
+        
+        <div class="d-flex justify-content-between align-items-center mb-5 border-bottom border-light pb-3" style="border-color: rgba(255,255,255,0.1) !important;">
+            <div>
+                <h1 class="h3 mb-1 text-white fw-bold">Mon Profil</h1>
+                <p class="text-muted mb-0">Gérez vos informations personnelles.</p>
+            </div>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success bg-gradient-success text-white border-0 py-3 rounded-4 shadow-sm mb-4">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="card card-glass">
+            <div class="row g-0">
+                <!-- Sidebar Profil (Initiales) -->
+                <div class="col-md-4 profile-sidebar">
+                    <div class="profile-picture">
+                        {{ user.firstName|first|upper }}{{ user.lastName|first|upper }}
+                    </div>
+                    
+                    <h3 class="h4 text-white fw-bold mt-4">{{ user.firstName }} {{ user.lastName }}</h3>
+                    <p class="text-muted mb-4">{{ user.email }}</p>
+                    
+                    <span class="badge" style="background: rgba(79, 195, 247, 0.1); color: #4fc3f7; border: 1px solid rgba(79, 195, 247, 0.2); padding: 8px 16px; border-radius: 20px;">
+                        {% if is_granted('ROLE_ADMIN') %}Administrateur{% else %}Candidat{% endif %}
+                    </span>
+                </div>
+                
+                <!-- Formulaire -->
+                <div class="col-md-8">
+                    <div class="p-5">
+                        <h4 class="mb-4 fw-semibold border-bottom pb-3" style="border-color: rgba(255,255,255,0.1) !important;">Modifier les informations</h4>
+                        
+                        {{ form_start(form) }}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                {{ form_label(form.firstName) }}
+                                {{ form_widget(form.firstName) }}
+                                {{ form_errors(form.firstName) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_label(form.lastName) }}
+                                {{ form_widget(form.lastName) }}
+                                {{ form_errors(form.lastName) }}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form_label(form.email) }}
+                            {{ form_widget(form.email) }}
+                            {{ form_errors(form.email) }}
+                        </div>
+                        
+                        <h4 class="mb-4 mt-5 fw-semibold border-bottom pb-3" style="border-color: rgba(255,255,255,0.1) !important;">🔒 Changer le mot de passe</h4>
+                        <p class="text-muted mb-4" style="font-size: 0.85rem;">Laissez les champs vides si vous ne souhaitez pas modifier votre mot de passe.</p>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                {{ form_label(form.plainPassword.first) }}
+                                {{ form_widget(form.plainPassword.first) }}
+                                {{ form_errors(form.plainPassword.first) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_label(form.plainPassword.second) }}
+                                {{ form_widget(form.plainPassword.second) }}
+                                {{ form_errors(form.plainPassword.second) }}
+                            </div>
+                        </div>
+                        {{ form_errors(form.plainPassword) }}
+                        
+                        <div class="text-end mt-5 pt-3 border-top" style="border-color: rgba(255,255,255,0.05) !important;">
+                            <button type="submit" class="btn btn-glass-primary">Enregistrer les modifications</button>
+                        </div>
+                        
+                        {{ form_end(form) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
