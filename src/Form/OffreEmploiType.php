@@ -21,30 +21,22 @@ class OffreEmploiType extends AbstractType
         $builder
             ->add('titre_poste', TextType::class, [
                 'label' => 'Titre du poste',
-                'constraints' => [
-                    new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'Le titre est requis.']),
-                    new \Symfony\Component\Validator\Constraints\Length(['min' => 5, 'max' => 255, 'minMessage' => 'Le titre doit faire au moins 5 caractères.'])
-                ]
+                'required' => true
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Description', 
-                'required' => true,
-                'constraints' => [new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'La description est requise.'])]
+                'required' => true
             ])
             ->add('departementRel', EntityType::class, [
                 'class' => Departement::class,
                 'choice_label' => 'libelle',
                 'label' => 'Département',
-                'constraints' => [new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'Veuillez sélectionner un département.'])]
+                'required' => true
             ])
             ->add('date_cloture', DateType::class, [
                 'widget' => 'single_text',
                 'required' => true,
-                'label' => 'Date de clôture',
-                'constraints' => [
-                    new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'La date de clôture est requise.']),
-                    new \Symfony\Component\Validator\Constraints\GreaterThanOrEqual(['value' => 'today', 'message' => 'La date de clôture ne peut pas être dans le passé.'])
-                ]
+                'label' => 'Date de clôture'
             ])
             ->add('statut_offre', ChoiceType::class, [
                 'choices' => [
@@ -56,11 +48,7 @@ class OffreEmploiType extends AbstractType
             ])
             ->add('salaire_propose', NumberType::class, [
                 'required' => true, 
-                'label' => 'Salaire proposé',
-                'constraints' => [
-                    new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'Veuillez saisir un salaire.']),
-                    new \Symfony\Component\Validator\Constraints\PositiveOrZero(['message' => 'Le salaire ne peut pas être négatif.'])
-                ]
+                'label' => 'Salaire proposé'
             ])
             ->add('devise', ChoiceType::class, [
                 'required' => true, 
@@ -69,8 +57,7 @@ class OffreEmploiType extends AbstractType
                     'TND' => 'TND',
                     'EUR' => 'EUR',
                     'USD' => 'USD'
-                ],
-                'constraints' => [new \Symfony\Component\Validator\Constraints\NotBlank(['message' => 'Veuillez sélectionner une devise.'])]
+                ]
             ])
         ;
     }

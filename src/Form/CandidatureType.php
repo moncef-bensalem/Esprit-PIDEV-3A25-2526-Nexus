@@ -41,18 +41,12 @@ class CandidatureType extends AbstractType
             ->add('score_matching', NumberType::class, [
                 'required' => false, 
                 'label' => 'Score AI (%)',
-                'scale' => 2,
-                'constraints' => [
-                    new \Symfony\Component\Validator\Constraints\Range(['min' => 0, 'max' => 100, 'notInRangeMessage' => 'Le score doit être entre 0 et 100.'])
-                ]
+                'scale' => 2
             ])
             ->add('source_candidature', TextType::class, ['required' => false, 'label' => 'Source'])
             ->add('notes', TextareaType::class, [
                 'required' => false, 
-                'label' => 'Notes',
-                'constraints' => [
-                    new \Symfony\Component\Validator\Constraints\Length(['max' => 1000, 'maxMessage' => 'Vos notes ne peuvent pas dépasser 1000 caractères.'])
-                ]
+                'label' => 'Notes'
             ])
         ;
     }
