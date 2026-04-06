@@ -1,0 +1,105 @@
+{% extends 'base.html.twig' %}
+{% block title %}Pipeline Kanban{% endblock %}
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Pipeline de Recrutement (Kanban)</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_dashboard') }}" class="btn"><i class="fas fa-arrow-left"></i> Retour au Dashboard</a>
+        </div>
+    </div>
+
+    <div class="kanban-board" style="display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 2rem; min-height: 70vh;">
+        
+        {% set cols = {
+            'RECU': {'title': 'Réception', 'color': 'var(--neon-blue)'},
+            'EN_ENTRETIEN': {'title': 'En Entretien', 'color': 'var(--neon-purple)'},
+            'OFFRE_FAITE': {'title': 'Offre Faite', 'color': 'var(--success-color)'},
+            'REJETE': {'title': 'Rejeté', 'color': 'var(--error-color)'}
+        } %}
+
+        {% for key, config in cols %}
+            <div class="kanban-column" data-status="{{ key }}" style="flex: 1; min-width: 300px; background: rgba(255, 255, 255, 0.04); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); padding: 1.5rem; display: flex; flex-direction: column;" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)">
+                <h3 style="border-bottom: 2px solid {{ config.color }}; padding-bottom: 0.5rem; margin-bottom: 1.5rem; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px;">{{ config.title }} <span style="float:right; opacity: 0.5; font-size: 0.9rem; background:rgba(0,0,0,0.5); padding:0.2rem 0.6rem; border-radius:1rem;">{{ kanban[key]|length }}</span></h3>
+                
+                <div class="kanban-items" style="flex: 1; display:flex; flex-direction:column; gap:1rem; min-height: 200px;">
+                    {% for cand in kanban[key] %}
+                        <div class="kanban-card" draggable="true" ondragstart="drag(event)" data-id="{{ cand.id_candidature }}" style="background: rgba(10, 15, 30, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid {{ config.color }}; border-radius: 8px; padding: 1rem; cursor: grab; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px {{ config.color }}33'" onmouseleave="this.style.transform='none'; this.style.boxShadow='none'">
+                            <div style="font-weight: 700; margin-bottom: 0.7rem; font-size: 1.05rem;">{{ cand.candidat.nom_complet }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;"><i class="fas fa-briefcase" style="margin-right: 0.3rem;"></i> {{ cand.offreEmploi.titre_poste }}</div>
+                            
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span class="badge" style="background: rgba(255,255,255,0.1); font-size:0.75rem;">Score: {{ cand.score_matching|default('N/A') }}</span>
+                                <a href="{{ path('app_candidature_show', {'id_candidature': cand.id_candidature}) }}" style="color: {{ config.color }}; font-size: 1rem;" title="Voir la candidature"><i class="fas fa-external-link-alt"></i></a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+        
+    </div>
+</div>
+
+<script>
+    function allowDrop(ev) {
+        ev.preventDefault();
+        ev.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+    }
+
+    function leaveDrop(ev) {
+        ev.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+    }
+
+    function drag(ev) {
+        ev.dataTransfer.setData("text", ev.target.getAttribute('data-id'));
+        ev.target.style.opacity = '0.4';
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        
+        document.querySelectorAll('.kanban-column').forEach(col => col.style.background = 'rgba(255, 255, 255, 0.04)');
+        
+        let candidatureId = ev.dataTransfer.getData("text");
+        let dropZone = ev.currentTarget;
+        let newStatus = dropZone.getAttribute('data-status');
+        
+        let draggedElement = document.querySelector(`.kanban-card[data-id="${candidatureId}"]`);
+        draggedElement.style.opacity = '1';
+        
+        let colorMap = {
+            'RECU': 'var(--neon-blue)',
+            'EN_ENTRETIEN': 'var(--neon-purple)',
+            'OFFRE_FAITE': 'var(--success-color)',
+            'REJETE': 'var(--error-color)'
+        };
+
+        draggedElement.style.borderLeftColor = colorMap[newStatus];
+        
+        dropZone.querySelector('.kanban-items').appendChild(draggedElement);
+        
+        fetch(`/kanban/update/${candidatureId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ new_status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(!data.success) {
+                alert('Erreur lors de la synchronisation de la base de données');
+                window.location.reload();
+            }
+        });
+    }
+    
+    document.addEventListener("dragend", function(event) {
+        if(event.target.classList.contains('kanban-card')){
+            event.target.style.opacity = "1";
+            document.querySelectorAll('.kanban-column').forEach(col => col.style.background = 'rgba(255, 255, 255, 0.04)');
+        }
+    });
+</script>
+{% endblock %}
