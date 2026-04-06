@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/candidat')]
+#[Route('/admin/talents')]
 final class CandidatController extends AbstractController
 {
     #[Route(name: 'app_candidat_index', methods: ['GET'])]

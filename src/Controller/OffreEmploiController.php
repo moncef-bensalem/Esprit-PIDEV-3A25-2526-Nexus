@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/offre-emploi')]
+#[Route('/admin/offre-emploi')]
 final class OffreEmploiController extends AbstractController
 {
     #[Route(name: 'app_offre_emploi_index', methods: ['GET'])]

@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/kanban')]
+#[Route('/admin/pipeline')]
 class KanbanController extends AbstractController
 {
     #[Route('', name: 'app_kanban_index', methods: ['GET'])]

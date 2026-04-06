@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class DashboardController extends AbstractController
 {
-    #[Route('/dashboard', name: 'app_dashboard', methods: ['GET'])]
+    #[Route('/admin/dashboard', name: 'app_dashboard', methods: ['GET'])]
     public function index(EntityManagerInterface $entityManager): Response
     {
         $offreEmploisActives = $entityManager->getRepository(OffreEmploi::class)->count(['statut_offre' => 'PUBLIEE']);
