@@ -128,34 +128,34 @@ class Talent
         return $this;
     }
 
-    public function getDate_embauche(): ?\DateTimeInterface
+    public function getDateEmbauche(): ?\DateTimeInterface
     {
         return $this->date_embauche;
     }
 
-    public function setDate_embauche(?\DateTimeInterface $value): static
+    public function setDateEmbauche(?\DateTimeInterface $value): static
     {
         $this->date_embauche = $value;
         return $this;
     }
 
-    public function getAnnees_experience(): ?int
+    public function getAnneesExperience(): ?int
     {
         return $this->annees_experience;
     }
 
-    public function setAnnees_experience(?int $value): static
+    public function setAnneesExperience(?int $value): static
     {
         $this->annees_experience = $value;
         return $this;
     }
 
-    public function getNiveau_etudes(): ?string
+    public function getNiveauEtudes(): ?string
     {
         return $this->niveau_etudes;
     }
 
-    public function setNiveau_etudes(?string $value): static
+    public function setNiveauEtudes(?string $value): static
     {
         $this->niveau_etudes = $value;
         return $this;
