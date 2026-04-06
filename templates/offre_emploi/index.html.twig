@@ -13,7 +13,7 @@
         </div>
     </div>
 
-    <form method="GET" action="{{ path('app_offre_emploi_index') }}" class="filters-bar" style="margin-bottom: 2rem; display: flex; align-items: flex-end;">
+    <form method="GET" action="{{ path('app_offre_emploi_index') }}" class="filters-bar" style="margin-bottom: 2rem; display: flex; align-items: flex-end; gap: 1rem;">
         <div>
             <label for="q">Recherche:</label>
             <input type="text" name="q" id="q" value="{{ app.request.query.get('q') }}" placeholder="Titre, département..." style="border-radius:2rem; width: 250px; padding: 0.5rem 1rem;" />

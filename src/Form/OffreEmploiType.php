@@ -59,7 +59,15 @@ class OffreEmploiType extends AbstractType
                     new \Symfony\Component\Validator\Constraints\PositiveOrZero(['message' => 'Le salaire ne peut pas être négatif.'])
                 ]
             ])
-            ->add('devise', TextType::class, ['required' => false, 'label' => 'Devise'])
+            ->add('devise', ChoiceType::class, [
+                'required' => false, 
+                'label' => 'Devise',
+                'choices' => [
+                    'TND' => 'TND',
+                    'EUR' => 'EUR',
+                    'USD' => 'USD'
+                ]
+            ])
         ;
     }
 
