@@ -1,0 +1,721 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Planifications — Tableau de bord{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & base ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg:       #07111f;
+    --surface:  #0d1d30;
+    --surface2: #102136;
+    --border:   rgba(79,195,247,.15);
+    --accent:   #4fc3f7;
+    --accent2:  #6c63ff;
+    --green:    #22c55e;
+    --orange:   #f59e0b;
+    --text:     #e2eaf4;
+    --muted:    #6b8ba4;
+    --radius:   18px;
+    --shadow:   0 8px 32px rgba(0,0,0,.45);
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Animated ambient gradient */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 15% 10%, rgba(79,195,247,.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 85% 80%, rgba(108,99,255,.07) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Layout wrapper ────────────────────────────────────────────────── */
+.page-wrapper {
+    position: relative;
+    z-index: 1;
+    padding: 28px 32px 40px;
+}
+
+/* ── Page header ───────────────────────────────────────────────────── */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    animation: slideDown .5s cubic-bezier(.22,1,.36,1) both;
+}
+.page-header-left h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -.5px;
+    line-height: 1.2;
+}
+.page-header-left p {
+    font-size: .82rem;
+    color: var(--muted);
+    margin-top: 4px;
+}
+.page-header-left h1 span {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.btn-new {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #4fc3f7, #0288d1);
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 600;
+    padding: 11px 22px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(79,195,247,.35);
+    transition: transform .2s, box-shadow .2s;
+    white-space: nowrap;
+}
+.btn-new:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(79,195,247,.5);
+    color: #fff;
+}
+.btn-new svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+/* ── Stats grid ────────────────────────────────────────────────────── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.stat-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 26px;
+    overflow: hidden;
+    transition: transform .25s, box-shadow .25s;
+    animation: fadeUp .55s cubic-bezier(.22,1,.36,1) both;
+}
+.stat-card:nth-child(1) { animation-delay: .05s; }
+.stat-card:nth-child(2) { animation-delay: .13s; }
+.stat-card:nth-child(3) { animation-delay: .21s; }
+.stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+
+/* top accent line */
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+.stat-card.c-blue::before  { background: linear-gradient(90deg,#4fc3f7,#0288d1); }
+.stat-card.c-green::before { background: linear-gradient(90deg,#22c55e,#16a34a); }
+.stat-card.c-orange::before{ background: linear-gradient(90deg,#f59e0b,#d97706); }
+
+/* glowing blob */
+.stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: -35px; right: -20px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    opacity: .07;
+    pointer-events: none;
+}
+.stat-card.c-blue::after   { background: #4fc3f7; }
+.stat-card.c-green::after  { background: #22c55e; }
+.stat-card.c-orange::after { background: #f59e0b; }
+
+.stat-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.stat-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+}
+.c-blue  .stat-icon { background: rgba(79,195,247,.14); }
+.c-green .stat-icon { background: rgba(34,197,94,.14); }
+.c-orange .stat-icon{ background: rgba(245,158,11,.14); }
+
+.stat-badge {
+    font-size: .68rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: .04em;
+}
+.c-blue  .stat-badge { background: rgba(79,195,247,.12); color: #4fc3f7; }
+.c-green .stat-badge { background: rgba(34,197,94,.12);  color: #22c55e; }
+.c-orange .stat-badge{ background: rgba(245,158,11,.12); color: #f59e0b; }
+
+.stat-value {
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -1.5px;
+    font-variant-numeric: tabular-nums;
+    animation: countUp .6s cubic-bezier(.22,1,.36,1) both;
+}
+.stat-card:nth-child(1) .stat-value { animation-delay: .15s; }
+.stat-card:nth-child(2) .stat-value { animation-delay: .23s; }
+.stat-card:nth-child(3) .stat-value { animation-delay: .31s; }
+
+.stat-label {
+    font-size: .73rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-top: 6px;
+}
+
+/* ── Calendar section ──────────────────────────────────────────────── */
+.cal-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    animation: fadeUp .6s .28s cubic-bezier(.22,1,.36,1) both;
+}
+
+.cal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    flex-wrap: wrap;
+}
+
+.cal-title {
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 4px;
+}
+.cal-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulseDot 2s ease-in-out infinite;
+}
+
+.btn-hdr {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.09);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 13px;
+    font-size: .79rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s, border-color .15s, transform .15s;
+    white-space: nowrap;
+    line-height: 1;
+}
+.btn-hdr:hover {
+    background: rgba(255,255,255,.09);
+    border-color: rgba(255,255,255,.18);
+    color: var(--text);
+    transform: translateY(-1px);
+}
+.btn-hdr.primary {
+    background: rgba(79,195,247,.12);
+    border-color: rgba(79,195,247,.3);
+    color: var(--accent);
+}
+.btn-hdr.primary:hover { background: rgba(79,195,247,.2); }
+.btn-hdr svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.search-wrap {
+    margin-left: auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.search-wrap .search-icon {
+    position: absolute;
+    left: 11px;
+    width: 14px; height: 14px;
+    color: var(--muted);
+    pointer-events: none;
+}
+.search-input {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 9px;
+    padding: 7px 14px 7px 34px;
+    font-size: .81rem;
+    color: var(--text);
+    min-width: 220px;
+    transition: border-color .2s, box-shadow .2s;
+    outline: none;
+    font-family: inherit;
+}
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus {
+    border-color: rgba(79,195,247,.5);
+    box-shadow: 0 0 0 3px rgba(79,195,247,.1);
+}
+
+.cal-body {
+    padding: 22px;
+    background: #fff;
+}
+
+/* ── FullCalendar overrides ────────────────────────────────────────── */
+.fc .fc-toolbar-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a2b3c;
+    letter-spacing: -.3px;
+    font-family: 'Inter', sans-serif;
+}
+.fc .fc-button {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    font-size: .79rem !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    font-family: 'Inter', sans-serif !important;
+    transition: background .15s !important;
+}
+.fc .fc-button:hover { background: #e2e8f0 !important; }
+.fc .fc-button-active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+    background: #0f172a !important;
+    color: #fff !important;
+    border-color: #0f172a !important;
+}
+.fc-day-today { background: rgba(79,195,247,.06) !important; }
+.fc-daygrid-day { transition: background .12s; }
+.fc-daygrid-day:hover { background: #f8fafc !important; cursor: pointer; }
+.fc-col-header-cell {
+    font-weight: 600;
+    font-size: .75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    padding: 10px 0 !important;
+}
+.fc-daygrid-event {
+    border-radius: 5px !important;
+    font-size: .74rem !important;
+    font-weight: 500 !important;
+    padding: 2px 7px !important;
+    border: none !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12) !important;
+    transition: opacity .15s, transform .15s !important;
+}
+.fc-daygrid-event:hover { opacity: .88 !important; transform: scale(1.025) !important; }
+.fc-daygrid-day-number {
+    font-size: .8rem;
+    color: #475569;
+    font-weight: 500;
+    padding: 6px 8px !important;
+}
+.fc-day-today .fc-daygrid-day-number {
+    background: #0288d1;
+    color: #fff;
+    border-radius: 50%;
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 4px;
+}
+.fc .fc-toolbar { flex-wrap: wrap; gap: 8px; }
+.fc-theme-standard td, .fc-theme-standard th { border-color: #f1f5f9; }
+.fc-scrollgrid { border-radius: 10px; overflow: hidden; }
+
+/* ── Flash ─────────────────────────────────────────────────────────── */
+.flash-wrap { animation: slideDown .4s ease both; margin-bottom: 18px; }
+.flash-wrap .alert {
+    background: rgba(34,197,94,.1);
+    border: 1px solid rgba(34,197,94,.3);
+    color: #86efac;
+    border-radius: 10px;
+    font-size: .84rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.flash-wrap .alert-danger {
+    background: rgba(239,68,68,.1);
+    border-color: rgba(239,68,68,.3);
+    color: #fca5a5;
+}
+.flash-wrap .btn-close { filter: invert(1) brightness(.6); }
+
+/* ── Modal ─────────────────────────────────────────────────────────── */
+.modal-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 64px rgba(0,0,0,.65);
+    overflow: hidden;
+}
+.modal-header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+}
+.modal-title { font-size: .92rem; font-weight: 600; color: var(--text); }
+.modal .btn-close { filter: invert(1) brightness(.5); }
+
+/* ── Keyframes ─────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes countUp {
+    from { opacity: 0; transform: scale(.75); }
+    to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulseDot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79,195,247,.5); }
+    50%       { box-shadow: 0 0 0 5px rgba(79,195,247,0); }
+}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .page-wrapper { padding: 16px 14px 28px; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .cal-body { padding: 12px; }
+    .search-input { min-width: 140px; }
+}
+
+.print-only { display: none; }
+
+@media print {
+    body { background: #fff !important; color: #000 !important; margin: 0 !important; }
+    body::before { display: none !important; }
+    
+    /* Cacher l'interface normale */
+    .sidebar, .page-wrapper, #addModal { display: none !important; }
+    
+    /* Afficher uniquement la section d'impression */
+    .print-only { display: block !important; width: 100%; padding: 20px; }
+    
+    /* Style de la table d'impression */
+    .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11pt; }
+    .print-table th, .print-table td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    .print-table th { background-color: #f1f5f9 !important; font-weight: bold; color: #334155; }
+    .print-header { text-align: center; margin-bottom: 25px; }
+    .print-header h1 { font-size: 18pt; margin: 0 0 5px 0; color: #000; }
+    .print-header p { margin: 0; color: #64748b; font-size: 10pt; }
+    
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+{% include '_sidebar.html.twig' %}
+
+<div class="page-wrapper">
+
+    {# ── Flash messages ────────────────────────────────────────────── #}
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+        <div class="flash-wrap">
+            <div class="alert alert-{{ type == 'success' ? 'success' : 'danger' }} alert-dismissible">
+                {% if type == 'success' %}
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                {% else %}
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                {% endif %}
+                {{ message }}
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+        {% endfor %}
+    {% endfor %}
+
+    {# ── Page header ───────────────────────────────────────────────── #}
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1>Tableau de bord <span>Planifications</span></h1>
+            <p>Gérez vos événements et suivez votre agenda en temps réel</p>
+        </div>
+        <a href="{{ path('planification_new') }}" class="btn-new">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nouvelle planification
+        </a>
+    </div>
+
+    {# ── Stats cards ───────────────────────────────────────────────── #}
+    <div class="stats-grid">
+        <div class="stat-card c-blue">
+            <div class="stat-top">
+                <div class="stat-icon">📅</div>
+                <span class="stat-badge">Tous</span>
+            </div>
+            <div class="stat-value" data-target="{{ total }}">0</div>
+            <div class="stat-label">Total planifications</div>
+        </div>
+
+        <div class="stat-card c-green">
+            <div class="stat-top">
+                <div class="stat-icon">✅</div>
+                <span class="stat-badge">En cours</span>
+            </div>
+            <div class="stat-value" data-target="{{ actifs }}">0</div>
+            <div class="stat-label">Événements actifs</div>
+        </div>
+
+        <div class="stat-card c-orange">
+            <div class="stat-top">
+                <div class="stat-icon">🆕</div>
+                <span class="stat-badge">7 derniers jours</span>
+            </div>
+            <div class="stat-value" data-target="{{ nouveaux }}">0</div>
+            <div class="stat-label">Nouveaux événements</div>
+        </div>
+    </div>
+
+    {# ── Calendar ──────────────────────────────────────────────────── #}
+    <div class="cal-section">
+        <div class="cal-header">
+            <div class="cal-title">
+                <div class="cal-dot"></div>
+                Agenda
+            </div>
+
+            <button class="btn-hdr">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Calendriers
+            </button>
+
+            <a href="{{ path('planification_new') }}" class="btn-hdr primary">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter
+            </a>
+
+            <button class="btn-hdr" onclick="window.print()">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+                Imprimer
+            </button>
+
+            <div class="search-wrap">
+                <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" class="search-input" placeholder="Rechercher un événement…" id="searchInput">
+            </div>
+        </div>
+
+        <div class="cal-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+{# ── Liste pour Impression (masquée sur écran) ─────────────────────── #}
+<div class="print-only">
+    <div class="print-header">
+        <h1>Rapport détaillé des Planifications</h1>
+        <p>Généré le {{ "now"|date('d/m/Y à H:i') }}</p>
+    </div>
+    
+    <table class="print-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Statut</th>
+                <th>Mode</th>
+                <th>Date</th>
+                <th>Plage Horaire</th>
+                <th>Département/Lieu</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in planifications %}
+            <tr>
+                <td>#{{ p.idEvent }}</td>
+                <td>{{ p.typeEvent|capitalize }}</td>
+                <td>{{ p.statut|capitalize }}</td>
+                <td>{{ p.mode|capitalize|replace({'_': ' '}) }}</td>
+                <td>{{ p.date ? p.date|date('d/m/Y') : '-' }}</td>
+                <td>{{ p.heureDebut ? p.heureDebut|date('H:i') : '-' }} - {{ p.heureFin ? p.heureFin|date('H:i') : '-' }}</td>
+                <td>{{ p.localisation ?: (p.lienMeeting ?: '-') }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7" style="text-align: center;">Aucune planification n'a été trouvée.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ── Modal ajout rapide ────────────────────────────────────────────── #}
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div style="width:32px;height:32px;background:rgba(79,195,247,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:1rem">+</div>
+                    <h5 class="modal-title">Nouvelle planification</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="modalIframe" src="" style="width:100%;height:540px;border:none;display:block;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/fr.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── Animated counters ─────────────────────────────────────────── */
+    document.querySelectorAll('.stat-value[data-target]').forEach(function (el) {
+        const target = parseInt(el.dataset.target, 10);
+        if (!target) { el.textContent = '0'; return; }
+        let start = null;
+        const duration = 900;
+        function step(ts) {
+            if (!start) start = ts;
+            const progress = Math.min((ts - start) / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 4);
+            el.textContent = Math.round(ease * target);
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    });
+
+    /* ── FullCalendar ──────────────────────────────────────────────── */
+    const calendarEl = document.getElementById('calendar');
+    const addModal   = new bootstrap.Modal(document.getElementById('addModal'));
+    const iframe     = document.getElementById('modalIframe');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'fr',
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left:   'prev,today,next',
+            center: 'title',
+            right:  'timeGridDay,timeGridWeek,dayGridMonth,multiMonthYear'
+        },
+        buttonText: {
+            today: "Aujourd'hui",
+            day:   'Jour',
+            week:  'Semaine',
+            month: 'Mois',
+            year:  'Année'
+        },
+        weekNumbers: true,
+        navLinks: true,
+        editable: false,
+        dayMaxEvents: 3,
+        events: '{{ path('planification_events') }}',
+
+        dateClick: function (info) {
+            iframe.src = '{{ path('planification_new') }}?date=' + info.dateStr + '&modal=1';
+            addModal.show();
+        },
+
+        eventClick: function (info) {
+            info.jsEvent.preventDefault();
+            const url = info.event.extendedProps.url;
+            if (url) window.location.href = url;
+        },
+
+        eventDidMount: function (info) {
+            if (info.event.extendedProps.statut === 'annulé') {
+                info.el.style.textDecoration = 'line-through';
+                info.el.style.opacity = '0.5';
+            }
+        }
+    });
+
+    calendar.render();
+
+    /* ── Search ────────────────────────────────────────────────────── */
+    document.getElementById('searchInput').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        calendar.getEvents().forEach(function (ev) {
+            ev.setProp('display', !q || ev.title.toLowerCase().includes(q) ? 'auto' : 'none');
+        });
+    });
+
+    /* ── Modal ─────────────────────────────────────────────────────── */
+    window.addEventListener('message', function (e) {
+        if (e.data === 'planification_saved') {
+            addModal.hide();
+            iframe.src = '';
+            calendar.refetchEvents();
+        }
+    });
+    document.getElementById('addModal').addEventListener('hidden.bs.modal', function () {
+        iframe.src = '';
+    });
+});
+</script>
+{% endblock %}
