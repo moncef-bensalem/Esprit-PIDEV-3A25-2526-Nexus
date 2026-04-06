@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New TalentCompetence{% endblock %}
+
+{% block body %}
+    <h1>Create new TalentCompetence</h1>
+
+    {{ include('talent_competence/_form.html.twig') }}
+
+    <a href="{{ path('app_talent_competence_index') }}">back to list</a>
+{% endblock %}

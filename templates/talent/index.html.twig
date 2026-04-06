@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Talent index{% endblock %}
+
+{% block body %}
+    <h1>Talent index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nom</th>
+                <th>Prenom</th>
+                <th>Email</th>
+                <th>Telephone</th>
+                <th>Poste</th>
+                <th>Departement</th>
+                <th>Date_embauche</th>
+                <th>Annees_experience</th>
+                <th>Niveau_etudes</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for talent in talent %}
+            <tr>
+                <td>{{ talent.id }}</td>
+                <td>{{ talent.nom }}</td>
+                <td>{{ talent.prenom }}</td>
+                <td>{{ talent.email }}</td>
+                <td>{{ talent.telephone }}</td>
+                <td>{{ talent.poste }}</td>
+                <td>{{ talent.departement }}</td>
+                <td>{{ talent.dateEmbauche ? talent.dateEmbauche|date('Y-m-d') : '' }}</td>
+                <td>{{ talent.anneesExperience }}</td>
+                <td>{{ talent.niveauEtudes }}</td>
+                <td>
+                    <a href="{{ path('app_talent_show', {'id': talent.id}) }}">show</a>
+                    <a href="{{ path('app_talent_edit', {'id': talent.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="11">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_talent_new') }}">Create new</a>
+{% endblock %}
