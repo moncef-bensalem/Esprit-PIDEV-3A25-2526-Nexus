@@ -1,0 +1,521 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Evaluations{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body { background: #0d1b2a; color: #d6e6f5; font-family: 'Segoe UI', sans-serif; }
+    .dash-grid {
+        display: grid;
+        grid-template-columns: 1.25fr .75fr;
+        gap: 18px;
+        padding: 10px 24px 0;
+    }
+    @media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr; } }
+    .panel {
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(15,23,42,.25);
+        border-radius: 14px;
+        padding: 14px;
+    }
+    .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+    .panel-title h2 {
+        font-size: 1rem;
+        font-weight: 800;
+        margin: 0;
+        color: #fff;
+    }
+    .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .month-label {
+        font-weight: 800;
+        color: #e2e8f0;
+        letter-spacing: .2px;
+        min-width: 180px;
+        text-align: center;
+    }
+    .btn-nav {
+        background: rgba(15,23,42,.55);
+        border: 1px solid rgba(255,255,255,.25);
+        color: #fff;
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .btn-nav:hover { background: rgba(15,23,42,.8); }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+    .dow {
+        font-size: .78rem;
+        color: rgba(226,232,240,.9);
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        text-align: center;
+        padding: 6px 0 2px;
+    }
+    .day {
+        min-height: 92px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(2,6,23,.32);
+        padding: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+    .day.muted {
+        opacity: .45;
+        background: rgba(2,6,23,.18);
+    }
+    .day.today {
+        border-color: rgba(37, 99, 235, .65);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, .18) inset;
+    }
+    .day-num {
+        font-weight: 800;
+        color: #fff;
+        font-size: .9rem;
+    }
+    .deadlines {
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .deadline-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: .78rem;
+        border: 1px solid rgba(255,255,255,.18);
+        background: rgba(15,23,42,.55);
+        color: #e2e8f0;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+    .deadline-pill:hover { background: rgba(15,23,42,.8); color: #fff; }
+    .deadline-pill .tag {
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.10);
+        border: 1px solid rgba(255,255,255,.14);
+        color: #fff;
+        flex: 0 0 auto;
+    }
+    .tag.favorable { background: rgba(20,83,45,.55); }
+    .tag.defavorable { background: rgba(127,29,29,.55); }
+    .tag.arevoir { background: rgba(154,52,18,.6); }
+    .chart-wrap {
+        position: relative;
+        height: 280px;
+    }
+    .topbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 22px 24px 8px;
+    }
+    .topbar-title { font-size: 1.2rem; font-weight: 700; color: #fff; }
+    .btn-create {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 8px 16px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .btn-create:hover { color: #fff; opacity: .95; }
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 18px;
+        padding: 16px 24px 24px;
+    }
+    .evaluation-card {
+        border-radius: 14px;
+        padding: 16px;
+        min-height: 190px;
+        border: 1px solid rgba(255,255,255,0.15);
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        transition: transform .12s ease-in-out, box-shadow .12s ease-in-out;
+    }
+    .evaluation-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+    .decision-favorable { background: #14532d; }
+    .decision-defavorable { background: #7f1d1d; }
+    .decision-arevoir { background: #9a3412; }
+    .card-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .card-meta { font-size: 0.85rem; color: #e2e8f0; line-height: 1.5; }
+    .card-actions {
+        margin-top: auto;
+        display: flex;
+        gap: 8px;
+        padding-top: 12px;
+    }
+    .btn-edit {
+        background: rgba(15,23,42,.45);
+        border: 1px solid rgba(255,255,255,.35);
+        color: #fff;
+        border-radius: 8px;
+        padding: 5px 12px;
+        text-decoration: none;
+        font-size: .8rem;
+    }
+    .btn-edit:hover { color: #fff; background: rgba(15,23,42,.7); }
+    .btn-delete {
+        background: rgba(127,29,29,.55);
+        border: 1px solid rgba(255,255,255,.35);
+        color: #fff;
+        border-radius: 8px;
+        padding: 5px 12px;
+        font-size: .8rem;
+    }
+    .btn-delete:hover { background: rgba(127,29,29,.8); }
+    .flash-wrap { margin: 12px 24px 0; }
+    .empty-state { margin: 36px 24px; color: #9fb4c8; font-size: .95rem; }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include '_sidebar.html.twig' %}
+
+<div class="topbar">
+    <div class="topbar-title">{% if is_candidate_only|default(false) %}Votre decision preliminaire{% else %}Liste des evaluations{% endif %}</div>
+    <a href="{{ path('evaluation_new') }}" class="btn-create">+ Creer une evaluation</a>
+</div>
+
+<div class="dash-grid">
+    <div class="panel">
+        <div class="panel-title">
+            <h2>Les dates de revoir</h2>
+            <div class="month-nav">
+                <button class="btn-nav" type="button" id="calPrev" aria-label="Mois precedent">&lt;</button>
+                <div class="month-label" id="calLabel">—</div>
+                <button class="btn-nav" type="button" id="calNext" aria-label="Mois suivant">&gt;</button>
+            </div>
+        </div>
+
+        <div class="calendar-grid" id="calendar">
+            <div class="dow">Lun</div><div class="dow">Mar</div><div class="dow">Mer</div><div class="dow">Jeu</div><div class="dow">Ven</div><div class="dow">Sam</div><div class="dow">Dim</div>
+            {# Les jours seront generes en JS #}
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">
+            <h2>Decisions preliminaires</h2>
+        </div>
+        <div class="chart-wrap">
+            <canvas id="decisionPie" aria-label="Pie chart decisions preliminaires"></canvas>
+        </div>
+    </div>
+</div>
+
+{% if not is_candidate_only|default(false) %}
+<div class="flash-wrap">
+    <form method="get" action="{{ path('evaluation_index') }}" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label text-white-50 mb-1">Recherche</label>
+            <input type="text" name="q" class="form-control" placeholder="Candidat, recruteur, decision, commentaire..." value="{{ q }}">
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label text-white-50 mb-1">Tri</label>
+            <select name="sort" class="form-select">
+                <option value="score" {{ sort == 'score' ? 'selected' : '' }}>Trier par score</option>
+                <option value="dateCreation" {{ sort == 'dateCreation' ? 'selected' : '' }}>Trier par date</option>
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label text-white-50 mb-1">Filtres</label>
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <select name="decision" class="form-select">
+                        <option value="">Toutes decisions</option>
+                        {% for d in decisionOptions %}
+                            <option value="{{ d }}" {{ d == decision ? 'selected' : '' }}>{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <select name="recruteur" class="form-select">
+                        <option value="">Tous recruteurs</option>
+                        {% for id, label in recruteurOptions %}
+                            <option value="{{ id }}" {{ id == recruteur ? 'selected' : '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <select name="candidat" class="form-select">
+                        <option value="">Tous candidats</option>
+                        {% for id, label in candidatOptions %}
+                            <option value="{{ id }}" {{ id == candidat ? 'selected' : '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-success w-100">Filtrer</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<div class="flash-wrap">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ type == 'success' ? 'success' : 'danger' }} alert-dismissible fade show py-2" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
+{% if evaluations is empty %}
+    <div class="empty-state">{% if is_candidate_only|default(false) %}Aucune decision preliminaire enregistree pour votre compte.{% else %}Aucune evaluation trouvee.{% endif %}</div>
+{% else %}
+<div class="cards-grid">
+    {% for evaluation in evaluations %}
+        {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
+        {% set avgScore = averageScoresById[evaluation.idEvaluation]|default(null) %}
+        <div class="evaluation-card {{ decisionClass }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
+            {% if is_candidate_only|default(false) %}
+                <div class="card-title">Decision preliminaire</div>
+                <div class="card-meta">
+                    <div>📌 {{ evaluation.decisionPreliminaire }}</div>
+                </div>
+            {% else %}
+                <div class="card-title">Evaluation #{{ evaluation.idEvaluation }}</div>
+                <div class="card-meta">
+                    <div>📅 Date creation: {{ evaluation.dateCreation|date('Y-m-d H:i') }}</div>
+                    <div>⭐ Score: {{ avgScore is null ? 'N/A' : (avgScore | number_format(2, '.', ',')) }}</div>
+                    <div>👤 Candidat: {{ evaluation.candidat ? (evaluation.candidat.firstName ~ ' ' ~ evaluation.candidat.lastName) : 'Non assigne' }}</div>
+                    <div>📌 Decision: {{ evaluation.decisionPreliminaire }}</div>
+                </div>
+
+                <div class="card-actions">
+                    <a href="{{ path('evaluation_edit', {idEvaluation: evaluation.idEvaluation}) }}" class="btn-edit" onclick="event.stopPropagation();">Modifier</a>
+                    <form method="post" action="{{ path('evaluation_delete', {idEvaluation: evaluation.idEvaluation}) }}" onsubmit="event.stopPropagation(); return confirm('Supprimer cette evaluation ?');" style="margin:0;">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_evaluation_' ~ evaluation.idEvaluation) }}">
+                        <button type="submit" class="btn-delete">Supprimer</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    const evaluations = [
+        {% for e in evaluations %}
+        {
+            id: {{ e.idEvaluation }},
+            decision: {{ e.decisionPreliminaire|json_encode|raw }},
+            reviewDeadline: {{ (e.reviewDeadline ? e.reviewDeadline|date('Y-m-d') : null)|json_encode|raw }},
+            url: {{ path('evaluation_show', {idEvaluation: e.idEvaluation})|json_encode|raw }}
+        }{{ not loop.last ? ',' : '' }}
+        {% endfor %}
+    ];
+
+    const deadlinesByDate = new Map();
+    for (const e of evaluations) {
+        if (e.decision !== 'A_REVOIR' || !e.reviewDeadline) continue;
+        if (!deadlinesByDate.has(e.reviewDeadline)) deadlinesByDate.set(e.reviewDeadline, []);
+        deadlinesByDate.get(e.reviewDeadline).push(e);
+    }
+
+    const monthNames = ['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre'];
+    const labelEl = document.getElementById('calLabel');
+    const calEl = document.getElementById('calendar');
+    const btnPrev = document.getElementById('calPrev');
+    const btnNext = document.getElementById('calNext');
+
+    if (!labelEl || !calEl) {
+        return;
+    }
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    let cursor = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    function isoDate(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    // JS getDay(): 0=Sun..6=Sat ; on veut 0=Lun..6=Dim
+    function mondayIndex(d) {
+        const js = d.getDay();
+        return (js + 6) % 7;
+    }
+
+    function decisionTagClass(decision) {
+        if (decision === 'FAVORABLE') return 'favorable';
+        if (decision === 'DEFAVORABLE') return 'defavorable';
+        return 'arevoir';
+    }
+
+    function clearDays() {
+        const nodes = Array.from(calEl.querySelectorAll('.day'));
+        for (const n of nodes) n.remove();
+    }
+
+    function renderMonth() {
+        labelEl.textContent = `${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`;
+        clearDays();
+
+        const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+        const last = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+        const startOffset = mondayIndex(first);
+
+        // On affiche 6 semaines (42 cases) pour une grille stable
+        const start = new Date(first);
+        start.setDate(first.getDate() - startOffset);
+
+        for (let i = 0; i < 42; i++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+
+            const isMuted = d.getMonth() !== cursor.getMonth();
+            const isToday = d.getTime() === today.getTime();
+            const key = isoDate(d);
+            const items = deadlinesByDate.get(key) ?? [];
+
+            const dayEl = document.createElement('div');
+            dayEl.className = `day${isMuted ? ' muted' : ''}${isToday ? ' today' : ''}`;
+
+            const numEl = document.createElement('div');
+            numEl.className = 'day-num';
+            numEl.textContent = String(d.getDate());
+            dayEl.appendChild(numEl);
+
+            if (items.length > 0) {
+                const list = document.createElement('div');
+                list.className = 'deadlines';
+                for (const it of items) {
+                    const a = document.createElement('a');
+                    a.href = it.url;
+                    a.className = 'deadline-pill';
+                    a.title = `Evaluation #${it.id} — ${it.decision}`;
+
+                    const left = document.createElement('span');
+                    left.textContent = `#${it.id}`;
+                    left.style.fontWeight = '800';
+
+                    const tag = document.createElement('span');
+                    tag.className = `tag ${decisionTagClass(it.decision)}`;
+                    tag.textContent = it.decision === 'A_REVOIR' ? 'A revoir' : it.decision;
+
+                    a.appendChild(left);
+                    a.appendChild(tag);
+                    list.appendChild(a);
+                }
+                dayEl.appendChild(list);
+            }
+
+            calEl.appendChild(dayEl);
+        }
+
+        // Evite lint "unused" en gardant last variable utile si besoin plus tard
+        void last;
+    }
+
+    btnPrev?.addEventListener('click', () => {
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+        renderMonth();
+    });
+    btnNext?.addEventListener('click', () => {
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        renderMonth();
+    });
+
+    renderMonth();
+
+    // Pie chart decisions preliminaires
+    const counts = { FAVORABLE: 0, DEFAVORABLE: 0, A_REVOIR: 0 };
+    for (const e of evaluations) {
+        if (e.decision in counts) counts[e.decision]++;
+    }
+    const total = counts.FAVORABLE + counts.DEFAVORABLE + counts.A_REVOIR;
+
+    const ctx = document.getElementById('decisionPie');
+    if (ctx && total > 0 && window.Chart) {
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['FAVORABLE', 'DEFAVORABLE', 'A_REVOIR'],
+                datasets: [{
+                    data: [counts.FAVORABLE, counts.DEFAVORABLE, counts.A_REVOIR],
+                    backgroundColor: [
+                        'rgba(20, 83, 45, 0.85)',
+                        'rgba(127, 29, 29, 0.85)',
+                        'rgba(154, 52, 18, 0.85)'
+                    ],
+                    borderColor: 'rgba(255,255,255,0.18)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#e2e8f0', boxWidth: 14, boxHeight: 14 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const val = ctx.raw ?? 0;
+                                const pct = total ? Math.round((val / total) * 100) : 0;
+                                return ` ${ctx.label}: ${val} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

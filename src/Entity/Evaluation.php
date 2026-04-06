@@ -7,6 +7,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
 use App\Entity\User;
 use App\Entity\ScoreCompetence;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity]
 #[ORM\Table(name: "evaluation")]
@@ -15,35 +17,50 @@ class Evaluation
     #[ORM\Id]
     //#[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
+    #[Assert\Positive(message: "L'identifiant de l'evaluation doit etre positif.")]
     private ?int $idEvaluation = null;
 
     // Null: No → NOT nullable
     #[ORM\Column(type: "datetime")]
+    #[Assert\NotNull(message: "La date de creation est obligatoire.")]
     private \DateTimeInterface $dateCreation;
 
     // longtext, Null: No
     #[ORM\Column(type: "text")]
+    #[Assert\NotBlank(message: "Le commentaire global est obligatoire.")]
+    #[Assert\Length(
+        min: 5,
+        max: 5000,
+        minMessage: "Le commentaire global doit contenir au moins {{ limit }} caracteres.",
+        maxMessage: "Le commentaire global ne doit pas depasser {{ limit }} caracteres."
+    )]
     private string $commentaireGlobal;
 
     // varchar(255), Null: No
     #[ORM\Column(type: "string", length: 255)]
+    #[Assert\NotBlank(message: "La decision preliminaire est obligatoire.")]
+    #[Assert\Choice(
+        choices: ["FAVORABLE", "DEFAVORABLE", "A_REVOIR"],
+        message: "La decision preliminaire est invalide."
+    )]
     private string $decisionPreliminaire;
 
-    // date, Null: No
-    #[ORM\Column(type: "date")]
-    private \DateTimeInterface $reviewDeadline;
+    // date, Null: Yes (required only when decision is A_REVOIR)
+    #[ORM\Column(type: "date", nullable: true)]
+    private ?\DateTimeInterface $reviewDeadline = null;
 
-    // Null: Yes → nullable
+    // Null: Yes → nullable. Renseigne avec l'utilisateur connecte lorsque celui-ci a ROLE_CANDIDAT ou ROLE_CANDIDATE (sans ROLE_ADMIN).
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsCandidat")]
     #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
     private ?User $candidat = null;
 
-    // Null: Yes → nullable
+    // Null: Yes → nullable. Renseigne avec l'utilisateur connecte lorsque celui-ci a ROLE_ADMIN.
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsRecruteur")]
     #[ORM\JoinColumn(name: "fk_recruteur_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
     private ?User $recruteur = null;
 
     #[ORM\OneToMany(mappedBy: "evaluation", targetEntity: ScoreCompetence::class, cascade: ["persist", "remove"])]
+    #[Assert\Valid]
     private Collection $scoreCompetences;
 
     public function __construct()
@@ -56,6 +73,11 @@ class Evaluation
         return $this->idEvaluation;
     }
 
+    public function setIdEvaluation(int $value): static
+    {
+        $this->idEvaluation = $value;
+        return $this;
+    }
     public function getDateCreation(): \DateTimeInterface
     {
         return $this->dateCreation;
@@ -63,6 +85,11 @@ class Evaluation
 
     public function setDateCreation(\DateTimeInterface $value): static
     {
+        // Doctrine "datetime" expects a mutable \DateTime instance.
+        if ($value instanceof \DateTimeImmutable) {
+            $value = \DateTime::createFromImmutable($value);
+        }
+
         $this->dateCreation = $value;
         return $this;
     }
@@ -89,17 +116,46 @@ class Evaluation
         return $this;
     }
 
-    public function getReviewDeadline(): \DateTimeInterface
+    public function getReviewDeadline(): ?\DateTimeInterface
     {
         return $this->reviewDeadline;
     }
 
-    public function setReviewDeadline(\DateTimeInterface $value): static
+    public function setReviewDeadline(?\DateTimeInterface $value): static
     {
+        // La colonne SQL est NOT NULL: si le formulaire envoie null
+        // (cas FAVORABLE/DEFAVORABLE), on garde la date existante
+        // ou on initialise a aujourd'hui pour eviter l'erreur DB.
+        if ($value === null) {
+            if (!$this->reviewDeadline instanceof \DateTimeInterface) {
+                $this->reviewDeadline = new \DateTimeImmutable('today');
+            }
+            return $this;
+        }
+
         $this->reviewDeadline = $value;
         return $this;
     }
 
+    #[Assert\Callback]
+    public function validateReviewDeadline(ExecutionContextInterface $context): void
+    {
+        if ($this->decisionPreliminaire === 'A_REVOIR') {
+            if (!$this->reviewDeadline instanceof \DateTimeInterface) {
+                $context->buildViolation('La date limite de review est obligatoire pour la decision A_REVOIR.')
+                    ->atPath('reviewDeadline')
+                    ->addViolation();
+                return;
+            }
+
+            $today = new \DateTimeImmutable('today');
+            if ($this->reviewDeadline < $today) {
+                $context->buildViolation('La date limite de review doit etre aujourd\'hui ou ulterieure.')
+                    ->atPath('reviewDeadline')
+                    ->addViolation();
+            }
+        }
+    }
     public function getCandidat(): ?User
     {
         return $this->candidat;

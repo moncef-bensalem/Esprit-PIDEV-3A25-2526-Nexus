@@ -17,7 +17,7 @@ class Planification
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: "idEvent", type: "integer")]
+    #[ORM\Column(name: "id_event", type: "integer")]
     private int $idEvent;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
@@ -28,7 +28,7 @@ class Planification
     #[ORM\JoinColumn(name: 'fk_candidature_id', referencedColumnName: 'id_candidature', nullable: true, onDelete: 'CASCADE')]
     private ?Candidature $candidature = null;
 
-    #[ORM\Column(name: "typeEvent", type: "string", length: 100)]
+    #[ORM\Column(name: "type_event", type: "string", length: 100)]
     #[Assert\NotBlank(message: "Le type d'événement est obligatoire.")]
     #[Assert\Choice(
         choices: ['entretien', 'reunion', 'formation', 'autre'],
@@ -40,11 +40,11 @@ class Planification
     #[Assert\NotBlank(message: "La date est obligatoire.")]
     private ?\DateTimeInterface $date = null;
 
-    #[ORM\Column(name: "heureDebut", type: "time", nullable: true)]
+    #[ORM\Column(name: "heure_debut", type: "time", nullable: true)]
     #[Assert\NotBlank(message: "L'heure de début est obligatoire.")]
     private ?\DateTimeInterface $heureDebut = null;
 
-    #[ORM\Column(name: "heureFin", type: "time", nullable: true)]
+    #[ORM\Column(name: "heure_fin", type: "time", nullable: true)]
     #[Assert\NotBlank(message: "L'heure de fin est obligatoire.")]
     private ?\DateTimeInterface $heureFin = null;
 
@@ -69,7 +69,7 @@ class Planification
     )]
     private ?string $description = null;
 
-    #[ORM\Column(name: "lienMeeting", type: "string", length: 255, nullable: true)]
+    #[ORM\Column(name: "lien_meeting", type: "string", length: 255, nullable: true)]
     #[Assert\Url(message: "Le lien de meeting doit être une URL valide (ex: https://...).")]
     private ?string $lienMeeting = null;
 

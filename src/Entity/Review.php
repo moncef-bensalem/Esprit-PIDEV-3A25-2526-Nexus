@@ -18,7 +18,7 @@ class Review
     private int $id;
 
     #[ORM\ManyToOne(targetEntity: Planification::class, inversedBy: "reviews")]
-    #[ORM\JoinColumn(name: 'planification_id', referencedColumnName: 'idEvent', onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'planification_id', referencedColumnName: 'id_event', onDelete: 'CASCADE')]
     private Planification $planification;
 
     #[ORM\Column(type: "integer", nullable: true)]
