@@ -1,13 +1,22 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit Talent{% endblock %}
+{% block title %}Modifier un talent - NEXUS{% endblock %}
 
 {% block body %}
-    <h1>Edit Talent</h1>
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1><i class="fa-solid fa-pen-to-square"></i> Modifier un talent</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_talent_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i> Retour à la liste</a>
+        </div>
+    </div>
 
-    {{ include('talent/_form.html.twig', {'button_label': 'Update'}) }}
+    <div class="form-container">
+        {{ include('talent/_form.html.twig', {'button_label': 'Enregistrer les modifications'}) }}
+    </div>
 
-    <a href="{{ path('app_talent_index') }}">back to list</a>
-
-    {{ include('talent/_delete_form.html.twig') }}
+    <div style="max-width: 800px; margin: 1.5rem auto 0 auto;">
+        {{ include('talent/_delete_form.html.twig') }}
+    </div>
+</div>
 {% endblock %}
