@@ -17,12 +17,124 @@ use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 class EvaluationController extends AbstractController
 {
     #[Route('', name: 'evaluation_index', methods: ['GET'])]
-    public function index(EntityManagerInterface $entityManager): Response
+    public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $evaluations = $entityManager->getRepository(Evaluation::class)->findBy([], ['dateCreation' => 'DESC']);
+        $q = trim((string) $request->query->get('q', ''));
+        $sort = (string) $request->query->get('sort', 'dateCreation'); // 'score' | 'dateCreation'
+
+        $decisionFilter = (string) $request->query->get('decision', '');
+        $recruteurFilter = (string) $request->query->get('recruteur', '');
+        $candidatFilter = (string) $request->query->get('candidat', '');
+
+        $evaluationsAll = $entityManager->getRepository(Evaluation::class)->findBy([], ['dateCreation' => 'DESC']);
+
+        $averageScoresById = [];
+        foreach ($evaluationsAll as $evaluation) {
+            $averageScoresById[$evaluation->getIdEvaluation()] = $this->computeAverageScore($evaluation);
+        }
+
+        // Options distinctes (pour remplir les selects)
+        $decisionOptions = [];
+        $recruteurOptions = []; // id => label (inclut "none" via key 'none')
+        $candidatOptions = [];
+        foreach ($evaluationsAll as $evaluation) {
+            $decisionOptions[$evaluation->getDecisionPreliminaire()] = true;
+
+            if ($evaluation->getRecruteur() === null) {
+                $recruteurOptions['none'] = 'Non assigne';
+            } else {
+                $recruteurOptions[$evaluation->getRecruteur()->getId()] = $evaluation->getRecruteur()->getFirstName().' '.$evaluation->getRecruteur()->getLastName();
+            }
+
+            if ($evaluation->getCandidat() === null) {
+                $candidatOptions['none'] = 'Non assigne';
+            } else {
+                $candidatOptions[$evaluation->getCandidat()->getId()] = $evaluation->getCandidat()->getFirstName().' '.$evaluation->getCandidat()->getLastName();
+            }
+        }
+
+        $needle = $q !== '' ? mb_strtolower($q) : '';
+
+        $evaluations = array_values(array_filter($evaluationsAll, function (Evaluation $evaluation) use ($needle, $decisionFilter, $recruteurFilter, $candidatFilter): bool {
+            if ($decisionFilter !== '' && $evaluation->getDecisionPreliminaire() !== $decisionFilter) {
+                return false;
+            }
+
+            if ($recruteurFilter !== '') {
+                if ($recruteurFilter === 'none' && $evaluation->getRecruteur() !== null) {
+                    return false;
+                }
+                if ($recruteurFilter !== 'none') {
+                    $recruteur = $evaluation->getRecruteur();
+                    if ($recruteur === null || (string) $recruteur->getId() !== $recruteurFilter) {
+                        return false;
+                    }
+                }
+            }
+
+            if ($candidatFilter !== '') {
+                if ($candidatFilter === 'none' && $evaluation->getCandidat() !== null) {
+                    return false;
+                }
+                if ($candidatFilter !== 'none') {
+                    $candidat = $evaluation->getCandidat();
+                    if ($candidat === null || (string) $candidat->getId() !== $candidatFilter) {
+                        return false;
+                    }
+                }
+            }
+
+            if ($needle !== '') {
+                $candidateLabel = $evaluation->getCandidat() ? ($evaluation->getCandidat()->getFirstName().' '.$evaluation->getCandidat()->getLastName()) : 'Non assigne';
+                $recruteurLabel = $evaluation->getRecruteur() ? ($evaluation->getRecruteur()->getFirstName().' '.$evaluation->getRecruteur()->getLastName()) : 'Non assigne';
+                $haystack = $evaluation->getIdEvaluation()
+                    .' '.$candidateLabel
+                    .' '.$recruteurLabel
+                    .' '.$evaluation->getDecisionPreliminaire()
+                    .' '.$evaluation->getCommentaireGlobal();
+
+                if (mb_stripos($haystack, $needle) === false) {
+                    return false;
+                }
+            }
+
+            return true;
+        }));
+
+        // Tri
+        if ($sort === 'score') {
+            usort($evaluations, function (Evaluation $a, Evaluation $b) use ($averageScoresById): int {
+                $avgA = $averageScoresById[$a->getIdEvaluation()] ?? null;
+                $avgB = $averageScoresById[$b->getIdEvaluation()] ?? null;
+
+                // Scores entre 0 et 20 => null (pas de score) passe en dernier
+                $valA = $avgA === null ? -1 : $avgA;
+                $valB = $avgB === null ? -1 : $avgB;
+
+                $cmp = $valB <=> $valA; // DESC
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+
+                return $b->getDateCreation() <=> $a->getDateCreation(); // tie-break
+            });
+        } else {
+            usort($evaluations, static function (Evaluation $a, Evaluation $b): int {
+                return $b->getDateCreation() <=> $a->getDateCreation(); // DESC
+            });
+        }
 
         return $this->render('evaluation/index.html.twig', [
             'evaluations' => $evaluations,
+            'averageScoresById' => $averageScoresById,
+            'q' => $q,
+            'sort' => $sort,
+            'decision' => $decisionFilter,
+            'recruteur' => $recruteurFilter,
+            'candidat' => $candidatFilter,
+            'decisionOptions' => array_keys($decisionOptions),
+            'recruteurOptions' => $recruteurOptions,
+            'candidatOptions' => $candidatOptions,
         ]);
     }
 
@@ -182,5 +294,33 @@ class EvaluationController extends AbstractController
             ->getSingleScalarResult();
 
         return ((int) $max) + 1;
+    }
+
+    private function computeAverageScore(Evaluation $evaluation): ?float
+    {
+        $sum = 0.0;
+        $count = 0;
+
+        foreach ($evaluation->getScoreCompetences() as $scoreCompetence) {
+            $raw = trim($scoreCompetence->getNoteAttribuee());
+            if ($raw === '') {
+                continue;
+            }
+
+            // Le champ est un string: on normalise "," => "."
+            $normalized = str_replace(',', '.', $raw);
+            if (!is_numeric($normalized)) {
+                continue;
+            }
+
+            $sum += (float) $normalized;
+            $count++;
+        }
+
+        if ($count === 0) {
+            return null;
+        }
+
+        return $sum / $count;
     }
 }

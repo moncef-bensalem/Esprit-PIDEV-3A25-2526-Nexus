@@ -86,6 +86,68 @@
 </div>
 
 <div class="flash-wrap">
+    <form method="get" action="{{ path('evaluation_index') }}" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label text-white-50 mb-1">Recherche</label>
+            <input type="text" name="q" class="form-control" placeholder="Candidat, recruteur, decision, commentaire..." value="{{ q }}">
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" name="sort" value="score" class="btn btn-primary w-100">
+                Trier par score
+            </button>
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" name="sort" value="dateCreation" class="btn btn-outline-light w-100">
+                Trier par date
+            </button>
+        </div>
+
+        <div class="col-md-4">
+            <div class="row g-2">
+                <div class="col-12">
+                    <label class="form-label text-white-50 mb-1">Filtres</label>
+                </div>
+
+                <div class="col-md-4">
+                    <select name="decision" class="form-select">
+                        <option value="">Toutes decisions</option>
+                        {% for d in decisionOptions %}
+                            <option value="{{ d }}" {{ d == decision ? 'selected' : '' }}>{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <select name="recruteur" class="form-select">
+                        <option value="">Tous recruteurs</option>
+                        {% for id, label in recruteurOptions %}
+                            <option value="{{ id }}" {{ id == recruteur ? 'selected' : '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <select name="candidat" class="form-select">
+                        <option value="">Tous candidats</option>
+                        {% for id, label in candidatOptions %}
+                            <option value="{{ id }}" {{ id == candidat ? 'selected' : '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 text-end">
+            <button type="submit" name="sort" value="{{ sort }}" class="btn btn-success">
+                Filtrer
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="flash-wrap">
     {% for type, messages in app.flashes %}
         {% for message in messages %}
             <div class="alert alert-{{ type == 'success' ? 'success' : 'danger' }} alert-dismissible fade show py-2" role="alert">
@@ -102,10 +164,12 @@
 <div class="cards-grid">
     {% for evaluation in evaluations %}
         {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
+        {% set avgScore = averageScoresById[evaluation.idEvaluation]|default(null) %}
         <div class="evaluation-card {{ decisionClass }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
             <div class="card-title">Evaluation #{{ evaluation.idEvaluation }}</div>
             <div class="card-meta">
                 <div>📅 Date creation: {{ evaluation.dateCreation|date('Y-m-d H:i') }}</div>
+                <div>⭐ Score: {{ avgScore is null ? 'N/A' : (avgScore | number_format(2, '.', ',')) }}</div>
                 <div>👤 Candidat: {{ evaluation.candidat ? (evaluation.candidat.firstName ~ ' ' ~ evaluation.candidat.lastName) : 'Non assigne' }}</div>
                 <div>📌 Decision: {{ evaluation.decisionPreliminaire }}</div>
             </div>
