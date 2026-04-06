@@ -7,29 +7,96 @@
     <div class="top-bar">
         <h1>Gestion des Talents</h1>
         <div class="top-actions">
-            <button class="btn"><i class="fa-solid fa-search"></i> Rechercher</button>
-            <button class="btn"><i class="fa-solid fa-chart-bar"></i> Classements</button>
-            <button class="btn"><i class="fa-solid fa-chart-pie"></i> Statistiques</button>
-            <button class="btn"><i class="fa-solid fa-sliders"></i> Recherche Avancée</button>
-            
-            <a href="{{ path('app_talent_index') }}" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Actualiser</a>
-            <a href="{{ path('app_talent_new') }}" class="btn"><i class="fa-solid fa-plus"></i> Ajouter un talent</a>
+            <button class="btn" id="btn-rechercher" onclick="toggleSearch()">
+                <i class="fa-solid fa-search"></i> Rechercher
+            </button>
+            <a href="{{ path('app_talent_classements') }}" class="btn">
+                <i class="fa-solid fa-chart-bar"></i> Classements
+            </a>
+            <a href="{{ path('app_talent_statistiques') }}" class="btn">
+                <i class="fa-solid fa-chart-pie"></i> Statistiques
+            </a>
+            <button class="btn" id="btn-avancee" onclick="toggleAdvanced()">
+                <i class="fa-solid fa-sliders"></i> Recherche Avancée
+            </button>
+            <a href="{{ path('app_talent_index') }}" class="btn btn-primary">
+                <i class="fa-solid fa-rotate-right"></i> Actualiser
+            </a>
+            <a href="{{ path('app_talent_new') }}" class="btn">
+                <i class="fa-solid fa-plus"></i> Ajouter un talent
+            </a>
         </div>
     </div>
 
-    <div class="filters-bar">
-        <div>
-            <label>Département :</label>
-            <select><option>Tous</option></select>
-        </div>
-        <div>
-            <label>Affichage :</label>
-            <select><option>Tous</option></select>
-        </div>
-        <div style="margin-left: auto; color: var(--text-muted); align-self: center;">
-            {{ talents_affiches }} talents trouvés
-        </div>
+    {# Barre de recherche rapide #}
+    <div class="search-bar-panel" id="search-panel" style="display: {{ search is not empty ? 'block' : 'none' }};">
+        <form method="get" action="{{ path('app_talent_index') }}" id="search-form">
+            <div class="search-input-wrap">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input type="text" name="q" value="{{ search }}" placeholder="Rechercher par nom, prénom, poste, département…" class="search-input" id="search-input" autofocus>
+                {% if search is not empty %}
+                    <a href="{{ path('app_talent_index') }}" class="search-clear"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+            </div>
+            {# Conserver les autres filtres actifs #}
+            {% if filter_dept %}<input type="hidden" name="departement" value="{{ filter_dept }}">{% endif %}
+            {% if filter_poste %}<input type="hidden" name="poste" value="{{ filter_poste }}">{% endif %}
+            {% if filter_exp %}<input type="hidden" name="experience" value="{{ filter_exp }}">{% endif %}
+        </form>
     </div>
+
+    {# Panneau recherche avancée #}
+    <div class="advanced-panel" id="advanced-panel" style="display: {{ (filter_dept or filter_poste or filter_exp) ? 'block' : 'none' }};">
+        <form method="get" action="{{ path('app_talent_index') }}" id="advanced-form">
+            {% if search is not empty %}<input type="hidden" name="q" value="{{ search }}">{% endif %}
+            <div class="advanced-grid">
+                <div class="adv-field">
+                    <label><i class="fa-solid fa-building"></i> Département</label>
+                    <select name="departement">
+                        <option value="">Tous les départements</option>
+                        {% for dept in departements %}
+                            <option value="{{ dept }}" {{ filter_dept == dept ? 'selected' : '' }}>{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="adv-field">
+                    <label><i class="fa-solid fa-briefcase"></i> Poste</label>
+                    <select name="poste">
+                        <option value="">Tous les postes</option>
+                        {% for poste in postes %}
+                            <option value="{{ poste }}" {{ filter_poste == poste ? 'selected' : '' }}>{{ poste }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="adv-field">
+                    <label><i class="fa-solid fa-clock"></i> Expérience</label>
+                    <select name="experience">
+                        <option value="">Toutes</option>
+                        <option value="0-2"  {{ filter_exp == '0-2'  ? 'selected' : '' }}>0–2 ans</option>
+                        <option value="3-5"  {{ filter_exp == '3-5'  ? 'selected' : '' }}>3–5 ans</option>
+                        <option value="6-10" {{ filter_exp == '6-10' ? 'selected' : '' }}>6–10 ans</option>
+                        <option value="10+"  {{ filter_exp == '10+'  ? 'selected' : '' }}>+10 ans</option>
+                    </select>
+                </div>
+                <div class="adv-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Appliquer</button>
+                    <a href="{{ path('app_talent_index') }}" class="btn"><i class="fa-solid fa-xmark"></i> Effacer</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# Bandeau des filtres actifs #}
+    {% if search or filter_dept or filter_poste or filter_exp %}
+    <div class="active-filters">
+        <span class="active-filters-label"><i class="fa-solid fa-filter"></i> Filtres actifs :</span>
+        {% if search %}<span class="filter-tag">Recherche: "{{ search }}"</span>{% endif %}
+        {% if filter_dept %}<span class="filter-tag">Dept: {{ filter_dept }}</span>{% endif %}
+        {% if filter_poste %}<span class="filter-tag">Poste: {{ filter_poste }}</span>{% endif %}
+        {% if filter_exp %}<span class="filter-tag">Exp: {{ filter_exp }} ans</span>{% endif %}
+        <a href="{{ path('app_talent_index') }}" class="filter-clear-all">Effacer tout <i class="fa-solid fa-xmark"></i></a>
+    </div>
+    {% endif %}
 
     <div class="stats-grid">
         <div class="stat-card">
@@ -77,9 +144,43 @@
             </div>
         {% else %}
             <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: var(--card-bg); border-radius: 1rem; color: var(--text-muted); border: 1px solid var(--border-color);">
-                Aucun talent trouvé. Commencez par en ajouter un !
+                <i class="fa-solid fa-magnifying-glass" style="font-size:2rem; margin-bottom:1rem; display:block; opacity:0.4;"></i>
+                Aucun talent trouvé avec ces critères.
             </div>
         {% endfor %}
     </div>
 </div>
+
+<script>
+function toggleSearch() {
+    const panel = document.getElementById('search-panel');
+    const isVisible = panel.style.display !== 'none';
+    panel.style.display = isVisible ? 'none' : 'block';
+    if (!isVisible) {
+        document.getElementById('search-input').focus();
+        document.getElementById('advanced-panel').style.display = 'none';
+    }
+}
+
+function toggleAdvanced() {
+    const panel = document.getElementById('advanced-panel');
+    const isVisible = panel.style.display !== 'none';
+    panel.style.display = isVisible ? 'none' : 'block';
+    if (!isVisible) {
+        document.getElementById('search-panel').style.display = 'none';
+    }
+}
+
+// Soumission auto de la recherche rapide après 500ms d'inactivité
+const searchInput = document.getElementById('search-input');
+if (searchInput) {
+    let debounce;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => {
+            document.getElementById('search-form').submit();
+        }, 500);
+    });
+}
+</script>
 {% endblock %}
