@@ -20,8 +20,22 @@ final class TalentController extends AbstractController
             ->getRepository(Talent::class)
             ->findAll();
 
+        $competencesCount = $entityManager
+            ->getRepository(\App\Entity\Competence::class)
+            ->count([]);
+
+        $departements = [];
+        foreach ($talent as $t) {
+            $departements[] = $t->getDepartement();
+        }
+        $departementsCount = count(array_unique($departements));
+
         return $this->render('talent/index.html.twig', [
             'talent' => $talent,
+            'total_talents' => count($talent),
+            'talents_affiches' => count($talent),
+            'departements_count' => $departementsCount,
+            'competences_count' => $competencesCount,
         ]);
     }
 
