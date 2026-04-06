@@ -17,7 +17,8 @@ class Departement
 
     #[ORM\Column(type: "string", length: 255)]
     #[Assert\NotBlank(message: "Le libellé du département ne peut pas être vide")]
-    #[Assert\Length(max: 255, maxMessage: "Le libellé est trop long")]
+    #[Assert\Length(min: 2, max: 255, minMessage: "Le libellé est trop court", maxMessage: "Le libellé est trop long")]
+    #[Assert\Regex(pattern: "/^[A-Za-zÀ-ÿ0-9\s\-&]+$/", message:"Caractères non autorisés détectés")]
     private string $libelle;
 
     public function getId_departement(): int

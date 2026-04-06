@@ -17,10 +17,10 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 
 class PublicFrontendController extends AbstractController
 {
-    #[Route('/offres', name: 'app_public_offres', methods: ['GET'])]
+    #[Route('/jobs', name: 'app_public_offres', methods: ['GET'])]
     public function offres(EntityManagerInterface $em): Response
     {
-        $offres = $em->getRepository(OffreEmploi::class)->findBy(['statut_offre' => 'Publiée'], ['date_creation' => 'DESC']);
+        $offres = $em->getRepository(OffreEmploi::class)->findBy(['statut_offre' => ['Publiée', 'PUBLIEE']], ['date_creation' => 'DESC']);
         
         return $this->render('frontend/offres.html.twig', [
             'offres' => $offres
@@ -31,8 +31,10 @@ class PublicFrontendController extends AbstractController
     public function postuler(string $id_offre, Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
     {
         $offre = $em->getRepository(OffreEmploi::class)->find($id_offre);
-        if (!$offre || $offre->getStatut_offre() !== 'Publiée') {
-            throw $this->createNotFoundException('Cette offre n\'est plus disponible.');
+        $statutDb = $offre ? $offre->getStatut_offre() : '';
+        $statutNorm = strtoupper(str_replace(['é', 'è', 'ê', 'ë'], 'E', $statutDb));
+        if (!$offre || $statutNorm !== 'PUBLIEE') {
+            throw $this->createNotFoundException('Cette offre n\'est plus disponible. Statut actuel: ' . $statutDb);
         }
 
         $form = $this->createForm(PostulationType::class);
@@ -105,7 +107,7 @@ class PublicFrontendController extends AbstractController
         ]);
     }
 
-    #[Route('/suivi', name: 'app_public_suivi', methods: ['GET', 'POST'])]
+    #[Route('/tracker', name: 'app_public_suivi', methods: ['GET', 'POST'])]
     public function suivi(Request $request, EntityManagerInterface $em): Response
     {
         $email = $request->query->get('email') ?? $request->request->get('email');

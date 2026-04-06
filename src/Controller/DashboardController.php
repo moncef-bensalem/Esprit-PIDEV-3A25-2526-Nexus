@@ -15,7 +15,7 @@ class DashboardController extends AbstractController
     #[Route('/admin/dashboard', name: 'app_dashboard', methods: ['GET'])]
     public function index(EntityManagerInterface $entityManager): Response
     {
-        $offreEmploisActives = $entityManager->getRepository(OffreEmploi::class)->count(['statut_offre' => 'Publiée']);
+        $offreEmploisActives = $entityManager->getRepository(OffreEmploi::class)->count(['statut_offre' => ['Publiée', 'PUBLIEE']]);
         
         // Candidatures en cours (RECU ou EN_ENTRETIEN)
         $qbCandidatures = $entityManager->getRepository(Candidature::class)->createQueryBuilder('c');

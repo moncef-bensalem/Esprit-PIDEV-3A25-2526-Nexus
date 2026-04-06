@@ -18,6 +18,7 @@ class Candidat
     #[ORM\Column(type: "string", length: 200)]
     #[Assert\NotBlank(message: "Le nom complet est obligatoire")]
     #[Assert\Length(min: 3, max: 200, minMessage: "Le nom doit faire au moins 3 caractères", maxMessage: "Le nom ne peut pas dépasser 200 caractères")]
+    #[Assert\Regex(pattern: "/^[a-zA-ZÀ-ÿ\s\-]+$/", message: "Le nom ne doit contenir que des lettres et des espaces")]
     private string $nom_complet;
 
     #[ORM\Column(type: "string", length: 255)]

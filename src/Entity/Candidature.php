@@ -43,6 +43,7 @@ class Candidature
     private ?Candidat $candidat = null;
 
     #[ORM\Column(type: "text", nullable: true)]
+    #[Assert\Length(max: 1000, maxMessage: "Vos notes ne peuvent pas dépasser 1000 caractères")]
     private ?string $notes = null;
 
     public function getId_candidature(): string
