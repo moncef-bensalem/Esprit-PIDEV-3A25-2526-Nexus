@@ -106,6 +106,7 @@ class PlanificationType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Planification::class,
+            'attr'       => ['novalidate' => 'novalidate'],
         ]);
     }
 }

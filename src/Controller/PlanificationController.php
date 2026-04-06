@@ -18,11 +18,13 @@ class PlanificationController extends AbstractController
     #[Route('', name: 'planification_index', methods: ['GET'])]
     public function index(PlanificationRepository $repo): Response
     {
-        $total = count($repo->findAll());
+        $planifications = $repo->findAll();
+        $total = count($planifications);
         $actifs = $repo->countActifs();
         $nouveaux = $repo->countNouveaux(7);
 
         return $this->render('planification/index.html.twig', [
+            'planifications' => $planifications,
             'total' => $total,
             'actifs' => $actifs,
             'nouveaux' => $nouveaux,
@@ -37,27 +39,27 @@ class PlanificationController extends AbstractController
 
         $colorMap = [
             'entretien' => '#4e73df',
-            'reunion'   => '#1cc88a',
+            'reunion' => '#1cc88a',
             'formation' => '#f6c23e',
-            'autre'     => '#e74a3b',
+            'autre' => '#e74a3b',
         ];
 
         foreach ($planifications as $p) {
-            $dateStr  = $p->getDate()?->format('Y-m-d') ?? date('Y-m-d');
+            $dateStr = $p->getDate()?->format('Y-m-d') ?? date('Y-m-d');
             $start = $dateStr . 'T' . ($p->getHeureDebut()?->format('H:i:s') ?? '00:00:00');
-            $end   = $dateStr . 'T' . ($p->getHeureFin()?->format('H:i:s') ?? '01:00:00');
+            $end = $dateStr . 'T' . ($p->getHeureFin()?->format('H:i:s') ?? '01:00:00');
             $color = $colorMap[$p->getTypeEvent()] ?? '#6c757d';
 
             $events[] = [
-                'id'    => $p->getIdEvent(),
+                'id' => $p->getIdEvent(),
                 'title' => ucfirst($p->getTypeEvent()) . ($p->getDescription() ? ' - ' . mb_substr($p->getDescription(), 0, 30) : ''),
                 'start' => $start,
-                'end'   => $end,
+                'end' => $end,
                 'color' => $color,
                 'extendedProps' => [
                     'statut' => $p->getStatut(),
-                    'mode'   => $p->getMode(),
-                    'url'    => $this->generateUrl('planification_show', ['id' => $p->getIdEvent()]),
+                    'mode' => $p->getMode(),
+                    'url' => $this->generateUrl('planification_show', ['id' => $p->getIdEvent()]),
                 ],
             ];
         }
@@ -96,7 +98,13 @@ class PlanificationController extends AbstractController
 
             $this->addFlash('success', 'Planification créée avec succès.');
             return $this->redirectToRoute('planification_index');
+        } elseif ($form->isSubmitted()) {
+            foreach ($form->getErrors(true) as $error) {
+                error_log("Form Error: " . $error->getMessage());
+                error_log("At path: " . $error->getOrigin()->getName());
+            }
         }
+
 
         $template = $isModal
             ? 'planification/new_modal.html.twig'

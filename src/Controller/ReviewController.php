@@ -50,13 +50,6 @@ class ReviewController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if (!$review->getRating()) {
-                $this->addFlash('error', 'Veuillez sélectionner une note.');
-                return $this->render('review/new.html.twig', [
-                    'form'          => $form,
-                    'planification' => $planification,
-                ]);
-            }
             $em->persist($review);
             $em->flush();
 
@@ -77,13 +70,6 @@ class ReviewController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if (!$review->getRating()) {
-                $this->addFlash('error', 'Veuillez sélectionner une note.');
-                return $this->render('review/edit.html.twig', [
-                    'form'   => $form,
-                    'review' => $review,
-                ]);
-            }
             $em->flush();
 
             $this->addFlash('success', 'Avis modifié avec succès.');

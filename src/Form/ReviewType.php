@@ -48,6 +48,7 @@ class ReviewType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Review::class,
+            'attr'       => ['novalidate' => 'novalidate'],
         ]);
     }
 }

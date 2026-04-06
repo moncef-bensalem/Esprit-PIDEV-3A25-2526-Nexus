@@ -1,4 +1,101 @@
-{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+<style>
+.form-global-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: .86rem;
+    color: #fcd34d;
+    margin-bottom: 8px;
+}
+.form-global-error svg { flex-shrink: 0; color: #f59e0b; }
+
+/* Premium Form Elements */
+.form-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted, #6b8ba4);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+}
+
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--text, #e2eaf4) !important;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    box-shadow: none !important;
+    transition: all 0.25s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(79, 195, 247, 0.5) !important;
+    box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.1) !important;
+}
+
+.form-select option {
+    background: var(--surface, #0d1d30);
+    color: var(--text, #e2eaf4);
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4fc3f7, #0288d1);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 9px;
+    box-shadow: 0 4px 14px rgba(79, 195, 247, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
+}
+
+.btn-outline-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2eaf4;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 9px;
+    transition: all 0.2s;
+}
+.btn-outline-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+</style>
+
+{{ form_start(form) }}
+
+{# Erreurs globales (Expression, etc.) #}
+{% set globalErrors = form.vars.errors %}
+{% if form.vars.submitted and globalErrors|length > 0 %}
+<div class="mb-3">
+    {% for error in globalErrors %}
+    <div class="form-global-error">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        {{ error.message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div class="row g-3">
     <div class="col-md-6">

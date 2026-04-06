@@ -1,4 +1,36 @@
-{{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'reviewForm'}}) }}
+<style>
+.form-global-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-left: 4px solid #ffc107;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: .86rem;
+    color: #664d03;
+    margin-bottom: 8px;
+}
+.form-global-error svg { flex-shrink: 0; color: #b45309; }
+</style>
+
+{{ form_start(form, {'attr': {'id': 'reviewForm'}}) }}
+
+{# Erreurs globales #}
+{% set globalErrors = form.vars.errors %}
+{% if form.vars.submitted and globalErrors|length > 0 %}
+<div class="mb-3">
+    {% for error in globalErrors %}
+    <div class="form-global-error">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        {{ error.message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 {# Star picker visuel #}
 <div class="mb-4">
@@ -35,7 +67,6 @@
 
 <script>
 (function () {
-    // Cibler l'input par son attribut name (Symfony génère review[rating])
     const input = document.querySelector('input[name$="[rating]"]');
     const stars = document.querySelectorAll('.star-pick');
     let current = parseInt(input ? input.value : '') || 0;
