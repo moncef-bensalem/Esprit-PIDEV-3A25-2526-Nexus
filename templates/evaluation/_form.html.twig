@@ -1,0 +1,58 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'evaluationForm'}}) }}
+
+<div class="mb-3">
+    {{ form_label(form.commentaireGlobal) }}
+    {{ form_widget(form.commentaireGlobal) }}
+    {{ form_errors(form.commentaireGlobal) }}
+</div>
+
+<div class="mb-3">
+    {{ form_label(form.decisionPreliminaire) }}
+    {{ form_widget(form.decisionPreliminaire) }}
+    {{ form_errors(form.decisionPreliminaire) }}
+</div>
+
+<div class="mb-3" id="reviewDeadlineGroup">
+    {{ form_label(form.reviewDeadline) }}
+    {{ form_widget(form.reviewDeadline) }}
+    {{ form_errors(form.reviewDeadline) }}
+</div>
+
+<div class="mb-3">
+    {{ form_label(form.candidat) }}
+    {{ form_widget(form.candidat) }}
+    {{ form_errors(form.candidat) }}
+</div>
+
+<div class="d-flex justify-content-end gap-2 mt-4">
+    <a href="{{ path('evaluation_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    <button type="submit" class="btn btn-success px-4">Enregistrer</button>
+</div>
+
+{{ form_end(form) }}
+
+<script>
+(function () {
+    const decisionSelect = document.querySelector('select[name$="[decisionPreliminaire]"]');
+    const deadlineGroup = document.getElementById('reviewDeadlineGroup');
+    const deadlineInput = document.querySelector('input[name$="[reviewDeadline]"]');
+
+    function toggleDeadline() {
+        const show = decisionSelect && decisionSelect.value === 'A_REVOIR';
+        if (!deadlineGroup || !deadlineInput) {
+            return;
+        }
+
+        deadlineGroup.style.display = show ? '' : 'none';
+        deadlineInput.required = show;
+        if (!show) {
+            deadlineInput.value = '';
+        }
+    }
+
+    if (decisionSelect) {
+        decisionSelect.addEventListener('change', toggleDeadline);
+        toggleDeadline();
+    }
+})();
+</script>
