@@ -5,6 +5,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Planification;
 use App\Repository\ReviewRepository;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ReviewRepository::class)]
 #[ORM\Table(name: "review")]
@@ -21,15 +22,29 @@ class Review
     private Planification $planification;
 
     #[ORM\Column(type: "integer", nullable: true)]
+    #[Assert\NotBlank(message: "La note est obligatoire.")]
+    #[Assert\Range(
+        min: 1,
+        max: 5,
+        notInRangeMessage: "La note doit être comprise entre {{ min }} et {{ max }}."
+    )]
     private ?int $rating = null;
 
     #[ORM\Column(type: "text", nullable: true)]
+    #[Assert\Length(
+        max: 1000,
+        maxMessage: "Le commentaire ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $commentaire = null;
 
     #[ORM\Column(type: "datetime", nullable: true)]
     private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\Column(type: "string", nullable: true)]
+    #[Assert\Choice(
+        choices: ['DONE', 'CANCELLED', 'NEEDS_FOLLOWUP'],
+        message: "Le statut choisi est invalide."
+    )]
     private ?string $statut = null;
 
     public function getId(): int
