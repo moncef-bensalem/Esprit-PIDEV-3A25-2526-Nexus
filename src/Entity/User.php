@@ -2,11 +2,6 @@
 
 namespace App\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-
-#[ORM\Entity]
-#[ORM\Table(name: "user")]
-class User
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -20,29 +15,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['email'], message: 'Un compte avec cet email existe déjà.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
     private int $id;
 
     #[ORM\Column(type: "string", length: 180)]
-    private string $email;
-
-    #[ORM\Column(type: "json")]
-    private array $roles;
-
-    #[ORM\Column(type: "string", length: 255)]
-    private string $password;
-
-    #[ORM\Column(type: "string", length: 255)]
-    private string $firstName;
-
-    #[ORM\Column(type: "string", length: 255)]
-    private string $lastName;
-
-    #[ORM\Column(type: "boolean")]
-    private bool $isActive;
     #[Assert\NotBlank(message: 'L\'email est obligatoire.')]
     #[Assert\Email(message: 'Veuillez saisir un email valide.')]
     private string $email;
@@ -101,30 +79,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
+
     public function getRoles(): array
     {
-        return $this->roles;
         $roles = $this->roles;
         if ($roles === []) {
             $roles[] = 'ROLE_CANDIDATE';
         }
-
         return array_values(array_unique($roles));
     }
 
     public function setRoles(array $value): static
     {
-        $this->roles = $value;
-        return $this;
-    }
-
         $this->roles = array_values(array_unique($value));
         return $this;
-    }
-
-    public function getUserIdentifier(): string
-    {
-        return $this->email;
     }
 
     public function getPassword(): string
