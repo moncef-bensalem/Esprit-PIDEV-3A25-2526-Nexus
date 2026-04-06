@@ -13,7 +13,7 @@
         </div>
     </div>
 
-    <form method="GET" action="{{ path('app_candidature_index') }}" class="filters-bar" style="margin-bottom: 2rem; display: flex; align-items: flex-end;">
+    <form method="GET" action="{{ path('app_candidature_index') }}" class="filters-bar" style="margin-bottom: 2rem; display: flex; align-items: flex-end; gap: 1rem;">
         <div>
             <label for="etat">État:</label>
             <select name="etat" id="etat" onchange="this.form.submit()" style="border-radius:2rem; padding: 0.5rem 1rem;">
@@ -24,7 +24,7 @@
                 <option value="REJETE" {% if app.request.query.get('etat') == 'REJETE' %}selected{% endif %}>Rejeté</option>
             </select>
         </div>
-        <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1.5rem; border-radius:2rem;">Filtrer</button>
+
         {% if app.request.query.get('etat') %}
             <a href="{{ path('app_candidature_index') }}" class="btn" style="padding: 0.55rem 1rem; border-radius:2rem;">Réinitialiser</a>
         {% endif %}
