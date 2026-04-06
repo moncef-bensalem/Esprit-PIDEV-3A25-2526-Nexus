@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Check your email{% endblock %}
+
+{% block body %}
+    <div class="alert alert-info">
+        If an account exists, an email with reset instructions was sent.
+        The link expires in {{ resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, 'ResetPasswordBundle') }}.
+    </div>
+{% endblock %}
