@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau Departement{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Nouveau Departement</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_departement_index') }}" class="btn">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="stat-card" style="text-align: left; max-width: 800px; margin: 0 auto;">
+        {{ include('departement/_form.html.twig') }}
+    </div>
+</div>
+{% endblock %}

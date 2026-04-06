@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Departement{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Détails Departement</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_departement_index') }}" class="btn">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <a href="{{ path('app_departement_edit', {'id_departement': departement.id_departement}) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Éditer
+            </a>
+            {{ include('departement/_delete_form.html.twig') }}
+        </div>
+    </div>
+
+    <div class="stat-card" style="text-align: left; max-width: 600px; margin: 0 auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <tbody>
+            <tr>
+                <th>Id departement</th>
+                <td>{{ departement.id_departement }}</td>
+            </tr>
+            <tr>
+                <th>Libelle</th>
+                <td>{{ departement.libelle }}</td>
+            </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Talents - NEXUS{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Gestion des Talents</h1>
+        <div class="top-actions">
+            <button class="btn"><i class="fa-solid fa-search"></i> Rechercher</button>
+            <button class="btn"><i class="fa-solid fa-chart-bar"></i> Classements</button>
+            <button class="btn"><i class="fa-solid fa-chart-pie"></i> Statistiques</button>
+            <button class="btn"><i class="fa-solid fa-sliders"></i> Recherche Avancée</button>
+            
+            <a href="{{ path('app_talent_index') }}" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Actualiser</a>
+            <a href="{{ path('app_talent_new') }}" class="btn"><i class="fa-solid fa-plus"></i> Ajouter un talent</a>
+        </div>
+    </div>
+
+    <div class="filters-bar">
+        <div>
+            <label>Département :</label>
+            <select><option>Tous</option></select>
+        </div>
+        <div>
+            <label>Affichage :</label>
+            <select><option>Tous</option></select>
+        </div>
+        <div style="margin-left: auto; color: var(--text-muted); align-self: center;">
+            {{ talents_affiches }} talents trouvés
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Talents</h3>
+            <p>{{ total_talents }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Talents Affichés</h3>
+            <p>{{ talents_affiches }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Départements</h3>
+            <p>{{ departements_count }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Compétences</h3>
+            <p>{{ competences_count }}</p>
+        </div>
+    </div>
+
+    <div class="talents-grid">
+        {% for t in talent %}
+            {% set theme = loop.index % 2 == 0 ? 'theme-purple' : 'theme-blue' %}
+            <div class="talent-card">
+                <div class="avatar-circle {{ theme }}">
+                    {{ t.prenom|slice(0,1)|upper }}{{ t.nom|slice(0,1)|upper }}
+                </div>
+                <h2 class="talent-name">{{ t.prenom }} {{ t.nom }}</h2>
+                <p class="talent-poste">{{ t.poste }}</p>
+                <div class="badge {{ theme }}">{{ t.departement|upper }}</div>
+                
+                <div class="talent-info">
+                    <div><i class="fa-solid fa-envelope"></i> {{ t.email }}</div>
+                    <div><i class="fa-solid fa-briefcase"></i> {{ t.anneesExperience }} ans exp.</div>
+                </div>
+                
+                <div class="talent-actions">
+                    <a href="{{ path('app_talent_show', {'id': t.id}) }}" class="btn-icon" title="Voir"><i class="fa-solid fa-eye"></i></a>
+                    <a href="{{ path('app_talent_edit', {'id': t.id}) }}" class="btn-icon" title="Éditer"><i class="fa-solid fa-pen"></i></a>
+                    <form method="post" action="{{ path('app_talent_delete', {'id': t.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce talent ?');" class="delete-form">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ t.id) }}">
+                        <button class="btn-icon btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: var(--card-bg); border-radius: 1rem; color: var(--text-muted); border: 1px solid var(--border-color);">
+                Aucun talent trouvé. Commencez par en ajouter un !
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

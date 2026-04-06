@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Candidat{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Détails Candidat</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_candidat_index') }}" class="btn">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <a href="{{ path('app_candidat_edit', {'id_candidat': candidat.id_candidat}) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Éditer
+            </a>
+            {{ include('candidat/_delete_form.html.twig') }}
+        </div>
+    </div>
+
+    <div class="stat-card" style="text-align: left; max-width: 600px; margin: 0 auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <tbody>
+            <tr>
+                <th>Id candidat</th>
+                <td>{{ candidat.id_candidat }}</td>
+            </tr>
+            <tr>
+                <th>Nom complet</th>
+                <td>{{ candidat.nom_complet }}</td>
+            </tr>
+            <tr>
+                <th>Email contact</th>
+                <td>{{ candidat.email_contact }}</td>
+            </tr>
+            <tr>
+                <th>Chemin cv</th>
+                <td>{{ candidat.chemin_cv }}</td>
+            </tr>
+            <tr>
+                <th>Date ajout</th>
+                <td>{{ candidat.date_ajout ? candidat.date_ajout|date('Y-m-d') : '' }}</td>
+            </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

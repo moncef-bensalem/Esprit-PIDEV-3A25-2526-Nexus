@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Éditer OffreEmploi{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Éditer OffreEmploi</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_offre_emploi_index') }}" class="btn">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            {{ include('offre_emploi/_delete_form.html.twig') }}
+        </div>
+    </div>
+
+    <div class="stat-card" style="text-align: left; max-width: 800px; margin: 0 auto;">
+        {{ include('offre_emploi/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+    </div>
+</div>
+{% endblock %}
