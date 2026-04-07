@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Details score competence{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body { background: #0d1b2a; color: #d6e6f5; font-family: 'Segoe UI', sans-serif; }
+    .wrapper { max-width: 860px; margin: 28px auto; }
+    .card-dark { background: #102235; border: 1px solid #1f3c57; border-radius: 12px; }
+    .label { color: #9fb4c8; font-size: .9rem; }
+    .value { color: #fff; font-size: 1rem; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="wrapper">
+    <div class="card card-dark">
+        <div class="card-header text-white d-flex justify-content-between align-items-center">
+            <span>Details du score competence #{{ scoreCompetence.idDetail }}</span>
+            <a href="{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}" class="btn btn-sm btn-outline-light">Retour</a>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="label">Evaluation</div>
+                    <div class="value">#{{ evaluation.idEvaluation }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="label">Nom critere</div>
+                    <div class="value">{{ scoreCompetence.nomCritere }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="label">Note attribuee</div>
+                    <div class="value">{{ scoreCompetence.noteAttribuee }}/20</div>
+                </div>
+                <div class="col-12">
+                    <div class="label">Appreciation specifique</div>
+                    <div class="value" style="font-weight: 500;">{{ scoreCompetence.appreciationSpecifique is not empty ? scoreCompetence.appreciationSpecifique : 'Aucune appreciation specifique.' }}</div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <a href="{{ path('score_competence_edit', {idEvaluation: evaluation.idEvaluation, idDetail: scoreCompetence.idDetail}) }}" class="btn btn-outline-light btn-sm">Modifier</a>
+                <form method="post" action="{{ path('score_competence_delete', {idEvaluation: evaluation.idEvaluation, idDetail: scoreCompetence.idDetail}) }}" onsubmit="return confirm('Supprimer ce score competence ?');" style="margin:0;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_score_competence_' ~ scoreCompetence.idDetail) }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

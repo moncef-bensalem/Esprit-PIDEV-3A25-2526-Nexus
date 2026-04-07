@@ -7,6 +7,8 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+use Symfony\Component\Form\Extension\Core\Type\DateType;
+
 class TalentType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -18,7 +20,10 @@ class TalentType extends AbstractType
             ->add('telephone')
             ->add('poste')
             ->add('departement')
-            ->add('date_embauche')
+            ->add('date_embauche', DateType::class, [
+                'widget' => 'single_text',
+                'required' => false,
+            ])
             ->add('annees_experience')
             ->add('niveau_etudes')
         ;

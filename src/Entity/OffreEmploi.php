@@ -12,10 +12,10 @@ class OffreEmploi
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "bigint")]
-    private string $id_offre;
+    private string $idOffre;
 
     #[ORM\Column(type: "string", length: 255)]
-    private string $titre_poste;
+    private string $titrePoste;
 
     #[ORM\Column(type: "text", nullable: true)]
     private ?string $description = null;
@@ -24,45 +24,45 @@ class OffreEmploi
     private string $departement;
 
     #[ORM\Column(type: "date", nullable: true)]
-    private ?\DateTimeInterface $date_cloture = null;
+    private ?\DateTimeInterface $dateCloture = null;
 
     #[ORM\Column(type: "string", length: 50)]
-    private string $statut_offre;
+    private string $statutOffre;
 
     #[ORM\Column(type: "datetime")]
-    private \DateTimeInterface $date_creation;
+    private \DateTimeInterface $dateCreation;
 
     #[ORM\Column(type: "datetime", nullable: true)]
-    private ?\DateTimeInterface $date_modification = null;
+    private ?\DateTimeInterface $dateModification = null;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    private ?int $fk_departement_id = null;
+    private ?int $fkDepartementId = null;
 
     #[ORM\Column(type: "float", nullable: true)]
-    private ?float $salaire_propose = null;
+    private ?float $salairePropose = null;
 
     #[ORM\Column(type: "string", length: 10, nullable: true)]
     private ?string $devise = null;
 
-    public function getId_offre(): string
+    public function getIdOffre(): string
     {
-        return $this->id_offre;
+        return $this->idOffre;
     }
 
-    public function setId_offre(string $value): static
+    public function setIdOffre(string $value): static
     {
-        $this->id_offre = $value;
+        $this->idOffre = $value;
         return $this;
     }
 
-    public function getTitre_poste(): string
+    public function getTitrePoste(): string
     {
-        return $this->titre_poste;
+        return $this->titrePoste;
     }
 
-    public function setTitre_poste(string $value): static
+    public function setTitrePoste(string $value): static
     {
-        $this->titre_poste = $value;
+        $this->titrePoste = $value;
         return $this;
     }
 
@@ -88,69 +88,69 @@ class OffreEmploi
         return $this;
     }
 
-    public function getDate_cloture(): ?\DateTimeInterface
+    public function getDateCloture(): ?\DateTimeInterface
     {
-        return $this->date_cloture;
+        return $this->dateCloture;
     }
 
-    public function setDate_cloture(?\DateTimeInterface $value): static
+    public function setDateCloture(?\DateTimeInterface $value): static
     {
-        $this->date_cloture = $value;
+        $this->dateCloture = $value;
         return $this;
     }
 
-    public function getStatut_offre(): string
+    public function getStatutOffre(): string
     {
-        return $this->statut_offre;
+        return $this->statutOffre;
     }
 
-    public function setStatut_offre(string $value): static
+    public function setStatutOffre(string $value): static
     {
-        $this->statut_offre = $value;
+        $this->statutOffre = $value;
         return $this;
     }
 
-    public function getDate_creation(): \DateTimeInterface
+    public function getDateCreation(): \DateTimeInterface
     {
-        return $this->date_creation;
+        return $this->dateCreation;
     }
 
-    public function setDate_creation(\DateTimeInterface $value): static
+    public function setDateCreation(\DateTimeInterface $value): static
     {
-        $this->date_creation = $value;
+        $this->dateCreation = $value;
         return $this;
     }
 
-    public function getDate_modification(): ?\DateTimeInterface
+    public function getDateModification(): ?\DateTimeInterface
     {
-        return $this->date_modification;
+        return $this->dateModification;
     }
 
-    public function setDate_modification(?\DateTimeInterface $value): static
+    public function setDateModification(?\DateTimeInterface $value): static
     {
-        $this->date_modification = $value;
+        $this->dateModification = $value;
         return $this;
     }
 
-    public function getFk_departement_id(): ?int
+    public function getFkDepartementId(): ?int
     {
-        return $this->fk_departement_id;
+        return $this->fkDepartementId;
     }
 
-    public function setFk_departement_id(?int $value): static
+    public function setFkDepartementId(?int $value): static
     {
-        $this->fk_departement_id = $value;
+        $this->fkDepartementId = $value;
         return $this;
     }
 
-    public function getSalaire_propose(): ?float
+    public function getSalairePropose(): ?float
     {
-        return $this->salaire_propose;
+        return $this->salairePropose;
     }
 
-    public function setSalaire_propose(?float $value): static
+    public function setSalairePropose(?float $value): static
     {
-        $this->salaire_propose = $value;
+        $this->salairePropose = $value;
         return $this;
     }
 

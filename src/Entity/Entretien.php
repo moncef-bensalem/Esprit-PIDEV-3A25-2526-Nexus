@@ -13,66 +13,66 @@ class Entretien
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "bigint")]
-    private string $id_entretien;
+    private string $idEntretien;
 
     #[ORM\Column(type: "datetime")]
-    private \DateTimeInterface $date_heure_debut;
+    private \DateTimeInterface $dateHeureDebut;
 
     #[ORM\Column(type: "string", length: 255, nullable: true)]
-    private ?string $lien_visio_salle = null;
+    private ?string $lienVisioSalle = null;
 
     #[ORM\Column(type: "string", length: 50)]
-    private string $statut_entretien;
+    private string $statutEntretien;
 
     #[ORM\ManyToOne(targetEntity: Candidature::class, inversedBy: "entretiens")]
-    #[ORM\JoinColumn(name: 'candidature_id', referencedColumnName: 'id_candidature', nullable: true, onDelete: 'CASCADE')]
-    private ?Candidature $candidature = null;
+    #[ORM\JoinColumn(name: 'candidature_id', referencedColumnName: 'id_candidature', onDelete: 'CASCADE')]
+    private Candidature $candidature;
 
     #[ORM\ManyToOne(targetEntity: TypeEntretien::class, inversedBy: "entretiens")]
-    #[ORM\JoinColumn(name: 'type_id', referencedColumnName: 'id_type', nullable: true, onDelete: 'CASCADE')]
-    private ?Type_entretien $type_entretien = null;
+    #[ORM\JoinColumn(name: 'type_id', referencedColumnName: 'id_type', onDelete: 'CASCADE')]
+    private TypeEntretien $typeEntretien;
 
-    public function getId_entretien(): string
+    public function getIdEntretien(): string
     {
-        return $this->id_entretien;
+        return $this->idEntretien;
     }
 
-    public function setId_entretien(string $value): static
+    public function setIdEntretien(string $value): static
     {
-        $this->id_entretien = $value;
+        $this->idEntretien = $value;
         return $this;
     }
 
-    public function getDate_heure_debut(): \DateTimeInterface
+    public function getDateHeureDebut(): \DateTimeInterface
     {
-        return $this->date_heure_debut;
+        return $this->dateHeureDebut;
     }
 
-    public function setDate_heure_debut(\DateTimeInterface $value): static
+    public function setDateHeureDebut(\DateTimeInterface $value): static
     {
-        $this->date_heure_debut = $value;
+        $this->dateHeureDebut = $value;
         return $this;
     }
 
-    public function getLien_visio_salle(): ?string
+    public function getLienVisioSalle(): ?string
     {
-        return $this->lien_visio_salle;
+        return $this->lienVisioSalle;
     }
 
-    public function setLien_visio_salle(?string $value): static
+    public function setLienVisioSalle(?string $value): static
     {
-        $this->lien_visio_salle = $value;
+        $this->lienVisioSalle = $value;
         return $this;
     }
 
-    public function getStatut_entretien(): string
+    public function getStatutEntretien(): string
     {
-        return $this->statut_entretien;
+        return $this->statutEntretien;
     }
 
-    public function setStatut_entretien(string $value): static
+    public function setStatutEntretien(string $value): static
     {
-        $this->statut_entretien = $value;
+        $this->statutEntretien = $value;
         return $this;
     }
 }

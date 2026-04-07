@@ -1,11 +1,21 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}New TalentCompetence{% endblock %}
+{% block title %}Nouvelle Compétence - NEXUS{% endblock %}
 
 {% block body %}
-    <h1>Create new TalentCompetence</h1>
+<div class="dashboard-container">
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <a href="{{ path('app_talent_competence_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1><i class="fa-solid fa-plus" style="color:var(--neon-blue);margin-right:.5rem;"></i>Nouvelle Compétence</h1>
+        </div>
+    </div>
 
-    {{ include('talent_competence/_form.html.twig') }}
-
-    <a href="{{ path('app_talent_competence_index') }}">back to list</a>
+    <div class="rank-section" style="max-width:600px;">
+        {{ include('talent_competence/_form.html.twig') }}
+        <div style="margin-top:1rem;">
+            <a href="{{ path('app_talent_competence_index') }}" class="btn"><i class="fa-solid fa-list"></i> Retour à la liste</a>
+        </div>
+    </div>
+</div>
 {% endblock %}

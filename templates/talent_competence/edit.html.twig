@@ -1,13 +1,22 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit TalentCompetence{% endblock %}
+{% block title %}Modifier Compétence - NEXUS{% endblock %}
 
 {% block body %}
-    <h1>Edit TalentCompetence</h1>
+<div class="dashboard-container">
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <a href="{{ path('app_talent_competence_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1><i class="fa-solid fa-pen" style="color:var(--neon-purple);margin-right:.5rem;"></i>Modifier Compétence</h1>
+        </div>
+    </div>
 
-    {{ include('talent_competence/_form.html.twig', {'button_label': 'Update'}) }}
-
-    <a href="{{ path('app_talent_competence_index') }}">back to list</a>
-
-    {{ include('talent_competence/_delete_form.html.twig') }}
+    <div class="rank-section" style="max-width:600px;">
+        {{ include('talent_competence/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+        <div style="margin-top:1rem; display:flex; gap:0.8rem;">
+            <a href="{{ path('app_talent_competence_index') }}" class="btn"><i class="fa-solid fa-list"></i> Retour</a>
+            {{ include('talent_competence/_delete_form.html.twig') }}
+        </div>
+    </div>
+</div>
 {% endblock %}

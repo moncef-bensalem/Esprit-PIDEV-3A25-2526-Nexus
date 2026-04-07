@@ -760,3 +760,6 @@ body {
     .advanced-grid      { grid-template-columns: 1fr; }
     .top-actions        { flex-wrap: wrap; }
 }
+body {
+    background-color: #0d1b2a;
+}

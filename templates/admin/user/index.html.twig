@@ -1,0 +1,205 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Utilisateurs{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body { background-color: #0d1b2a; color: #fff; font-family: 'Segoe UI', sans-serif; }
+    main.container { max-width: 100%; padding-top: 0 !important; }
+    
+    .table-glass {
+        background: #15273b;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        border: 1px solid #1a2f45;
+    }
+    
+    .table-glass table { margin-bottom: 0; }
+    .table-glass thead th {
+        background: rgba(26, 47, 69, 0.8) !important;
+        color: #9ab;
+        border-bottom: 1px solid #1a2f45;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        padding: 18px 20px;
+    }
+    
+    .table-glass tbody td {
+        background: transparent !important;
+        color: #fff;
+        border-bottom: 1px solid rgba(26, 47, 69, 0.5);
+        padding: 16px 20px;
+        vertical-align: middle;
+    }
+    
+    .table-glass tbody tr:hover td {
+        background: rgba(255, 255, 255, 0.03) !important;
+    }
+    
+    .role-badge {
+        font-size: 0.75rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+        background: rgba(79, 195, 247, 0.1);
+        color: #4fc3f7;
+        border: 1px solid rgba(79, 195, 247, 0.2);
+    }
+    
+    .status-active {
+        font-size: 0.75rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        background: rgba(76, 175, 80, 0.15);
+        color: #66bb6a;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+    .status-inactive {
+        font-size: 0.75rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        background: rgba(244, 67, 54, 0.15);
+        color: #ef5350;
+        border: 1px solid rgba(244, 67, 54, 0.3);
+    }
+
+    .btn-toggle {
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.05);
+        color: #9ab;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .btn-toggle:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .btn-toggle.activate:hover { border-color: #66bb6a; color: #66bb6a; }
+    .btn-toggle.deactivate:hover { border-color: #ef5350; color: #ef5350; }
+
+    .btn-action {
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    
+    .btn-glass-primary {
+        background: linear-gradient(135deg, #4fc3f7, #0288d1);
+        border: none;
+        color: #fff;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 10px 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-glass-primary:hover {
+        background: linear-gradient(135deg, #29b6f6, #0277bd);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4 px-4" style="margin-left: 70px; max-width: calc(100% - 70px);">
+
+        {% for message in app.flashes('success') %}
+            <div class="alert border-0 py-3 rounded-4 shadow-sm mb-4" style="background: rgba(76, 175, 80, 0.15); color: #66bb6a;">
+                ✅ {{ message }}
+            </div>
+        {% endfor %}
+        
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-light pb-3" style="border-color: rgba(255,255,255,0.1) !important;">
+            <div>
+                <h1 class="h3 mb-1 text-white fw-bold">Gestion des Utilisateurs</h1>
+                <p class="text-muted mb-0">Consultez et modifiez les comptes de la plateforme.</p>
+            </div>
+            <a href="{{ path('admin_user_new') }}" class="btn btn-glass-primary d-flex align-items-center gap-2">
+                <span>➕</span> Nouveau
+            </a>
+        </div>
+
+        <div class="card card-glass mb-4 p-3">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label text-muted" style="font-size: 0.85rem;">Rechercher un utilisateur</label>
+                    <input type="text" name="q" value="{{ currentQuery|default('') }}" class="form-control bg-dark border-secondary text-white" placeholder="Nom, Prénom ou Email...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted" style="font-size: 0.85rem;">Filtrer par rôle</label>
+                    <select name="role" class="form-select bg-dark border-secondary text-white">
+                        <option value="">Tous les rôles</option>
+                        <option value="ROLE_ADMIN" {% if currentRole == 'ROLE_ADMIN' %}selected{% endif %}>Administrateur</option>
+                        <option value="ROLE_CANDIDATE" {% if currentRole == 'ROLE_CANDIDATE' %}selected{% endif %}>Candidat</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-glass-primary px-4 w-100">🔍 Rechercher</button>
+                    {% if currentQuery or currentRole %}
+                        <a href="{{ path('admin_user_index') }}" class="btn btn-outline-light px-3">Effacer</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <div class="table-glass">
+            <div class="table-responsive">
+                <table class="table table-borderless">
+                    <thead>
+                        <tr>
+                            <th width="80">ID</th>
+                            <th>Email</th>
+                            <th>Nom complet</th>
+                            <th>Rôles</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td class="text-muted fw-bold">#{{ user.id }}</td>
+                            <td class="fw-medium">{{ user.email }}</td>
+                            <td>{{ user.firstName }} {{ user.lastName }}</td>
+                            <td>
+                                {% for role in user.roles %}
+                                    <span class="role-badge me-1">{{ role|replace({'ROLE_': ''}) }}</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if user.isActive %}
+                                    <span class="status-active">● Actif</span>
+                                {% else %}
+                                    <span class="status-inactive">● Inactif</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end d-flex gap-1 justify-content-end align-items-center">
+                                <form method="post" action="{{ path('admin_user_toggle', {id: user.id}) }}" style="display:inline;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_user_' ~ user.id) }}">
+                                    {% if user.isActive %}
+                                        <button type="submit" class="btn-toggle deactivate" title="Désactiver">🚫</button>
+                                    {% else %}
+                                        <button type="submit" class="btn-toggle activate" title="Activer">✅</button>
+                                    {% endif %}
+                                </form>
+                                <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-sm btn-info text-white btn-action">Éditer</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <div class="fs-1 mb-2">📭</div>
+                                Aucun utilisateur trouvé.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

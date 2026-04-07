@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un compte{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body { background-color: #0d1b2a; color: #fff; font-family: 'Segoe UI', sans-serif; }
+    .card-glass {
+        background: #15273b;
+        border-radius: 14px;
+        border: 1px solid #1a2f45;
+        color: #fff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .card-header-glass {
+        background: rgba(255,255,255,0.02);
+        border-bottom: 1px solid #1a2f45;
+        font-weight: 700;
+        font-size: 1.25rem;
+        padding: 20px;
+        color: #fff;
+        border-radius: 14px 14px 0 0;
+    }
+    .form-control {
+        background: #0d1b2a;
+        border: 1px solid #1a2f45;
+        color: #fff !important;
+        border-radius: 8px;
+        padding: 12px 15px;
+    }
+    .form-control:focus {
+        background: #0d1b2a;
+        border-color: #4fc3f7;
+        box-shadow: 0 0 0 0.25rem rgba(79, 195, 247, 0.25);
+    }
+    .form-label { color: #9ab; font-weight: 500; font-size: 0.9rem; margin-bottom: 8px; }
+    .btn-glass-primary {
+        background: linear-gradient(135deg, #4fc3f7, #0288d1);
+        border: none;
+        color: #fff;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 12px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-glass-primary:hover {
+        background: linear-gradient(135deg, #29b6f6, #0277bd);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+    }
+    a.glass-link { color: #4fc3f7; text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    a.glass-link:hover { color: #81d4fa; text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="row justify-content-center align-items-center mt-4">
+        <div class="col-md-7">
+            <div class="card card-glass">
+                <div class="card-header-glass text-center">Création de compte candidat</div>
+                <div class="card-body p-4">
+                    {{ form_start(registrationForm) }}
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                {{ form_label(registrationForm.firstName, 'Prénom') }}
+                                {{ form_widget(registrationForm.firstName, {'attr': {'class': 'form-control', 'placeholder': 'Votre prénom'}}) }}
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                {{ form_label(registrationForm.lastName, 'Nom') }}
+                                {{ form_widget(registrationForm.lastName, {'attr': {'class': 'form-control', 'placeholder': 'Votre nom'}}) }}
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            {{ form_label(registrationForm.email, 'Adresse email') }}
+                            {{ form_widget(registrationForm.email, {'attr': {'class': 'form-control', 'placeholder': 'exemple@email.com'}}) }}
+                        </div>
+                        <div class="mb-4">
+                            {{ form_label(registrationForm.plainPassword.first, 'Mot de passe') }}
+                            {{ form_widget(registrationForm.plainPassword.first, {'attr': {'class': 'form-control', 'placeholder': 'Votre mot de passe'}}) }}
+                        </div>
+                        <div class="mb-4">
+                            {{ form_label(registrationForm.plainPassword.second, 'Confirmer le mot de passe') }}
+                            {{ form_widget(registrationForm.plainPassword.second, {'attr': {'class': 'form-control', 'placeholder': 'Répétez le mot de passe'}}) }}
+                        </div>
+                        <button type="submit" class="btn btn-glass-primary w-100 mt-2">S'inscrire</button>
+                    {{ form_end(registrationForm) }}
+                    <div class="mt-4 text-center">
+                        <a href="{{ path('app_login') }}" class="glass-link">Déjà un compte ? Se connecter</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

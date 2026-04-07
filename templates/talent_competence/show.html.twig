@@ -1,34 +1,44 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}TalentCompetence{% endblock %}
+{% block title %}Détail Compétence - NEXUS{% endblock %}
 
 {% block body %}
-    <h1>TalentCompetence</h1>
+<div class="dashboard-container">
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <a href="{{ path('app_talent_competence_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1><i class="fa-solid fa-trophy" style="color:var(--neon-purple);margin-right:.5rem;"></i>Détail Compétence</h1>
+        </div>
+        <div class="top-actions">
+            <a href="{{ path('app_talent_competence_edit', {'id': talent_competence.id}) }}" class="btn"><i class="fa-solid fa-pen"></i> Modifier</a>
+        </div>
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ talent_competence.id }}</td>
-            </tr>
-            <tr>
-                <th>Niveau_maitrise</th>
-                <td>{{ talent_competence.niveauMaitrise }}</td>
-            </tr>
-            <tr>
-                <th>Annees_pratique</th>
-                <td>{{ talent_competence.anneesPratique }}</td>
-            </tr>
-            <tr>
-                <th>Date_acquisition</th>
-                <td>{{ talent_competence.dateAcquisition ? talent_competence.dateAcquisition|date('Y-m-d') : '' }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <a href="{{ path('app_talent_competence_index') }}">back to list</a>
-
-    <a href="{{ path('app_talent_competence_edit', {'id': talent_competence.id}) }}">edit</a>
-
-    {{ include('talent_competence/_delete_form.html.twig') }}
+    <div class="rank-section" style="max-width:600px;">
+        <div class="rank-header">
+            <i class="fa-solid fa-info-circle" style="color:var(--neon-blue);"></i>
+            <h2>Informations</h2>
+        </div>
+        <div class="stat-bar-row">
+            <span class="stat-bar-label"><strong>ID</strong></span>
+            <span style="color:var(--text-main);">{{ talent_competence.id }}</span>
+        </div>
+        <div class="stat-bar-row">
+            <span class="stat-bar-label"><strong>Niveau</strong></span>
+            <span style="color:var(--text-main);">{{ talent_competence.niveau_maitrise ?? 'Non défini' }}</span>
+        </div>
+        <div class="stat-bar-row">
+            <span class="stat-bar-label"><strong>Pratique</strong></span>
+            <span style="color:var(--text-main);">{{ talent_competence.annees_pratique ?? 0 }} ans</span>
+        </div>
+        <div class="stat-bar-row">
+            <span class="stat-bar-label"><strong>Acquis le</strong></span>
+            <span style="color:var(--text-main);">{{ talent_competence.date_acquisition ? talent_competence.date_acquisition|date('d/m/Y') : 'N/A' }}</span>
+        </div>
+        <div style="margin-top:1.5rem; display:flex; gap:0.8rem;">
+            <a href="{{ path('app_talent_competence_index') }}" class="btn"><i class="fa-solid fa-list"></i> Retour</a>
+            {{ include('talent_competence/_delete_form.html.twig') }}
+        </div>
+    </div>
+</div>
 {% endblock %}

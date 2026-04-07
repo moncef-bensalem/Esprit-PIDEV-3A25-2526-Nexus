@@ -18,7 +18,6 @@ class Candidat
     private string $nom_complet;
 
     #[ORM\Column(type: "string", length: 255)]
-    
     private string $email_contact;
 
     #[ORM\Column(type: "string", length: 500, nullable: true)]

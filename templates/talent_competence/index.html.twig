@@ -1,39 +1,49 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}TalentCompetence index{% endblock %}
+{% block title %}Compétences - NEXUS{% endblock %}
 
 {% block body %}
-    <h1>TalentCompetence index</h1>
+<div class="dashboard-container">
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <a href="{{ path('app_talent_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1><i class="fa-solid fa-trophy" style="color:var(--neon-purple);margin-right:.5rem;"></i>Compétences des Talents</h1>
+        </div>
+        <div class="top-actions">
+            <a href="{{ path('app_talent_competence_new') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ajouter</a>
+        </div>
+    </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Niveau_maitrise</th>
-                <th>Annees_pratique</th>
-                <th>Date_acquisition</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for talent_competence in talent_competences %}
-            <tr>
-                <td>{{ talent_competence.id }}</td>
-                <td>{{ talent_competence.niveauMaitrise }}</td>
-                <td>{{ talent_competence.anneesPratique }}</td>
-                <td>{{ talent_competence.dateAcquisition ? talent_competence.dateAcquisition|date('Y-m-d') : '' }}</td>
-                <td>
-                    <a href="{{ path('app_talent_competence_show', {'id': talent_competence.id}) }}">show</a>
-                    <a href="{{ path('app_talent_competence_edit', {'id': talent_competence.id}) }}">edit</a>
-                </td>
-            </tr>
+    <div class="talents-grid">
+        {% for tc in talent_competences %}
+        <div class="talent-card">
+            <div class="avatar-circle {{ loop.index % 2 == 0 ? 'theme-purple' : 'theme-blue' }}">
+                <i class="fa-solid fa-star"></i>
+            </div>
+            <h3 class="talent-name">Compétence #{{ tc.id }}</h3>
+            <div class="talent-info">
+                <div><i class="fa-solid fa-layer-group"></i> Niveau: {{ tc.niveau_maitrise ?? 'Non défini' }}</div>
+                <div><i class="fa-solid fa-calendar-days"></i> Pratique: {{ tc.annees_pratique ?? 0 }} ans</div>
+                <div><i class="fa-solid fa-clock"></i> Acquis le: {{ tc.date_acquisition ? tc.date_acquisition|date('d/m/Y') : 'N/A' }}</div>
+            </div>
+            <div class="talent-actions">
+                <a href="{{ path('app_talent_competence_show', {'id': tc.id}) }}" class="btn-icon" title="Voir"><i class="fa-solid fa-eye"></i></a>
+                <a href="{{ path('app_talent_competence_edit', {'id': tc.id}) }}" class="btn-icon" title="Modifier"><i class="fa-solid fa-pen"></i></a>
+                <form method="post" action="{{ path('app_talent_competence_delete', {'id': tc.id}) }}" class="delete-form" onsubmit="return confirm('Supprimer cette compétence ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ tc.id) }}">
+                    <button class="btn-icon btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
         {% else %}
-            <tr>
-                <td colspan="5">no records found</td>
-            </tr>
+        <div class="rank-empty" style="grid-column: 1 / -1;">
+            <i class="fa-solid fa-inbox" style="font-size:2rem;color:var(--text-muted);margin-bottom:1rem;display:block;"></i>
+            Aucune compétence enregistrée.
+            <div style="margin-top:1rem;">
+                <a href="{{ path('app_talent_competence_new') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ajouter une compétence</a>
+            </div>
+        </div>
         {% endfor %}
-        </tbody>
-    </table>
-
-    <a href="{{ path('app_talent_competence_new') }}">Create new</a>
+    </div>
+</div>
 {% endblock %}

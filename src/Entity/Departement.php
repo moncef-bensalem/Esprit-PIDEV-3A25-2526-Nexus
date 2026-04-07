@@ -12,19 +12,19 @@ class Departement
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
-    private int $id_departement;
+    private int $idDepartement;
 
     #[ORM\Column(type: "string", length: 255)]
     private string $libelle;
 
-    public function getId_departement(): int
+    public function getIdDepartement(): int
     {
-        return $this->id_departement;
+        return $this->idDepartement;
     }
 
-    public function setId_departement(int $value): static
+    public function setIdDepartement(int $value): static
     {
-        $this->id_departement = $value;
+        $this->idDepartement = $value;
         return $this;
     }
 

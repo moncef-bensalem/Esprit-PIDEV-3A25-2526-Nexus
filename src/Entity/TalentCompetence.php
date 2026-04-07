@@ -5,6 +5,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Competence;
 use Symfony\Component\Validator\Constraints as Assert;
+
 #[ORM\Entity]
 #[ORM\Table(name: "talent_competence")]
 class TalentCompetence
@@ -44,6 +45,28 @@ class TalentCompetence
     public function setId(int $value): static
     {
         $this->id = $value;
+        return $this;
+    }
+
+    public function getTalent(): Talent
+    {
+        return $this->talent;
+    }
+
+    public function setTalent(Talent $talent): static
+    {
+        $this->talent = $talent;
+        return $this;
+    }
+
+    public function getCompetence(): Competence
+    {
+        return $this->competence;
+    }
+
+    public function setCompetence(Competence $competence): static
+    {
+        $this->competence = $competence;
         return $this;
     }
 

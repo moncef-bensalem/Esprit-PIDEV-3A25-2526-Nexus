@@ -3,7 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
+
 #[ORM\Entity]
 #[ORM\Table(name: "talent")]
 class Talent
@@ -15,41 +15,31 @@ class Talent
     private int $id;
 
     #[ORM\Column(type: "string", length: 100)]
-    #[Assert\NotBlank(message: "Le nom est obligatoire")]
-    #[Assert\Length(min: 2, max: 100, minMessage: "Le nom doit faire au moins {{ limit }} caractères")]
     private string $nom;
 
     #[ORM\Column(type: "string", length: 100)]
-    #[Assert\NotBlank(message: "Le prénom est obligatoire")]
-    #[Assert\Length(min: 2, max: 100, minMessage: "Le prénom doit faire au moins {{ limit }} caractères")]
     private string $prenom;
 
     #[ORM\Column(type: "string", length: 100)]
-    #[Assert\NotBlank(message: "L'e-mail est obligatoire")]
-    #[Assert\Email(message: "L'e-mail n'est pas valide")]
     private string $email;
 
     #[ORM\Column(type: "string", length: 20, nullable: true)]
-    #[Assert\Length(max: 20, maxMessage: "Le téléphone ne peut pas dépasser {{ limit }} caractères")]
     private ?string $telephone = null;
 
     #[ORM\Column(type: "string", length: 100)]
-    #[Assert\NotBlank(message: "Le poste est obligatoire")]
     private string $poste;
 
     #[ORM\Column(type: "string", length: 100)]
-    #[Assert\NotBlank(message: "Le département est obligatoire")]
     private string $departement;
 
     #[ORM\Column(type: "date", nullable: true)]
-    private ?\DateTimeInterface $date_embauche = null;
+    private ?\DateTimeInterface $dateEmbauche = null;
 
     #[ORM\Column(type: "integer", nullable: true)]
-    #[Assert\PositiveOrZero(message: "Les années d'expérience ne peuvent pas être négatives")]
-    private ?int $annees_experience = null;
+    private ?int $anneesExperience = null;
 
     #[ORM\Column(type: "string", length: 100, nullable: true)]
-    private ?string $niveau_etudes = null;
+    private ?string $niveauEtudes = null;
 
     public function getId(): int
     {
@@ -130,34 +120,34 @@ class Talent
 
     public function getDateEmbauche(): ?\DateTimeInterface
     {
-        return $this->date_embauche;
+        return $this->dateEmbauche;
     }
 
     public function setDateEmbauche(?\DateTimeInterface $value): static
     {
-        $this->date_embauche = $value;
+        $this->dateEmbauche = $value;
         return $this;
     }
 
     public function getAnneesExperience(): ?int
     {
-        return $this->annees_experience;
+        return $this->anneesExperience;
     }
 
     public function setAnneesExperience(?int $value): static
     {
-        $this->annees_experience = $value;
+        $this->anneesExperience = $value;
         return $this;
     }
 
     public function getNiveauEtudes(): ?string
     {
-        return $this->niveau_etudes;
+        return $this->niveauEtudes;
     }
 
     public function setNiveauEtudes(?string $value): static
     {
-        $this->niveau_etudes = $value;
+        $this->niveauEtudes = $value;
         return $this;
     }
 }

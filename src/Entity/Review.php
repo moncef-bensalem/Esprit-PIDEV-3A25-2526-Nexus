@@ -4,8 +4,10 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Planification;
+use App\Repository\ReviewRepository;
+use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: ReviewRepository::class)]
 #[ORM\Table(name: "review")]
 class Review
 {
@@ -16,24 +18,49 @@ class Review
     private int $id;
 
     #[ORM\ManyToOne(targetEntity: Planification::class, inversedBy: "reviews")]
-    #[ORM\JoinColumn(name: 'planification_id', referencedColumnName: 'idEvent', onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'planification_id', referencedColumnName: 'id_event', onDelete: 'CASCADE')]
     private Planification $planification;
 
-    #[ORM\Column(type: "integer")]
-    private int $rating;
+    #[ORM\Column(type: "integer", nullable: true)]
+    #[Assert\NotBlank(message: "La note est obligatoire.")]
+    #[Assert\Range(
+        min: 1,
+        max: 5,
+        notInRangeMessage: "La note doit être comprise entre {{ min }} et {{ max }}."
+    )]
+    private ?int $rating = null;
 
     #[ORM\Column(type: "text", nullable: true)]
+    #[Assert\Length(
+        max: 1000,
+        maxMessage: "Le commentaire ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $commentaire = null;
 
     #[ORM\Column(type: "datetime", nullable: true)]
-    private ?\DateTimeInterface $created_at = null;
+    private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\Column(type: "string", nullable: true)]
+    #[Assert\Choice(
+        choices: ['DONE', 'CANCELLED', 'NEEDS_FOLLOWUP'],
+        message: "Le statut choisi est invalide."
+    )]
     private ?string $statut = null;
 
     public function getId(): int
     {
         return $this->id;
+    }
+
+    public function getPlanification(): Planification
+    {
+        return $this->planification;
+    }
+
+    public function setPlanification(?Planification $planification): static
+    {
+        $this->planification = $planification;
+        return $this;
     }
 
     public function setId(int $value): static
@@ -42,12 +69,12 @@ class Review
         return $this;
     }
 
-    public function getRating(): int
+    public function getRating(): ?int
     {
         return $this->rating;
     }
 
-    public function setRating(int $value): static
+    public function setRating(?int $value): static
     {
         $this->rating = $value;
         return $this;
@@ -64,14 +91,14 @@ class Review
         return $this;
     }
 
-    public function getCreated_at(): ?\DateTimeInterface
+    public function getCreatedAt(): ?\DateTimeInterface
     {
-        return $this->created_at;
+        return $this->createdAt;
     }
 
-    public function setCreated_at(?\DateTimeInterface $value): static
+    public function setCreatedAt(?\DateTimeInterface $value): static
     {
-        $this->created_at = $value;
+        $this->createdAt = $value;
         return $this;
     }
 

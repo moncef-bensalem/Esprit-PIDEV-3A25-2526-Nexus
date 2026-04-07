@@ -106,6 +106,17 @@ class ProfilTalent
         return $this;
     }
 
+    public function getUser(): User
+    {
+        return $this->user;
+    }
+
+    public function setUser(User $user): static
+    {
+        $this->user = $user;
+        return $this;
+    }
+
     public function getCreated_at(): ?\DateTimeInterface
     {
         return $this->created_at;

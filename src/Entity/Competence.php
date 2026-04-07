@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+
 #[ORM\Entity]
 #[ORM\Table(name: "competence")]
 class Competence
@@ -19,8 +20,8 @@ class Competence
     #[Assert\Length(max: 100, maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères")]
     private string $nom;
 
+
     #[ORM\Column(type: "string", length: 100, nullable: true)]
-    #[Assert\Length(max: 100, maxMessage: "La catégorie ne peut pas dépasser {{ limit }} caractères")]
     private ?string $categorie = null;
 
     #[ORM\Column(type: "text", nullable: true)]

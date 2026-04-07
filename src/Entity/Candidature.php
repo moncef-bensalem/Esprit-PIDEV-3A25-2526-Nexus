@@ -30,7 +30,7 @@ class Candidature
 
     #[ORM\ManyToOne(targetEntity: OffreEmploi::class, inversedBy: "candidatures")]
     #[ORM\JoinColumn(name: 'fk_offre_id', referencedColumnName: 'id_offre', nullable: true, onDelete: 'CASCADE')]
-    private ?Offre_emploi $offre_emploi = null;
+    private ?OffreEmploi $offre_emploi = null;
 
     #[ORM\ManyToOne(targetEntity: Candidat::class, inversedBy: "candidatures")]
     #[ORM\JoinColumn(name: 'fk_candidat_id', referencedColumnName: 'id_candidat', nullable: true, onDelete: 'CASCADE')]
@@ -91,6 +91,28 @@ class Candidature
     public function setSource_candidature(?string $value): static
     {
         $this->source_candidature = $value;
+        return $this;
+    }
+
+    public function getOffre_emploi(): ?OffreEmploi
+    {
+        return $this->offre_emploi;
+    }
+
+    public function setOffre_emploi(?OffreEmploi $value): static
+    {
+        $this->offre_emploi = $value;
+        return $this;
+    }
+
+    public function getCandidat(): ?Candidat
+    {
+        return $this->candidat;
+    }
+
+    public function setCandidat(?Candidat $value): static
+    {
+        $this->candidat = $value;
         return $this;
     }
 
