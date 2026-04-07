@@ -9,18 +9,57 @@
         </div>
     </div>
     
-    <div class="form-container">
-        <h2 style="margin-bottom: 0.5rem; font-size: 2rem; color: var(--text-main);">{{ offre.titre_poste }}</h2>
-        <p style="color: var(--neon-blue); font-weight: 600; margin-bottom: 2.5rem; letter-spacing: 1px;"><i class="fas fa-building" style="margin-right:0.5rem;"></i> {{ offre.departement }}</p>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; max-width: 800px; margin: 0 auto;">
         
-        {% for message in app.flashes('error') %}
-            <div class="badge badge-danger" style="margin-bottom: 2rem; display:block;">{{ message }}</div>
-        {% endfor %}
+        <div class="detail-card" style="border-top: 4px solid var(--neon-purple); text-align: center; padding: 3rem 2rem;">
+            <div class="avatar-circle theme-purple" style="width: 80px; height: 80px; font-size: 2rem; margin: 0 auto 1.5rem auto;">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h2 style="margin-bottom: 0.5rem; font-size: 2rem; color: var(--text-main);">{{ offre.titre_poste }}</h2>
+            <p style="color: var(--neon-blue); font-weight: 600; font-size: 1.2rem; margin-bottom: 1rem; letter-spacing: 1px;"><i class="fas fa-building" style="margin-right:0.5rem;"></i> {{ offre.departement }}</p>
+            <div style="display: inline-flex; gap: 1rem; color: var(--text-muted); font-size: 0.95rem; margin-top: 1rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 2rem;">
+                <span><i class="fas fa-money-bill-wave"></i> {{ offre.salaire_propose ? offre.salaire_propose|number_format(0, '.', ' ') ~ ' ' ~ offre.devise : 'Non spécifié' }}</span>
+                <span>•</span>
+                <span><i class="fas fa-calendar-alt"></i> {{ offre.date_creation ? offre.date_creation|date('d/m/Y') : '' }}</span>
+            </div>
+        </div>
 
-        {{ form_start(form, {'attr': {'enctype': 'multipart/form-data'}}) }}
-            {{ form_widget(form) }}
-            <button class="btn btn-primary" style="margin-top:2rem; width: 100%; justify-content:center; padding: 1rem;"><i class="fas fa-paper-plane"></i> Soumettre ma candidature (CV)</button>
-        {{ form_end(form) }}
+        <div class="form-container">
+            <h3 style="margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">Vos Informations & CV</h3>
+            
+            {% for message in app.flashes('error') %}
+                <div class="badge badge-danger" style="margin-bottom: 2rem; display:block; text-align:center; padding: 1rem; font-size:1rem;">{{ message }}</div>
+            {% endfor %}
+
+            {{ form_start(form, {'attr': {'enctype': 'multipart/form-data', 'class': 'custom-form'}}) }}
+                
+                <div style="margin-bottom: 1.5rem;">
+                    {{ form_label(form.nom_complet, 'Nom Complet', {'label_attr': {'style': 'display:block; margin-bottom:0.5rem; color:var(--text-muted); font-weight:600;'}}) }}
+                    {{ form_widget(form.nom_complet, {'attr': {'style': 'width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--border-color); background: rgba(255,255,255,0.02); color:var(--text-main);', 'placeholder': 'Ex: Jean Dupont'}}) }}
+                    {{ form_errors(form.nom_complet) }}
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    {{ form_label(form.email, 'Adresse Email', {'label_attr': {'style': 'display:block; margin-bottom:0.5rem; color:var(--text-muted); font-weight:600;'}}) }}
+                    {{ form_widget(form.email, {'attr': {'style': 'width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--border-color); background: rgba(255,255,255,0.02); color:var(--text-main);', 'placeholder': 'Ex: jean.dupont@email.com'}}) }}
+                    {{ form_errors(form.email) }}
+                </div>
+
+                <div style="margin-bottom: 2rem; padding: 1.5rem; border: 1px dashed var(--neon-purple); border-radius: 8px; background: rgba(255,255,255,0.01);">
+                    {{ form_label(form.cv, 'Votre CV (Format PDF ou Word)', {'label_attr': {'style': 'display:block; margin-bottom:0.8rem; color:var(--neon-blue); font-weight:600;'}}) }}
+                    {{ form_widget(form.cv, {'attr': {'style': 'width:100%; color:var(--text-main);'}}) }}
+                    {{ form_errors(form.cv) }}
+                    <small style="display:block; margin-top:0.5rem; color:var(--text-muted);">Taille maximum : 5 Mo</small>
+                </div>
+
+                {{ form_rest(form) }}
+
+                <button class="btn btn-primary" style="margin-top:1rem; width: 100%; justify-content:center; padding: 1.2rem; font-size: 1.1rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.2);">
+                    <i class="fas fa-paper-plane" style="margin-right: 0.5rem;"></i> Envoyer ma candidature
+                </button>
+            {{ form_end(form) }}
+        </div>
+
     </div>
 </div>
 {% endblock %}

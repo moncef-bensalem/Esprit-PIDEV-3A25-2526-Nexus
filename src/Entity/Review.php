@@ -85,4 +85,15 @@ class Review
         $this->statut = $value;
         return $this;
     }
+
+    public function getPlanification(): ?Planification
+    {
+        return $this->planification;
+    }
+
+    public function setPlanification(?Planification $planification): static
+    {
+        $this->planification = $planification;
+        return $this;
+    }
 }

@@ -9,34 +9,57 @@
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Offres Actives</h3>
-            <p>{{ offres_actives }}</p>
-        </div>
-        <div class="stat-card">
-            <h3>Candidatures en cours</h3>
-            <p>{{ candidatures_en_cours }}</p>
-        </div>
-        <div class="stat-card">
-            <h3>Total Candidats</h3>
-            <p>{{ total_candidats }}</p>
-        </div>
-        <div class="stat-card">
-            <h3>Taux d'offres publiées</h3>
-            <p>{{ taux_conversion }}%</p>
-        </div>
-    </div>
-    
-    <div style="display:flex; gap: 2rem; margin-top: 3rem; flex-wrap: wrap;">
-        <div class="stat-card" style="flex:1; min-width: 300px;">
-            <h3 style="color:var(--text-main); margin-bottom: 2rem; font-size: 1.2rem;">Accès Rapides</h3>
-            <div style="display: flex; flex-direction:column; gap:1rem;">
-                <a href="{{ path('app_offre_emploi_index') }}" class="btn btn-primary" style="justify-content:center;">Gérer les offres d'emploi</a>
-                <a href="{{ path('app_candidature_index') }}" class="btn" style="justify-content:center;">Gérer les candidatures</a>
-                <a href="{{ path('app_departement_index') }}" class="btn" style="justify-content:center;">Départements</a>
+        <div class="stat-card" style="display: flex; align-items: center; gap: 1.5rem;">
+            <div class="avatar-circle theme-blue" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.3rem;">Offres Actives</p>
+                <h3 style="font-size: 2rem; margin: 0; color: var(--text-main);">{{ offres_actives }}</h3>
             </div>
         </div>
 
+        <div class="stat-card" style="display: flex; align-items: center; gap: 1.5rem;">
+            <div class="avatar-circle theme-purple" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.3rem;">Candidatures en cours</p>
+                <h3 style="font-size: 2rem; margin: 0; color: var(--text-main);">{{ candidatures_en_cours }}</h3>
+            </div>
+        </div>
+
+        <div class="stat-card" style="display: flex; align-items: center; gap: 1.5rem;">
+            <div class="avatar-circle" style="background: rgba(0, 255, 136, 0.1); color: var(--success-color); border: 1px solid rgba(0, 255, 136, 0.2); width: 60px; height: 60px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.3rem;">Total Candidats</p>
+                <h3 style="font-size: 2rem; margin: 0; color: var(--text-main);">{{ total_candidats }}</h3>
+            </div>
+        </div>
+
+        <div class="stat-card" style="display: flex; align-items: center; gap: 1.5rem;">
+            <div class="avatar-circle" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid rgba(255, 255, 255, 0.1); width: 60px; height: 60px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.3rem;">Taux de publication</p>
+                <h3 style="font-size: 2rem; margin: 0; color: var(--text-main);">{{ taux_conversion }}%</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem;">
+        <div class="detail-card" style="flex:1; border-top: 4px solid var(--neon-blue);">
+            <h3 style="color:var(--text-main); margin-bottom: 2rem; font-size: 1.2rem;"><i class="fas fa-rocket" style="color: var(--neon-blue); margin-right: 0.5rem;"></i> Accès Rapides RH</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                <a href="{{ path('app_offre_emploi_index') }}" class="btn btn-primary" style="justify-content:center; padding: 1rem;"><i class="fas fa-briefcase"></i> Gérer les Offres</a>
+                <a href="{{ path('app_candidature_index') }}" class="btn" style="justify-content:center; padding: 1rem; border: 1px solid var(--neon-purple); color: var(--neon-purple);"><i class="fas fa-inbox"></i> Candidatures</a>
+                <a href="{{ path('app_departement_index') }}" class="btn" style="justify-content:center; padding: 1rem;"><i class="fas fa-building"></i> Départements</a>
+                <a href="{{ path('app_kanban_index') }}" class="btn" style="justify-content:center; padding: 1rem; background: rgba(255, 255, 255, 0.05);"><i class="fas fa-columns"></i> Pipeline Kanban</a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

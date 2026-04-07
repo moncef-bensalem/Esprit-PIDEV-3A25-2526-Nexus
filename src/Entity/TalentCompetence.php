@@ -47,6 +47,28 @@ class TalentCompetence
         return $this;
     }
 
+    public function getTalent(): ?Talent
+    {
+        return $this->talent;
+    }
+
+    public function setTalent(?Talent $talent): static
+    {
+        $this->talent = $talent;
+        return $this;
+    }
+
+    public function getCompetence(): ?Competence
+    {
+        return $this->competence;
+    }
+
+    public function setCompetence(?Competence $competence): static
+    {
+        $this->competence = $competence;
+        return $this;
+    }
+
     public function getNiveau_maitrise(): ?string
     {
         return $this->niveau_maitrise;
@@ -78,5 +100,36 @@ class TalentCompetence
     {
         $this->date_acquisition = $value;
         return $this;
+    }
+
+    // Aliases for PropertyAccessor (Symfony Forms)
+    public function getNiveauMaitrise(): ?string
+    {
+        return $this->getNiveau_maitrise();
+    }
+
+    public function setNiveauMaitrise(?string $value): static
+    {
+        return $this->setNiveau_maitrise($value);
+    }
+
+    public function getAnneesPratique(): ?int
+    {
+        return $this->getAnnees_pratique();
+    }
+
+    public function setAnneesPratique(?int $value): static
+    {
+        return $this->setAnnees_pratique($value);
+    }
+
+    public function getDateAcquisition(): ?\DateTimeInterface
+    {
+        return $this->getDate_acquisition();
+    }
+
+    public function setDateAcquisition(?\DateTimeInterface $value): static
+    {
+        return $this->setDate_acquisition($value);
     }
 }

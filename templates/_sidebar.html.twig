@@ -1,20 +1,23 @@
 <style>
+    {% set is_candidate = is_granted('ROLE_CANDIDATE') and not is_granted('ROLE_ADMIN') %}
     .sidebar {
         position: fixed;
         top: 0; left: 0;
-        width: 70px;
+        width: {{ is_candidate ? '220px' : '70px' }};
         height: 100vh;
         background: #080f1a;
         border-right: 1px solid #1a2f45;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        padding: 18px 0;
+        align-items: {{ is_candidate ? 'flex-start' : 'center' }};
+        padding: 18px {{ is_candidate ? '20px' : '0' }};
         z-index: 1000;
         gap: 6px;
         transition: width .25s ease;
     }
-    .sidebar:hover { width: 190px; }
+    {% if not is_candidate %}
+    .sidebar:hover { width: 190px; align-items: flex-start; padding: 18px 20px; }
+    {% endif %}
 
     .sidebar-logo {
         width: 38px; height: 38px;
@@ -27,12 +30,14 @@
     }
 
     .sidebar-divider {
-        width: 40px; height: 1px;
+        width: {{ is_candidate ? '100%' : '40px' }}; height: 1px;
         background: #1a2f45;
         margin: 8px 0;
         transition: width .25s;
     }
-    .sidebar:hover .sidebar-divider { width: 150px; }
+    {% if not is_candidate %}
+    .sidebar:hover .sidebar-divider { width: 100%; }
+    {% endif %}
 
     .nav-item {
         width: 100%;
@@ -58,19 +63,25 @@
         flex-shrink: 0;
         width: 26px;
         text-align: center;
+        margin-right: {{ is_candidate ? '10px' : '0' }};
     }
+    {% if not is_candidate %}
+    .sidebar:hover .nav-icon { margin-right: 10px; }
+    {% endif %}
     .nav-label {
-        opacity: 0;
+        opacity: {{ is_candidate ? '1' : '0' }};
         transition: opacity .2s .05s;
         font-size: 0.82rem;
     }
+    {% if not is_candidate %}
     .sidebar:hover .nav-label { opacity: 1; }
+    {% endif %}
 
     /* tooltip quand sidebar fermée */
     .nav-item[data-tip]:not(:hover)::after { display: none; }
 
     /* Push main content */
-    body { margin-left: 70px !important; }
+    body { margin-left: {{ is_candidate ? '220px' : '70px' }} !important; }
 </style>
 
 <nav class="sidebar">
@@ -91,8 +102,8 @@
     <div class="sidebar-divider"></div>
 
     <!-- Recruitment Module Admin Routes -->
-    <a href="{{ path('app_dashboard') }}"
-       class="nav-item {{ app.request.attributes.get('_route') == 'app_dashboard' ? 'active' : '' }}">
+    <a href="{{ path('app_recrutement_dashboard') }}"
+       class="nav-item {{ app.request.attributes.get('_route') == 'app_recrutement_dashboard' ? 'active' : '' }}">
         <span class="nav-icon">🤝</span>
         <span class="nav-label">Recrutement</span>
     </a>
@@ -136,6 +147,7 @@
         <span class="nav-label">Agenda</span>
     </a>
 
+    {% if is_granted('ROLE_ADMIN') %}
     <a href="{{ path('review_index') }}"
        class="nav-item {{ app.request.attributes.get('_route') starts with 'review' ? 'active' : '' }}">
         <span class="nav-icon">★</span>
@@ -181,6 +193,7 @@
         <span class="nav-icon">➕</span>
         <span class="nav-label">Nouvelle planif.</span>
     </a>
+    {% endif %}
 
     <a href="{{ path('app_logout') }}"
        class="nav-item">

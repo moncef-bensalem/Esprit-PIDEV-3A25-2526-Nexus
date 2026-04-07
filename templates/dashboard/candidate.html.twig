@@ -87,11 +87,13 @@
 
         <div class="row g-4 mb-5">
             <div class="col-md-6">
-                <div class="stats-card cyan shadow-sm">
-                    <span class="stats-icon">📄</span>
-                    <div class="stats-label">Mes Candidatures</div>
-                    <div class="stats-number">{{ myApplications }}</div>
-                </div>
+                <a href="{{ path('app_public_suivi', {'email': app.user.userIdentifier}) }}" style="text-decoration:none; color:inherit;">
+                    <div class="stats-card cyan shadow-sm">
+                        <span class="stats-icon">📄</span>
+                        <div class="stats-label">Mes Candidatures</div>
+                        <div class="stats-number">{{ myApplications }}</div>
+                    </div>
+                </a>
             </div>
             <div class="col-md-6">
                 <div class="stats-card purple shadow-sm">
@@ -107,7 +109,7 @@
                 <div class="quick-actions-card shadow">
                     <h5 class="mb-4 text-white fw-semibold border-bottom border-secondary pb-3">Actions Rapides</h5>
                     <div class="d-flex gap-3 flex-wrap mt-3">
-                        <a href="#" class="btn btn-glass px-4 py-4 rounded-4 d-flex flex-column align-items-center justify-content-center gap-2">
+                        <a href="{{ path('app_public_offres') }}" class="btn btn-glass px-4 py-4 rounded-4 d-flex flex-column align-items-center justify-content-center gap-2">
                             <span style="font-size: 1.5rem;">💼</span>
                             <span class="fw-medium">Explorer les Offres</span>
                         </a>

@@ -17,36 +17,39 @@
         </div>
     </div>
 
-    <div class="stat-card" style="text-align: left; max-width: 600px; margin: 0 auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
-            <tbody>
-            <tr>
-                <th>Id offre</th>
-                <td>{{ offre_emploi.id_offre }}</td>
-            </tr>
-            <tr>
-                <th>Titre poste</th>
-                <td>{{ offre_emploi.titre_poste }}</td>
-            </tr>
-            <tr>
-                <th>Departement</th>
-                <td>{{ offre_emploi.departement }}</td>
-            </tr>
-            <tr>
-                <th>Statut offre</th>
-                <td>{{ offre_emploi.statut_offre }}</td>
-            </tr>
-            <tr>
-                <th>Salaire propose</th>
-                <td>{{ offre_emploi.salaire_propose }}</td>
-            </tr>
-            <tr>
-                <th>Date creation</th>
-                <td>{{ offre_emploi.date_creation ? offre_emploi.date_creation|date('Y-m-d') : '' }}</td>
-            </tr>
-
-            </tbody>
-        </table>
+    <div class="detail-card" style="margin: 0 auto;">
+        <div class="detail-row">
+            <div class="detail-label">ID Offre</div>
+            <div class="detail-value text-muted">#{{ offre_emploi.id_offre }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Titre du poste</div>
+            <div class="detail-value" style="font-size: 1.2rem; font-weight: 700; color: var(--neon-blue);">{{ offre_emploi.titre_poste }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Département</div>
+            <div class="detail-value">{{ offre_emploi.departement }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Statut</div>
+            <div class="detail-value">
+                <span class="badge {% if offre_emploi.statut_offre == 'Publiée' %}theme-blue{% else %}theme-purple{% endif %}">
+                    {{ offre_emploi.statut_offre }}
+                </span>
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Salaire Proposé</div>
+            <div class="detail-value">{{ offre_emploi.salaire_propose|number_format(0, '.', ' ') }} {{ offre_emploi.devise }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Date de Création</div>
+            <div class="detail-value"><i class="fas fa-calendar-alt text-muted"></i> {{ offre_emploi.date_creation ? offre_emploi.date_creation|date('d/m/Y') : '' }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Description Rapide</div>
+            <div class="detail-value" style="white-space: pre-wrap; font-size: 0.9rem; margin-top: 0.5rem; line-height: 1.5;">{{ offre_emploi.description }}</div>
+        </div>
     </div>
 </div>
 {% endblock %}

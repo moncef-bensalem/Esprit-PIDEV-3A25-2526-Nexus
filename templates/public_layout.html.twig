@@ -11,14 +11,13 @@
 </head>
 <body>
     <div class="public-wrapper">
-        <header class="public-navbar">
-            <div class="sidebar-logo" style="margin:0;">
-                <i class="fas fa-cubes" style="color: var(--neon-blue);"></i> Nexus Carrières
+        <header class="public-navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--border-color);">
+            <div class="sidebar-logo" style="margin:0; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">
+                <i class="fas fa-cubes" style="color: var(--neon-blue); margin-right: 0.5rem;"></i> Nexus Carrières
             </div>
-            <div class="public-nav-links">
-                <a href="{{ path('app_public_offres') }}" class="{% if 'offres' in app.request.get('_route') %}active{% endif %}" style="font-weight:600;">Nos Offres</a>
-                <a href="{{ path('app_public_suivi') }}" class="{% if 'suivi' in app.request.get('_route') %}active{% endif %}" style="font-weight:600;">Suivi Candidature</a>
-                <a href="{{ path('app_dashboard') }}" class="btn" style="font-size: 0.85rem;"><i class="fas fa-lock"></i> RH Login</a>
+            <div class="public-nav-links" style="display: flex; gap: 2rem;">
+                <a href="{{ path('app_public_offres') }}" class="{% if 'offres' in app.request.get('_route') %}active{% endif %}" style="font-weight:600; text-decoration:none; color: var(--text-main); font-size: 1.1rem;">Nos Offres</a>
+                <a href="{{ path('app_public_suivi') }}" class="{% if 'suivi' in app.request.get('_route') %}active{% endif %}" style="font-weight:600; text-decoration:none; color: var(--text-main); font-size: 1.1rem;">Suivi Candidature</a>
             </div>
         </header>
 

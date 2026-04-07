@@ -16,56 +16,63 @@
         <div class="badge badge-success" style="margin-bottom: 2rem; display:inline-block;">{{ message }}</div>
     {% endfor %}
 
-    <div class="stat-card" style="max-width: 600px; margin: 0 auto 3rem auto; padding: 3rem;">
-        <h3 style="margin-bottom: 2rem; text-align:center; font-size:1.4rem;">Entrez votre email pour voir l'état d'avancement</h3>
+    <div class="form-container" style="max-width: 600px; margin: 0 auto 4rem auto; padding: 3rem; text-align: center;">
+        <div class="avatar-circle theme-blue" style="width: 70px; height: 70px; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">
+            <i class="fas fa-search-location"></i>
+        </div>
+        <h2 style="margin-bottom: 2rem; font-size:1.6rem; color: var(--text-main);">Suivez l'état de votre candidature</h2>
         <form method="POST" action="{{ path('app_public_suivi') }}" style="display:flex; flex-direction:column; gap: 1rem;">
-            <input type="email" name="email" value="{{ searchedEmail }}" placeholder="Votre adresse email" required style="padding: 1.2rem; border-radius: 0.8rem; font-size: 1rem;">
-            <button type="submit" class="btn btn-primary" style="justify-content:center; padding: 1.2rem; font-size:1rem;"><i class="fas fa-search"></i> Vérifier mon statut</button>
+            <input type="email" name="email" value="{{ searchedEmail }}" placeholder="Saisissez votre adresse email" required style="padding: 1.2rem; border-radius: 8px; font-size: 1rem; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-main); text-align: center;">
+            <button type="submit" class="btn btn-primary" style="justify-content:center; padding: 1.2rem; font-size:1.1rem; border-radius: 8px;">
+                <i class="fas fa-search"></i> Vérifier mon statut
+            </button>
         </form>
     </div>
 
     {% if candidat %}
         <div class="stat-card">
             <h2 style="margin-bottom: 2rem; color: var(--neon-blue);">Candidatures de {{ candidat.nom_complet }}</h2>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Offre d'Emploi</th>
-                        <th>Département</th>
-                        <th>Date Postulation</th>
-                        <th>Pipeline d'Avancement</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for cand in candidatures %}
-                    <tr>
-                        <td style="font-weight: 700; color:var(--text-main);">{{ cand.offreEmploi.titre_poste }}</td>
-                        <td>{{ cand.offreEmploi.departement }}</td>
-                        <td>{{ cand.date_postulation|date('d/m/Y') }}</td>
-                        <td>
-                            {# Visual Pipeline #}
-                            <div style="display:flex; align-items:center; gap:0.5rem;">
-                                {% if cand.etat_avancement == 'RECU' %}
-                                    <span class="badge badge-info"><i class="fas fa-inbox"></i> Reçu</span>
-                                    <span style="color:var(--text-muted);">→ En Attente</span>
-                                {% elseif cand.etat_avancement == 'EN_ENTRETIEN' %}
-                                    <span class="badge badge-info" style="opacity:0.5;">Reçu</span> → 
-                                    <span class="badge badge-warning"><i class="fas fa-comments"></i> En Entretien</span>
-                                {% elseif cand.etat_avancement == 'OFFRE_FAITE' %}
-                                    <span class="badge badge-success"><i class="fas fa-check-circle"></i> Offre Faite!</span>
-                                {% else %}
-                                    <span class="badge badge-danger"><i class="fas fa-times-circle"></i> Rejeté</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="4" style="text-align:center; padding: 2rem;">Aucune candidature trouvée.</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+            <div style="overflow-x: auto;">
+                <table class="table table-dark table-hover mb-0" style="background: transparent;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th>Offre d'Emploi</th>
+                            <th>Département</th>
+                            <th>Date Postulation</th>
+                            <th>État d'Avancement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for cand in candidatures %}
+                        <tr style="vertical-align: middle;">
+                            <td style="font-weight: 700; color:var(--text-main);">{{ cand.offreEmploi.titre_poste }}</td>
+                            <td style="color:var(--text-muted);"><i class="fas fa-building" style="margin-right: 0.5rem;"></i>{{ cand.offreEmploi.departement }}</td>
+                            <td style="color:var(--text-muted);"><i class="fas fa-calendar-alt" style="margin-right: 0.5rem;"></i>{{ cand.date_postulation|date('d/m/Y') }}</td>
+                            <td>
+                                {# Visual Pipeline #}
+                                <div style="display:flex; align-items:center; gap:0.5rem; font-size: 0.9rem;">
+                                    {% if cand.etat_avancement == 'RECU' %}
+                                        <span class="badge theme-blue"><i class="fas fa-inbox"></i> Reçu</span>
+                                        <span style="color:var(--text-muted);"><i class="fas fa-arrow-right"></i> En Attente d'évaluation</span>
+                                    {% elseif cand.etat_avancement == 'EN_ENTRETIEN' %}
+                                        <span class="badge theme-blue" style="opacity:0.3;"><i class="fas fa-check"></i> Reçu</span> <i class="fas fa-arrow-right text-muted"></i> 
+                                        <span class="badge theme-purple"><i class="fas fa-comments"></i> En Entretien</span>
+                                    {% elseif cand.etat_avancement == 'OFFRE_FAITE' %}
+                                        <span class="badge" style="background: var(--success-color); color: white;"><i class="fas fa-check-circle"></i> Félicitations, Offre Faite !</span>
+                                    {% else %}
+                                        <span class="badge" style="background: var(--error-color); color: white;"><i class="fas fa-times-circle"></i> Rejeté</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align:center; padding: 3rem; color:var(--text-muted);">Aucune candidature trouvée à cette adresse email.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     {% endif %}
 </div>

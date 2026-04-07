@@ -17,20 +17,17 @@
         </div>
     </div>
 
-    <div class="stat-card" style="text-align: left; max-width: 600px; margin: 0 auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
-            <tbody>
-            <tr>
-                <th>Id departement</th>
-                <td>{{ departement.id_departement }}</td>
-            </tr>
-            <tr>
-                <th>Libelle</th>
-                <td>{{ departement.libelle }}</td>
-            </tr>
-
-            </tbody>
-        </table>
+    <div class="detail-card" style="margin: 0 auto; max-width: 600px;">
+        <div class="detail-row">
+            <div class="detail-label">ID Département</div>
+            <div class="detail-value text-muted">#{{ departement.id_departement }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Nom du Département</div>
+            <div class="detail-value" style="font-size: 1.2rem; font-weight: 700; color: var(--neon-blue);">
+                <i class="fas fa-building" style="margin-right: 0.5rem; opacity: 0.7;"></i>{{ departement.libelle }}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

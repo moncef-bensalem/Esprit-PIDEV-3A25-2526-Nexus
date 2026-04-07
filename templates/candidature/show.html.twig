@@ -17,32 +17,47 @@
         </div>
     </div>
 
-    <div class="stat-card" style="text-align: left; max-width: 600px; margin: 0 auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
-            <tbody>
-            <tr>
-                <th>Id candidature</th>
-                <td>{{ candidature.id_candidature }}</td>
-            </tr>
-            <tr>
-                <th>Etat avancement</th>
-                <td>{{ candidature.etat_avancement }}</td>
-            </tr>
-            <tr>
-                <th>Score matching</th>
-                <td>{{ candidature.score_matching }}</td>
-            </tr>
-            <tr>
-                <th>Date postulation</th>
-                <td>{{ candidature.date_postulation ? candidature.date_postulation|date('Y-m-d') : '' }}</td>
-            </tr>
-            <tr>
-                <th>Notes</th>
-                <td>{{ candidature.notes }}</td>
-            </tr>
-
-            </tbody>
-        </table>
+    <div class="detail-card" style="margin: 0 auto;">
+        <div class="detail-row">
+            <div class="detail-label">ID Candidature</div>
+            <div class="detail-value text-muted">#{{ candidature.id_candidature }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Candidat</div>
+            <div class="detail-value" style="font-size: 1.1rem; font-weight: 600;">{{ candidature.candidat.nomComplet|default('Non assigné') }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Offre Associée</div>
+            <div class="detail-value text-muted">{{ candidature.offreEmploi.titrePoste|default('Non assigné') }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">État d'Avancement</div>
+            <div class="detail-value">
+                {% if candidature.etat_avancement == 'RECU' %}
+                    <span class="badge theme-blue">Reçu</span>
+                {% elseif candidature.etat_avancement == 'EN_ENTRETIEN' %}
+                    <span class="badge theme-purple">En Entretien</span>
+                {% elseif candidature.etat_avancement == 'OFFRE_FAITE' %}
+                    <span class="badge" style="background: var(--success-color); color: #fff;">Offre Faite</span>
+                {% else %}
+                    <span class="badge" style="background: var(--error-color); color: #fff;">Rejeté</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Score de Matching</div>
+            <div class="detail-value" style="color: var(--neon-blue); font-weight: bold;">
+                {{ candidature.score_matching|default('N/A') }}{% if candidature.score_matching %}%{% endif %}
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Date de Postulation</div>
+            <div class="detail-value"><i class="fas fa-clock text-muted"></i> {{ candidature.date_postulation ? candidature.date_postulation|date('d/m/Y H:i') : '' }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Notes de l'Équipe</div>
+            <div class="detail-value" style="white-space: pre-wrap; font-size: 0.9rem; margin-top: 0.5rem; line-height: 1.5; background: rgba(0,0,0,0.1); padding: 1rem; border-radius: 8px;">{{ candidature.notes|default('Aucune note.') }}</div>
+        </div>
     </div>
 </div>
 {% endblock %}

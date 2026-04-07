@@ -3,21 +3,31 @@
 namespace App\Controller;
 
 use App\Repository\PlanificationRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Entity\Candidat;
+use App\Entity\Candidature;
 
 #[Route('/candidate/dashboard')]
 #[IsGranted('ROLE_CANDIDATE')]
 class CandidateDashboardController extends AbstractController
 {
     #[Route('', name: 'candidate_dashboard', methods: ['GET'])]
-    public function index(PlanificationRepository $planificationRepository): Response
+    public function index(PlanificationRepository $planificationRepository, EntityManagerInterface $em): Response
     {
-        // Candidate-domain relations are not wired yet in the current model,
-        // so this dashboard exposes safe placeholders until module links are added.
+        $user = $this->getUser();
         $myApplications = 0;
+
+        if ($user) {
+            $candidat = $em->getRepository(Candidat::class)->findOneBy(['email_contact' => $user->getUserIdentifier()]);
+            if ($candidat) {
+                $myApplications = $em->getRepository(Candidature::class)->count(['candidat' => $candidat]);
+            }
+        }
+
         $myInterviews = count($planificationRepository->findAll());
 
         return $this->render('dashboard/candidate.html.twig', [

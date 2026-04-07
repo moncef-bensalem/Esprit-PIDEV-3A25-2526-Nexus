@@ -64,6 +64,28 @@ class Planification
         return $this;
     }
 
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
+        return $this;
+    }
+
+    public function getCandidature(): ?Candidature
+    {
+        return $this->candidature;
+    }
+
+    public function setCandidature(?Candidature $candidature): static
+    {
+        $this->candidature = $candidature;
+        return $this;
+    }
+
     public function getTypeEvent(): string
     {
         return $this->typeEvent;
@@ -163,7 +185,7 @@ class Planification
         return $this;
     }
 
-    #[ORM\OneToMany(mappedBy: "planification_id", targetEntity: Review::class, cascade: ["persist", "remove"])]
+    #[ORM\OneToMany(mappedBy: "planification", targetEntity: Review::class, cascade: ["persist", "remove"])]
     private Collection $reviews;
 
     public function getReviews(): Collection
@@ -175,7 +197,7 @@ class Planification
     {
         if (!$this->reviews->contains($review)) {
             $this->reviews->add($review);
-            $review->setPlanification_id($this);
+            $review->setPlanification($this);
         }
         return $this;
     }
@@ -183,8 +205,9 @@ class Planification
     public function removeReview(Review $review): static
     {
         if ($this->reviews->removeElement($review)) {
-            if ($review->setPlanification_id() === $this) {
-                $review->setPlanification_id(null);
+            // set the owning side to null (unless already changed)
+            if ($review->getPlanification() === $this) {
+                $review->setPlanification(null);
             }
         }
         return $this;

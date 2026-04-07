@@ -14,9 +14,23 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Doctrine\ORM\Tools\SchemaTool;
 
 class PublicFrontendController extends AbstractController
 {
+    #[Route('/force-db', name: 'force_db')]
+    public function updateDb(EntityManagerInterface $em): Response
+    {
+        try {
+            $tool = new SchemaTool($em);
+            $classes = $em->getMetadataFactory()->getAllMetadata();
+            $tool->updateSchema($classes, true);
+            return new Response('Base de donnees mise a jour avec succes ! <br><a href="/jobs">Aller au site</a>');
+        } catch (\Exception $e) {
+            return new Response('Erreur: ' . $e->getMessage());
+        }
+    }
+
     #[Route('/jobs', name: 'app_public_offres', methods: ['GET'])]
     public function offres(EntityManagerInterface $em): Response
     {
