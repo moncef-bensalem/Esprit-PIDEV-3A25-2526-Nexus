@@ -84,6 +84,7 @@ class GenerateEntitiesCommand extends Command
     private function toClassName(string $tableName): string
     {
         return str_replace('', '', ucwords($tableName, ''));
+        return str_replace('_', '', ucwords($tableName, '_'));
     }
 
     // FIX: Convert snake_case to camelCase for property/method names
@@ -91,6 +92,7 @@ class GenerateEntitiesCommand extends Command
     private function toCamelCase(string $name): string
     {
         return lcfirst(str_replace('', '', ucwords($name, '')));
+        return lcfirst(str_replace('_', '', ucwords($name, '_')));
     }
 
     private function generateEntity(

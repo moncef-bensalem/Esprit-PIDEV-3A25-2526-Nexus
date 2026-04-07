@@ -1,0 +1,167 @@
+<style>
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0;
+        width: 70px;
+        height: 100vh;
+        background: #080f1a;
+        border-right: 1px solid #1a2f45;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 18px 0;
+        z-index: 1000;
+        gap: 6px;
+        transition: width .25s ease;
+    }
+    .sidebar:hover { width: 190px; }
+
+    .sidebar-logo {
+        width: 38px; height: 38px;
+        background: linear-gradient(135deg, #4fc3f7, #0288d1);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem; font-weight: 900; color: #fff;
+        flex-shrink: 0;
+        margin-bottom: 18px;
+    }
+
+    .sidebar-divider {
+        width: 40px; height: 1px;
+        background: #1a2f45;
+        margin: 8px 0;
+        transition: width .25s;
+    }
+    .sidebar:hover .sidebar-divider { width: 150px; }
+
+    .nav-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        color: #5a7a9a;
+        text-decoration: none;
+        border-radius: 0;
+        font-size: 0.83rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: background .15s, color .15s;
+        position: relative;
+    }
+    .nav-item:hover { background: #0f2337; color: #c8e8ff; }
+    .nav-item.active { background: #0f2337; color: #4fc3f7; border-left: 3px solid #4fc3f7; }
+
+    .nav-icon {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        width: 26px;
+        text-align: center;
+    }
+    .nav-label {
+        opacity: 0;
+        transition: opacity .2s .05s;
+        font-size: 0.82rem;
+    }
+    .sidebar:hover .nav-label { opacity: 1; }
+
+    /* tooltip quand sidebar fermée */
+    .nav-item[data-tip]:not(:hover)::after { display: none; }
+
+    /* Push main content */
+    body { margin-left: 70px !important; }
+</style>
+
+<nav class="sidebar">
+    <div class="sidebar-logo">P</div>
+
+
+    {% if is_granted('ROLE_ADMIN') %}
+    <a href="{{ path('admin_dashboard') }}"
+       class="nav-item {{ app.request.attributes.get('_route') == 'admin_dashboard' ? 'active' : '' }}">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Dashboard Admin</span>
+    </a>
+    <a href="{{ path('admin_user_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'admin_user_' ? 'active' : '' }}">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">Utilisateurs</span>
+    </a>
+    <div class="sidebar-divider"></div>
+    {% endif %}
+
+    {% if is_granted('ROLE_CANDIDATE') and not is_granted('ROLE_ADMIN') %}
+    <a href="{{ path('candidate_dashboard') }}"
+       class="nav-item {{ app.request.attributes.get('_route') == 'candidate_dashboard' ? 'active' : '' }}">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Accueil</span>
+    </a>
+    {% endif %}
+
+    {% if is_granted('ROLE_CANDIDATE') %}
+    <a href="{{ path('candidate_profile') }}"
+       class="nav-item {{ app.request.attributes.get('_route') == 'candidate_profile' ? 'active' : '' }}">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Mon Profil</span>
+    </a>
+    {% endif %}
+
+    <a href="{{ path('planification_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'planification' ? 'active' : '' }}">
+        <span class="nav-icon">📅</span>
+        <span class="nav-label">Agenda</span>
+    </a>
+
+    <a href="{{ path('review_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'review' ? 'active' : '' }}">
+        <span class="nav-icon">★</span>
+        <span class="nav-label">Avis</span>
+    </a>
+
+    <a href="{{ path('evaluation_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'evaluation' ? 'active' : '' }}">
+        <span class="nav-icon">🧾</span>
+        <span class="nav-label">Evaluations</span>
+    </a>
+
+    <div class="sidebar-divider"></div>
+
+    <a href="{{ path('app_talent_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'app_talent_' and not ('competence' in app.request.attributes.get('_route')) ? 'active' : '' }}">
+        <span class="nav-icon">🎯</span>
+        <span class="nav-label">Talents</span>
+    </a>
+
+    <a href="{{ path('app_talent_competence_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'app_talent_competence' ? 'active' : '' }}">
+        <span class="nav-icon">🏆</span>
+        <span class="nav-label">Compétences</span>
+    </a>
+
+    <a href="{{ path('app_talent_classements') }}"
+       class="nav-item {{ app.request.attributes.get('_route') == 'app_talent_classements' ? 'active' : '' }}">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Classements</span>
+    </a>
+
+    <a href="{{ path('app_talent_statistiques') }}"
+       class="nav-item {{ app.request.attributes.get('_route') == 'app_talent_statistiques' ? 'active' : '' }}">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Statistiques</span>
+    </a>
+
+    <div class="sidebar-divider"></div>
+
+    <a href="{{ path('planification_new') }}"
+       class="nav-item">
+        <span class="nav-icon">➕</span>
+        <span class="nav-label">Nouvelle planif.</span>
+    </a>
+
+    <a href="{{ path('app_logout') }}"
+       class="nav-item">
+        <span class="nav-icon">🚪</span>
+        <span class="nav-label">Déconnexion</span>
+    </a>
+</nav>

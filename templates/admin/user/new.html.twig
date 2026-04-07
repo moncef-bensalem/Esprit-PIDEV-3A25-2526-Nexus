@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau Utilisateur{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body { background-color: #0d1b2a; color: #fff; font-family: 'Segoe UI', sans-serif; }
+    main.container { max-width: 100%; padding-top: 0 !important; }
+    
+    .card-glass {
+        background: #15273b;
+        border-radius: 14px;
+        border: 1px solid #1a2f45;
+        color: #fff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .form-control {
+        background: #0d1b2a;
+        border: 1px solid #1a2f45;
+        color: #fff !important;
+        border-radius: 8px;
+        padding: 12px 15px;
+    }
+    .form-control:focus {
+        background: #0d1b2a;
+        border-color: #4fc3f7;
+        box-shadow: 0 0 0 0.25rem rgba(79, 195, 247, 0.25);
+    }
+    .form-label { color: #9ab; font-weight: 500; font-size: 0.9rem; margin-bottom: 8px; }
+    .btn-glass-primary {
+        background: linear-gradient(135deg, #4fc3f7, #0288d1);
+        border: none;
+        color: #fff;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-glass-primary:hover {
+        background: linear-gradient(135deg, #29b6f6, #0277bd);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4 px-4" style="margin-left: 70px; max-width: calc(100% - 70px);">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-light pb-3" style="border-color: rgba(255,255,255,0.1) !important;">
+            <div>
+                <h1 class="h3 mb-1 text-white fw-bold">Créer un Utilisateur</h1>
+                <p class="text-muted mb-0">Ajoutez manuellement un nouvel utilisateur système.</p>
+            </div>
+            <a href="{{ path('admin_user_index') }}" class="btn btn-outline-light rounded-pill px-4">Retour à la liste</a>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8 col-lg-6">
+                {% include 'admin/user/_form.html.twig' with {form: form, button_label: 'Ajouter l\'utilisateur'} %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

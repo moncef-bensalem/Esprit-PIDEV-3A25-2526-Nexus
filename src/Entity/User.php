@@ -2,38 +2,60 @@
 
 namespace App\Entity;
 
+use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: "user")]
-class User
+#[ORM\HasLifecycleCallbacks]
+#[UniqueEntity(fields: ['email'], message: 'Un compte avec cet email existe déjà.')]
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
     private int $id;
 
     #[ORM\Column(type: "string", length: 180)]
+    #[Assert\NotBlank(message: 'L\'email est obligatoire.')]
+    #[Assert\Email(message: 'Veuillez saisir un email valide.')]
     private string $email;
 
     #[ORM\Column(type: "json")]
-    private array $roles;
+    private array $roles = [];
 
     #[ORM\Column(type: "string", length: 255)]
-    private string $password;
+    private string $password = '';
 
     #[ORM\Column(type: "string", length: 255)]
-    private string $first_name;
+    #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
+    #[Assert\Length(
+        min: 2, max: 50,
+        minMessage: 'Le prénom doit contenir au moins {{ limit }} caractères.',
+        maxMessage: 'Le prénom ne doit pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(pattern: '/^[a-zA-ZÀ-ÿ\s\-]+$/', message: 'Le prénom ne doit contenir que des lettres.')]
+    private string $firstName = '';
 
     #[ORM\Column(type: "string", length: 255)]
-    private string $last_name;
+    #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
+    #[Assert\Length(
+        min: 2, max: 50,
+        minMessage: 'Le nom doit contenir au moins {{ limit }} caractères.',
+        maxMessage: 'Le nom ne doit pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(pattern: '/^[a-zA-ZÀ-ÿ\s\-]+$/', message: 'Le nom ne doit contenir que des lettres.')]
+    private string $lastName = '';
 
     #[ORM\Column(type: "boolean")]
-    private bool $is_active;
+    private bool $isActive = true;
 
     #[ORM\Column(type: "datetime", nullable: true)]
-    private ?\DateTimeInterface $created_at = null;
+    private ?\DateTimeInterface $createdAt = null;
 
     public function getId(): int
     {
@@ -57,14 +79,23 @@ class User
         return $this;
     }
 
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
+
     public function getRoles(): array
     {
-        return $this->roles;
+        $roles = $this->roles;
+        if ($roles === []) {
+            $roles[] = 'ROLE_CANDIDATE';
+        }
+        return array_values(array_unique($roles));
     }
 
     public function setRoles(array $value): static
     {
-        $this->roles = $value;
+        $this->roles = array_values(array_unique($value));
         return $this;
     }
 
@@ -79,47 +110,58 @@ class User
         return $this;
     }
 
-    public function getFirst_name(): string
+    public function eraseCredentials(): void
     {
-        return $this->first_name;
+    }
+    public function getFirstName(): string
+    {
+        return $this->firstName;
     }
 
-    public function setFirst_name(string $value): static
+    public function setFirstName(string $value): static
     {
-        $this->first_name = $value;
+        $this->firstName = $value;
         return $this;
     }
 
-    public function getLast_name(): string
+    public function getLastName(): string
     {
-        return $this->last_name;
+        return $this->lastName;
     }
 
-    public function setLast_name(string $value): static
+    public function setLastName(string $value): static
     {
-        $this->last_name = $value;
+        $this->lastName = $value;
         return $this;
     }
 
-    public function getIs_active(): bool
+    public function getIsActive(): bool
     {
-        return $this->is_active;
+        return $this->isActive;
     }
 
-    public function setIs_active(bool $value): static
+    public function setIsActive(bool $value): static
     {
-        $this->is_active = $value;
+        $this->isActive = $value;
         return $this;
     }
 
-    public function getCreated_at(): ?\DateTimeInterface
+    public function getCreatedAt(): ?\DateTimeInterface
     {
-        return $this->created_at;
+        return $this->createdAt;
     }
 
-    public function setCreated_at(?\DateTimeInterface $value): static
+    public function setCreatedAt(?\DateTimeInterface $value): static
     {
-        $this->created_at = $value;
+        $this->createdAt = $value;
         return $this;
+    }
+
+    #[ORM\PrePersist]
+    public function initializeTimestamps(): void
+    {
+        if ($this->createdAt === null) {
+            $this->createdAt = new \DateTime();
+        }
     }
 }

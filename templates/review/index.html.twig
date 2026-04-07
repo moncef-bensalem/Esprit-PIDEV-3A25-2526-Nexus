@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Planifications & Avis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ══════════════════════════════════════════════
+           DESIGN SYSTEM — TOKENS
+           ══════════════════════════════════════════════ */
+        :root {
+            --bg-deep:    #050b15;
+            --bg-surface: #0b1929;
+            --bg-card:    #0f2236;
+            --bg-card-hover: #132d47;
+            --border:     rgba(79,195,247,0.12);
+            --border-hover: rgba(79,195,247,0.35);
+            --accent:     #4fc3f7;
+            --accent-dim: rgba(79,195,247,0.10);
+            --green:      #10b981;
+            --green-dim:  rgba(16,185,129,0.12);
+            --red:        #f87171;
+            --red-dim:    rgba(248,113,113,0.10);
+            --orange:     #fbbf24;
+            --orange-dim: rgba(251,191,36,0.12);
+            --purple:     #a78bfa;
+            --purple-dim: rgba(167,139,250,0.12);
+            --text:       #dce8f4;
+            --text-dim:   #5e7d99;
+            --text-meta:  #7a9ab8;
+            --radius:     16px;
+            --radius-sm:  10px;
+            --shadow:     0 8px 32px rgba(0,0,0,0.35);
+            --shadow-lg:  0 20px 60px rgba(0,0,0,0.5);
+            --ease:       cubic-bezier(.4,0,.2,1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg-deep);
+            color: var(--text);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated ambient blobs ─────────────────── */
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::before {
+            width: 700px; height: 700px;
+            top: -200px; left: -100px;
+            background: radial-gradient(circle, rgba(79,195,247,0.08), transparent 70%);
+            animation: blobFloat 12s ease-in-out infinite alternate;
+        }
+        body::after {
+            width: 500px; height: 500px;
+            bottom: -150px; right: -100px;
+            background: radial-gradient(circle, rgba(167,139,250,0.07), transparent 70%);
+            animation: blobFloat 10s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes blobFloat {
+            from { transform: translate(0, 0) scale(1); }
+            to   { transform: translate(40px, 30px) scale(1.15); }
+        }
+
+        /* ── Canvas particles ──────────────────────── */
+        #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+        /* ── Wrapper ───────────────────────────────── */
+        .page-wrap { position: relative; z-index: 1; }
+
+        /* ══════════════════════════════════════════════
+           TOPBAR
+           ══════════════════════════════════════════════ */
+        .topbar {
+            background: rgba(11,25,41,0.85);
+            backdrop-filter: blur(24px) saturate(1.5);
+            border-bottom: 1px solid rgba(79,195,247,0.08);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            position: sticky; top: 0; z-index: 100;
+            animation: slideDown .5s var(--ease) both;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .topbar-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -.01em;
+        }
+        .topbar-title .amp {
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 900;
+        }
+        .topbar-icon {
+            display: inline-flex;
+            padding: 6px;
+            background: var(--accent-dim);
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+
+        /* Topbar buttons */
+        .btn-top {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all .25s var(--ease);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn-top:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+
+        .btn-refresh {
+            background: linear-gradient(135deg, #00bcd4, #0097a7);
+            color: #fff;
+        }
+        .btn-refresh:hover { background: linear-gradient(135deg, #26c6da, #00acc1); }
+
+        .btn-clear {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+            color: var(--text-meta);
+        }
+        .btn-clear:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .btn-stats {
+            margin-left: auto;
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+            color: #fff;
+        }
+        .btn-stats:hover { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; }
+
+        .filter-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.8rem;
+            color: var(--text-meta);
+            cursor: pointer;
+            padding: 5px 12px;
+            border-radius: 99px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            transition: all .25s var(--ease);
+        }
+        .filter-label:hover { border-color: var(--orange); color: var(--orange); }
+        .filter-label input[type=checkbox] { accent-color: var(--orange); width: 14px; height: 14px; }
+
+        /* ══════════════════════════════════════════════
+           CARDS GRID
+           ══════════════════════════════════════════════ */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+            gap: 22px;
+            padding: 28px;
+        }
+
+        /* ── Plan Card ─────────────────────────────── */
+        .plan-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            min-height: 290px;
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+
+            /* stagger entrance */
+            opacity: 0;
+            transform: translateY(30px) scale(0.97);
+            animation: cardIn .5s var(--ease) forwards;
+
+            transition:
+                border-color .3s var(--ease),
+                transform .3s var(--ease),
+                box-shadow .3s var(--ease),
+                background .3s var(--ease);
+        }
+        @keyframes cardIn {
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* floating glow on hover */
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 30%,
+                rgba(79,195,247,0.06) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity .4s var(--ease);
+            pointer-events: none;
+        }
+
+        .plan-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: var(--shadow-lg);
+            background: var(--bg-card-hover);
+        }
+        .plan-card:hover::before { opacity: 1; }
+
+        /* Shimmer line at top */
+        .plan-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg,
+                transparent,
+                var(--accent),
+                var(--purple),
+                transparent);
+            opacity: 0;
+            transition: opacity .3s var(--ease);
+        }
+        .plan-card:hover::after { opacity: 1; }
+
+        /* ── Card header ─────────────────────────────── */
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .plan-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #ecf4ff;
+            flex: 1;
+            line-height: 1.4;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .plan-title .title-dot {
+            display: inline-block;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin-top: 6px;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px var(--accent);
+            animation: dotPulse 2s ease infinite;
+        }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--accent); }
+            50%      { opacity: .5; box-shadow: 0 0 16px var(--accent); }
+        }
+
+        /* ── Badge statut ──────────────────────────── */
+        .badge-statut {
+            font-size: 0.68rem;
+            font-weight: 700;
+            border-radius: 99px;
+            padding: 4px 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+            transition: transform .25s var(--ease);
+        }
+        .badge-statut:hover { transform: scale(1.08); }
+        .badge-done      { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,.35); }
+        .badge-prevu     { background: rgba(59,130,246,.12); color: #60a5fa; border: 1px solid rgba(59,130,246,.35); }
+        .badge-cancelled { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,.35); }
+        .badge-followup  { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(251,191,36,.35); }
+        .badge-none      { background: rgba(100,116,139,.12); color: #94a3b8; border: 1px solid rgba(100,116,139,.35); }
+
+        /* ── Card meta ─────────────────────────────── */
+        .card-meta {
+            margin-top: 14px;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: var(--text-meta);
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+        .meta-row .meta-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.04);
+            font-size: 0.72rem;
+            flex-shrink: 0;
+        }
+        .meta-row a {
+            color: var(--accent);
+            text-decoration: none;
+            word-break: break-all;
+            transition: color .2s;
+        }
+        .meta-row a:hover { color: #7dd6fc; text-decoration: underline; }
+        .card-meta .meta-desc {
+            font-size: 0.76rem;
+            color: #6e8ea8;
+            margin-top: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.45;
+            padding-left: 30px;
+        }
+
+        /* ── Stars ─────────────────────────────────── */
+        .stars {
+            display: flex;
+            gap: 4px;
+            margin-top: 12px;
+            position: relative;
+            z-index: 1;
+        }
+        .star {
+            font-size: 1.15rem;
+            cursor: default;
+            color: #1e3d58;
+            transition: transform .2s var(--ease), color .3s;
+        }
+        .star.filled {
+            color: var(--orange);
+            text-shadow: 0 0 10px rgba(251,191,36,0.4);
+        }
+        .plan-card:hover .star.filled {
+            animation: starBounce .4s var(--ease);
+        }
+        @keyframes starBounce {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.3) rotate(-8deg); }
+            70%  { transform: scale(0.9) rotate(4deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+        /* stagger star animation */
+        .plan-card:hover .star.filled:nth-child(1) { animation-delay: 0s; }
+        .plan-card:hover .star.filled:nth-child(2) { animation-delay: .05s; }
+        .plan-card:hover .star.filled:nth-child(3) { animation-delay: .1s; }
+        .plan-card:hover .star.filled:nth-child(4) { animation-delay: .15s; }
+        .plan-card:hover .star.filled:nth-child(5) { animation-delay: .2s; }
+
+        /* ── Card Actions ──────────────────────────── */
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 14px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        .card-actions > *,
+        .card-actions form { margin: 0; }
+
+        .btn-act {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.74rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all .25s var(--ease);
+            border: 1px solid;
+        }
+        .btn-act:hover { transform: translateY(-2px); }
+
+        .btn-modify {
+            background: rgba(96,165,250,0.08);
+            color: #60a5fa;
+            border-color: rgba(96,165,250,0.25);
+        }
+        .btn-modify:hover {
+            background: rgba(96,165,250,0.18);
+            color: #93c5fd;
+            box-shadow: 0 4px 16px rgba(96,165,250,0.2);
+        }
+
+        .btn-delete {
+            background: var(--red-dim);
+            color: var(--red);
+            border-color: rgba(248,113,113,0.25);
+        }
+        .btn-delete:hover {
+            background: rgba(248,113,113,0.2);
+            box-shadow: 0 4px 16px rgba(248,113,113,0.2);
+        }
+
+        .btn-review {
+            background: var(--green-dim);
+            color: var(--green);
+            border-color: rgba(16,185,129,0.25);
+        }
+        .btn-review:hover {
+            background: rgba(16,185,129,0.2);
+            color: #6ee7b7;
+            box-shadow: 0 4px 16px rgba(16,185,129,0.2);
+        }
+
+        /* ══════════════════════════════════════════════
+           FLASH & EMPTY
+           ══════════════════════════════════════════════ */
+        .flash-bar {
+            padding: 12px 28px 0;
+            animation: slideDown .4s var(--ease) both;
+        }
+        .flash-bar .alert {
+            border-radius: var(--radius-sm);
+            backdrop-filter: blur(12px);
+            border: 1px solid;
+            font-size: 0.87rem;
+        }
+        .flash-bar .alert-success {
+            background: rgba(16,185,129,0.1);
+            border-color: rgba(16,185,129,0.3);
+            color: var(--green);
+        }
+        .flash-bar .alert-danger {
+            background: rgba(248,113,113,0.1);
+            border-color: rgba(248,113,113,0.3);
+            color: var(--red);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 80px 20px;
+            font-size: 1rem;
+            animation: fadeIn .6s var(--ease) both;
+        }
+        .empty-state::before {
+            content: '📭';
+            display: block;
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: .5;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ══════════════════════════════════════════════
+           SCROLLBAR & RESPONSIVE
+           ══════════════════════════════════════════════ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+        @media (max-width: 640px) {
+            .topbar { padding: 10px 16px; gap: 8px; }
+            .cards-grid { padding: 16px; gap: 14px; grid-template-columns: 1fr; }
+            .plan-card { min-height: auto; }
+        }
+    </style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+
+<div class="page-wrap">
+
+{# ── Topbar ── #}
+<div class="topbar">
+    <div class="topbar-title">
+        <span class="topbar-icon">📋</span>
+        Planifications <span class="amp">&</span> Avis
+    </div>
+
+    <button class="btn-top btn-refresh" onclick="location.reload()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M3.5 11.5a9 9 0 0 1 15.3-5.3L21.5 8"/><path d="M20.5 12.5a9 9 0 0 1-15.3 5.3L2.5 16"/></svg>
+        Rafraîchir
+    </button>
+
+    <label class="filter-label">
+        <input type="checkbox" id="filterLow" {% if filter_low %}checked{% endif %}>
+        Filtrer avis ≤ 2 ★
+    </label>
+
+    <button class="btn-top btn-clear" onclick="clearFilter()">Effacer filtre</button>
+
+    <a href="{{ path('review_stats') }}" class="btn-top btn-stats">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+        Statistiques
+    </a>
+</div>
+
+{# Flash messages #}
+<div class="flash-bar">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ type == 'success' ? 'success' : 'danger' }} alert-dismissible fade show py-2" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+
+{# ── Cards Grid ── #}
+{% if planifications is empty %}
+    <div class="empty-state">Aucune planification trouvée.</div>
+{% else %}
+<div class="cards-grid" id="cardsGrid">
+    {% for p in planifications %}
+        {% set review = p.reviews|first %}
+        {% set rating = review ? review.rating : 0 %}
+
+        <div class="plan-card" data-rating="{{ rating }}" style="animation-delay: {{ loop.index0 * 0.06 }}s">
+
+            {# Header: titre + badge statut #}
+            <div class="card-top">
+                <div class="plan-title">
+                    <span class="title-dot"></span>
+                    {{ p.typeEvent|capitalize }}{% if p.description %} — {{ p.description|slice(0,30) }}{% if p.description|length > 30 %}…{% endif %}{% endif %}
+                </div>
+                {% if review and review.statut %}
+                    {% set s = review.statut %}
+                    <span class="badge-statut {{ s == 'DONE' ? 'badge-done' : (s == 'CANCELLED' ? 'badge-cancelled' : (s == 'NEEDS_FOLLOWUP' ? 'badge-followup' : 'badge-none')) }}">
+                        {{ s == 'DONE' ? 'Terminé' : (s == 'CANCELLED' ? 'Annulé' : 'Suivi nécéssaire') }}
+                    </span>
+                {% elseif p.statut %}
+                    <span class="badge-statut {{ p.statut == 'confirmé' ? 'badge-done' : (p.statut == 'annulé' ? 'badge-cancelled' : 'badge-prevu') }}">
+                        {{ p.statut|capitalize }}
+                    </span>
+                {% else %}
+                    <span class="badge-statut badge-prevu">Prévu</span>
+                {% endif %}
+            </div>
+
+            {# Méta-données #}
+            <div class="card-meta">
+                <div class="meta-row">
+                    <span class="meta-icon">📅</span>
+                    Date : {{ p.date ? p.date|date('Y-m-d') : '—' }}
+                    &nbsp;&nbsp;
+                    <span class="meta-icon">🕐</span>
+                    {{ p.heureDebut ? p.heureDebut|date('H:i:s') : '--:--' }} → {{ p.heureFin ? p.heureFin|date('H:i:s') : '--:--' }}
+                </div>
+                {% if p.mode %}
+                <div class="meta-row">
+                    <span class="meta-icon">🔑</span>
+                    Mode : {{ p.mode }}
+                </div>
+                {% endif %}
+                {% if p.description %}
+                <div class="meta-desc">📝 {{ p.description }}</div>
+                {% endif %}
+                {% if p.lienMeeting %}
+                <div class="meta-row">
+                    <span class="meta-icon">🔗</span>
+                    <a href="{{ p.lienMeeting }}" target="_blank">{{ p.lienMeeting }}</a>
+                </div>
+                {% endif %}
+            </div>
+
+            {# Étoiles #}
+            <div class="stars">
+                {% for i in 1..5 %}
+                    <span class="star {{ i <= rating ? 'filled' : '' }}">★</span>
+                {% endfor %}
+            </div>
+
+            {# Actions #}
+            <div class="card-actions">
+                <a href="{{ path('planification_edit', {id: p.idEvent}) }}" class="btn-act btn-modify">✏ Modifier</a>
+
+                <form method="post" action="{{ path('planification_delete', {id: p.idEvent}) }}"
+                      onsubmit="return confirm('Supprimer cette planification ?')" style="margin:0">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ p.idEvent) }}">
+                    <button type="submit" class="btn-act btn-delete">🗑 Supprimer</button>
+                </form>
+
+                {% if review %}
+                    <a href="{{ path('review_edit', {id: review.id}) }}" class="btn-act btn-review">★ Modifier avis</a>
+                {% else %}
+                    <a href="{{ path('review_new', {id: p.idEvent}) }}" class="btn-act btn-review">★ Ajouter un avis</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════
+   PARTICLES BACKGROUND
+   ═══════════════════════════════════════════════ */
+(function () {
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let W, H, pts = [];
+
+    function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+    resize();
+    addEventListener('resize', resize);
+
+    const COLORS = ['rgba(79,195,247,','rgba(167,139,250,','rgba(16,185,129,','rgba(251,191,36,'];
+    function rand(a, b) { return Math.random() * (b - a) + a; }
+
+    for (let i = 0; i < 60; i++) pts.push({
+        x: rand(0, W), y: rand(0, H),
+        r: rand(.4, 1.8),
+        vx: rand(-.15, .15), vy: rand(-.2, -.03),
+        a: rand(.08, .4),
+        c: COLORS[~~(Math.random() * 4)],
+        d: 1
+    });
+
+    (function loop() {
+        ctx.clearRect(0, 0, W, H);
+        pts.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy;
+            p.a += .002 * p.d;
+            if (p.a > .45 || p.a < .05) p.d *= -1;
+            if (p.y < -5) { p.y = H + 5; p.x = rand(0, W); }
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, 6.283);
+            ctx.fillStyle = p.c + p.a + ')';
+            ctx.fill();
+        });
+        requestAnimationFrame(loop);
+    })();
+})();
+
+/* ═══════════════════════════════════════════════
+   FILTER LOGIC
+   ═══════════════════════════════════════════════ */
+const filterCheckbox = document.getElementById('filterLow');
+const cards = document.querySelectorAll('.plan-card');
+
+function applyFilter() {
+    const low = filterCheckbox.checked;
+    cards.forEach(card => {
+        const rating = parseInt(card.dataset.rating || '0');
+        if (!low || rating <= 2) {
+            card.style.display = '';
+            card.style.animation = 'cardIn .4s var(--ease) forwards';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function clearFilter() {
+    filterCheckbox.checked = false;
+    applyFilter();
+}
+
+filterCheckbox.addEventListener('change', applyFilter);
+applyFilter();
+
+/* ═══════════════════════════════════════════════
+   TILT ON MOUSE MOVE (subtle 3D effect)
+   ═══════════════════════════════════════════════ */
+cards.forEach(card => {
+    card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width  - .5;
+        const y = (e.clientY - rect.top)  / rect.height - .5;
+        card.style.transform = `translateY(-6px) scale(1.01) perspective(600px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`;
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+    });
+});
+</script>
+</body>
+</html>

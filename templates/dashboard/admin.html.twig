@@ -1,0 +1,203 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body { background-color: #0d1b2a; color: #fff; font-family: 'Segoe UI', sans-serif; }
+    
+    /* Retire la limitation de largeur du main container (déclaré dans base.html.twig) */
+    main.container { max-width: 100%; padding-top: 0 !important; }
+
+    .dashboard-header {
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 1rem;
+    }
+
+    .stats-card {
+        border-radius: 14px;
+        padding: 24px;
+        min-width: 160px;
+        border: 2px solid transparent;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+    .stats-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); cursor: pointer; }
+
+    .stats-card::after {
+        content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        opacity: 0; transition: opacity 0.3s;
+    }
+    .stats-card:hover::after { opacity: 1; }
+
+    .stats-card.blue  { border-color: #4fc3f7; background: rgba(79,195,247,0.08); }
+    .stats-card.green { border-color: #4caf50; background: rgba(76,175,80,0.08); }
+    .stats-card.orange{ border-color: #ffa726; background: rgba(255,167,38,0.08); }
+
+    .stats-icon {
+        font-size: 3rem;
+        position: absolute;
+        right: -10px;
+        bottom: -15px;
+        opacity: 0.15;
+        transition: transform 0.3s;
+    }
+    .stats-card:hover .stats-icon { transform: scale(1.1); }
+
+    .stats-number { font-size: 2.8rem; font-weight: 800; margin-top: 5px; line-height: 1; }
+    .stats-label  { font-size: 0.85rem; color: #9ab; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+    .quick-actions-card {
+        background: #15273b;
+        border-radius: 14px;
+        padding: 24px;
+        border: 1px solid #1a2f45;
+        height: 100%;
+    }
+
+    .btn-glass {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        backdrop-filter: blur(10px);
+        transition: all 0.2s;
+        text-decoration: none;
+        flex: 1;
+        min-width: 150px;
+    }
+    .btn-glass:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3); }
+
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4 px-4" style="margin-left: 70px; max-width: calc(100% - 70px);">
+        
+        <div class="dashboard-header d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-2 text-white fw-bold">Admin Dashboard</h1>
+                <p class="text-muted mb-0">Aperçu en temps réel de votre plateforme Nexus.</p>
+            </div>
+            <div>
+                <span class="badge bg-primary px-3 py-2 fs-6 rounded-pill shadow-sm">Administrateur</span>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="stats-card blue shadow-sm">
+                    <span class="stats-icon">👥</span>
+                    <div class="stats-label">Total Utilisateurs</div>
+                    <div class="stats-number">{{ totalUsers }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card green shadow-sm">
+                    <span class="stats-icon">👨‍🎓</span>
+                    <div class="stats-label">Total Candidats</div>
+                    <div class="stats-number">{{ totalCandidates }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card orange shadow-sm">
+                    <span class="stats-icon">📅</span>
+                    <div class="stats-label">Entretiens Planifiés</div>
+                    <div class="stats-number">{{ totalInterviews }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-7">
+                <div class="quick-actions-card shadow">
+                    <h5 class="mb-4 text-white fw-semibold border-bottom border-secondary pb-3">Actions Rapides</h5>
+                    <div class="d-flex gap-3 flex-wrap mt-3">
+                        <a href="{{ path('admin_user_index') }}" class="btn btn-glass px-4 py-4 rounded-4 d-flex flex-column align-items-center justify-content-center gap-2">
+                            <span style="font-size: 1.5rem;">⚙️</span>
+                            <span class="fw-medium">Gérer les Utilisateurs</span>
+                        </a>
+                        <a href="{{ path('planification_index') }}" class="btn btn-glass px-4 py-4 rounded-4 d-flex flex-column align-items-center justify-content-center gap-2">
+                            <span style="font-size: 1.5rem;">📆</span>
+                            <span class="fw-medium">Afficher l'Agenda</span>
+                        </a>
+                        <a href="{{ path('app_register') }}" class="btn btn-glass px-4 py-4 rounded-4 d-flex flex-column align-items-center justify-content-center gap-2">
+                            <span style="font-size: 1.5rem;">➕</span>
+                            <span class="fw-medium">Créer un Compte</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-5">
+                <div class="quick-actions-card shadow d-flex flex-column">
+                    <h5 class="mb-4 text-white fw-semibold border-bottom border-secondary pb-3">Répartition des Rôles</h5>
+                    <div class="flex-grow-1 d-flex justify-content-center align-items-center">
+                        <div style="height: 250px; width: 100%;">
+                            <canvas id="rolesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('rolesChart').getContext('2d');
+        
+        // Data passed from controller
+        const roleData = {{ roleDistribution|json_encode|raw }};
+        const labels = Object.keys(roleData);
+        const data = Object.values(roleData);
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        'rgba(79, 195, 247, 0.8)', // Bleu clair (Admin)
+                        'rgba(156, 39, 176, 0.8)'  // Violet (Candidat)
+                    ],
+                    borderColor: [
+                        '#4fc3f7',
+                        '#9c27b0'
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#fff',
+                            padding: 20,
+                            font: { family: "'Segoe UI', sans-serif", size: 13, weight: '500' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(21, 39, 59, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#4fc3f7',
+                        borderWidth: 1,
+                        padding: 12
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

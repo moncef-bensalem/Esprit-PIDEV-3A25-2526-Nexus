@@ -1,0 +1,143 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Statistiques - NEXUS{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <a href="{{ path('app_talent_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1><i class="fa-solid fa-chart-pie" style="color:var(--neon-purple);margin-right:.5rem;"></i>Statistiques</h1>
+        </div>
+        <div class="top-actions">
+            <a href="{{ path('app_talent_classements') }}" class="btn"><i class="fa-solid fa-chart-bar"></i> Classements</a>
+            <a href="{{ path('app_talent_new') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ajouter</a>
+        </div>
+    </div>
+
+    {# KPIs #}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Talents</h3>
+            <p>{{ total }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Départements</h3>
+            <p>{{ nb_depts }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Exp. Moyenne</h3>
+            <p>{{ avg_exp }}<small style="font-size:1rem;font-weight:400;color:var(--text-muted);"> ans</small></p>
+        </div>
+        <div class="stat-card">
+            <h3>Postes uniques</h3>
+            <p>{{ by_dept|length > 0 ? by_dept|keys|length : 0 }}</p>
+        </div>
+    </div>
+
+    <div class="stat-layout">
+
+        {# Répartition par département #}
+        <div class="stat-section">
+            <div class="rank-header">
+                <i class="fa-solid fa-building" style="color:var(--neon-blue);"></i>
+                <h2>Répartition par Département</h2>
+            </div>
+            {% set deptMax = by_dept|length > 0 ? by_dept|first : 1 %}
+            {% for dept, count in by_dept %}
+            <div class="stat-bar-row">
+                <span class="stat-bar-label">{{ dept }}</span>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill stat-bar-fill--blue" style="width:{{ deptMax > 0 ? (count / deptMax * 100)|round : 0 }}%">
+                        <span class="stat-bar-val">{{ count }}</span>
+                    </div>
+                </div>
+                <span class="stat-bar-pct">{{ total > 0 ? ((count / total) * 100)|round : 0 }}%</span>
+            </div>
+            {% else %}
+            <div class="rank-empty">Aucune donnée.</div>
+            {% endfor %}
+        </div>
+
+        {# Répartition par expérience #}
+        <div class="stat-section">
+            <div class="rank-header">
+                <i class="fa-solid fa-clock" style="color:var(--neon-purple);"></i>
+                <h2>Répartition par Expérience</h2>
+            </div>
+            {% set expMax = exp_buckets|first %}
+            {% set colors = ['blue', 'purple', 'pink', 'yellow'] %}
+            {% for label, count in exp_buckets %}
+            {% set color = colors[loop.index0 % 4] %}
+            <div class="stat-bar-row">
+                <span class="stat-bar-label">{{ label }}</span>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill stat-bar-fill--{{ color }}" style="width:{{ expMax > 0 ? (count / expMax * 100)|round : 0 }}%">
+                        <span class="stat-bar-val">{{ count }}</span>
+                    </div>
+                </div>
+                <span class="stat-bar-pct">{{ total > 0 ? ((count / total) * 100)|round : 0 }}%</span>
+            </div>
+            {% endfor %}
+
+            {# Donut chart visuel #}
+            <div class="donut-wrap">
+                <svg viewBox="0 0 200 200" class="donut-svg">
+                    {% set circumference = 502 %}
+                    {% set offset = 0 %}
+                    {% set donutColors = ['#3b82f6','#8b5cf6','#ec4899','#f59e0b'] %}
+                    {% for label, count in exp_buckets %}
+                        {% set pct = total > 0 ? (count / total) : 0 %}
+                        {% set dash = (pct * circumference)|round %}
+                        <circle
+                            class="donut-seg"
+                            cx="100" cy="100" r="80"
+                            fill="transparent"
+                            stroke="{{ donutColors[loop.index0 % 4] }}"
+                            stroke-width="28"
+                            stroke-dasharray="{{ dash }} {{ circumference - dash }}"
+                            stroke-dashoffset="{{ circumference - offset }}"
+                            style="transition: stroke-dashoffset 1s ease;"
+                        />
+                        {% set offset = offset + dash %}
+                    {% endfor %}
+                    <text x="100" y="95" text-anchor="middle" fill="white" font-size="28" font-weight="bold">{{ total }}</text>
+                    <text x="100" y="118" text-anchor="middle" fill="#94a3b8" font-size="13">talents</text>
+                </svg>
+                <div class="donut-legend">
+                    {% set donutColors = ['#3b82f6','#8b5cf6','#ec4899','#f59e0b'] %}
+                    {% for label, count in exp_buckets %}
+                    <span class="donut-legend-item">
+                        <span class="donut-dot" style="background:{{ donutColors[loop.index0 % 4] }};"></span>
+                        {{ label }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# Répartition par niveau d'études #}
+        <div class="stat-section">
+            <div class="rank-header">
+                <i class="fa-solid fa-graduation-cap" style="color:#f59e0b;"></i>
+                <h2>Niveau d'Études</h2>
+            </div>
+            {% set niveauMax = by_niveau|length > 0 ? by_niveau|first : 1 %}
+            {% for niveau, count in by_niveau %}
+            <div class="stat-bar-row">
+                <span class="stat-bar-label">{{ niveau }}</span>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill stat-bar-fill--yellow" style="width:{{ niveauMax > 0 ? (count / niveauMax * 100)|round : 0 }}%">
+                        <span class="stat-bar-val">{{ count }}</span>
+                    </div>
+                </div>
+                <span class="stat-bar-pct">{{ total > 0 ? ((count / total) * 100)|round : 0 }}%</span>
+            </div>
+            {% else %}
+            <div class="rank-empty">Aucun niveau renseigné.</div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}
