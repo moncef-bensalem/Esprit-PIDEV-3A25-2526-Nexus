@@ -1,6 +1,6 @@
 security:
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
-        password_hashers:
+    password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
     providers:

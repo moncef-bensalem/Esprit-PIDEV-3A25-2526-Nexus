@@ -35,6 +35,18 @@
             "./migrations/.gitignore"
         ]
     },
+    "lexik/jwt-authentication-bundle": {
+        "version": "2.18",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "2.5",
+            "ref": "e9481b233a11ef7e15fe055a2b21fd3ac1aa2bb7"
+        },
+        "files": [
+            "./config/packages/lexik_jwt_authentication.yaml"
+        ]
+    },
     "phpunit/phpunit": {
         "version": "11.5",
         "recipe": {
@@ -178,6 +190,15 @@
             "./config/packages/notifier.yaml"
         ]
     },
+    "symfony/phpunit-bridge": {
+        "version": "8.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "7.3",
+            "ref": "56f87409c45ff6654b0bf07c5cc359aebf6016ab"
+        }
+    },
     "symfony/routing": {
         "version": "6.4",
         "recipe": {
@@ -288,6 +309,18 @@
         },
         "files": [
             "./config/packages/messenger.yaml"
+        ]
+    },
+    "symfonycasts/reset-password-bundle": {
+        "version": "1.25",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "97c1627c0384534997ae1047b93be517ca16de43"
+        },
+        "files": [
+            "./config/packages/reset_password.yaml"
         ]
     },
     "twig/extra-bundle": {
