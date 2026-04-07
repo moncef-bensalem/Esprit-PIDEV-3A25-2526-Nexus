@@ -89,6 +89,29 @@
         <span class="nav-label">Utilisateurs</span>
     </a>
     <div class="sidebar-divider"></div>
+
+    <!-- Recruitment Module Admin Routes -->
+    <a href="{{ path('app_dashboard') }}"
+       class="nav-item {{ app.request.attributes.get('_route') == 'app_dashboard' ? 'active' : '' }}">
+        <span class="nav-icon">🤝</span>
+        <span class="nav-label">Recrutement</span>
+    </a>
+    <a href="{{ path('app_offre_emploi_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'app_offre_emploi_' ? 'active' : '' }}">
+        <span class="nav-icon">💼</span>
+        <span class="nav-label">Offres d'emploi</span>
+    </a>
+    <a href="{{ path('app_candidature_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'app_candidature_' ? 'active' : '' }}">
+        <span class="nav-icon">📥</span>
+        <span class="nav-label">Candidatures</span>
+    </a>
+    <a href="{{ path('app_departement_index') }}"
+       class="nav-item {{ app.request.attributes.get('_route') starts with 'app_departement_' ? 'active' : '' }}">
+        <span class="nav-icon">🏢</span>
+        <span class="nav-label">Départements</span>
+    </a>
+    <div class="sidebar-divider"></div>
     {% endif %}
 
     {% if is_granted('ROLE_CANDIDATE') and not is_granted('ROLE_ADMIN') %}
