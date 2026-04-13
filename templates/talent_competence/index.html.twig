@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}TalentCompetence index{% endblock %}
+
+{% block body %}
+    <h1>TalentCompetence index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Niveau_maitrise</th>
+                <th>Annees_pratique</th>
+                <th>Date_acquisition</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for talent_competence in talent_competences %}
+            <tr>
+                <td>{{ talent_competence.id }}</td>
+                <td>{{ talent_competence.niveauMaitrise }}</td>
+                <td>{{ talent_competence.anneesPratique }}</td>
+                <td>{{ talent_competence.dateAcquisition ? talent_competence.dateAcquisition|date('Y-m-d') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_talent_competence_show', {'id': talent_competence.id}) }}">show</a>
+                    <a href="{{ path('app_talent_competence_edit', {'id': talent_competence.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_talent_competence_new') }}">Create new</a>
+{% endblock %}

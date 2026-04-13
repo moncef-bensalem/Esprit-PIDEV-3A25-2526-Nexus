@@ -1,0 +1,227 @@
+    {% extends 'base.html.twig' %}
+
+{% block title %}Espace Candidat{% endblock %}
+{% block page_title %}Espace Candidat{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .page-lead { font-size: .85rem; color: rgba(255,255,255,.35); margin-top: 2px; }
+
+    /* ── Welcome banner ── */
+    .nx-welcome {
+        background: linear-gradient(135deg, rgba(32,178,170,.12) 0%, rgba(2,136,209,.08) 100%);
+        border: 1px solid rgba(32,178,170,.2);
+        border-radius: 18px;
+        padding: 26px 28px;
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 28px; gap: 16px;
+        position: relative; overflow: hidden;
+    }
+    .nx-welcome::before {
+        content: '';
+        position: absolute; top: -60%; right: -80px;
+        width: 300px; height: 300px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(32,178,170,.08) 0%, transparent 70%);
+    }
+    .nx-welcome-title { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .nx-welcome-sub   { font-size: .84rem; color: rgba(255,255,255,.45); }
+    .nx-welcome-badge {
+        background: rgba(32,178,170,.15); border: 1px solid rgba(32,178,170,.3);
+        border-radius: 20px; padding: 6px 16px;
+        font-size: .75rem; font-weight: 600; color: #20b2aa; letter-spacing: .5px;
+        white-space: nowrap; flex-shrink: 0;
+    }
+
+    /* ── Stat cards ── */
+    .nx-stat {
+        background: rgba(13,25,42,.7);
+        border: 1px solid rgba(32,178,170,.15);
+        border-radius: 18px; padding: 26px 24px;
+        position: relative; overflow: hidden;
+        transition: transform .25s, box-shadow .25s;
+        backdrop-filter: blur(8px);
+        text-decoration: none; display: block; color: inherit;
+    }
+    .nx-stat:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(0,0,0,.35);
+        color: inherit;
+    }
+    .nx-stat::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        border-radius: 18px 18px 0 0;
+    }
+    .nx-stat.cyan::before   { background: linear-gradient(90deg,#20b2aa,transparent); }
+    .nx-stat.purple::before { background: linear-gradient(90deg,#ab47bc,transparent); }
+
+    .nx-stat-icon {
+        width: 46px; height: 46px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem; margin-bottom: 16px;
+    }
+    .nx-stat.cyan   .nx-stat-icon { background: rgba(32,178,170,.15); color: #20b2aa; }
+    .nx-stat.purple .nx-stat-icon { background: rgba(171,71,188,.15); color: #ab47bc; }
+
+    .nx-stat-num   { font-size: 2.4rem; font-weight: 800; line-height: 1; color: #fff; }
+    .nx-stat-label { font-size: .78rem; font-weight: 500; text-transform: uppercase; letter-spacing: .8px; color: rgba(255,255,255,.4); margin-top: 4px; }
+    .nx-stat-bg-icon {
+        position: absolute; right: 16px; bottom: 12px; font-size: 3.5rem; opacity: .05;
+        transition: opacity .25s, transform .25s;
+    }
+    .nx-stat:hover .nx-stat-bg-icon { opacity: .08; transform: scale(1.08); }
+
+    /* ── Panel ── */
+    .nx-panel {
+        background: rgba(13,25,42,.7);
+        border: 1px solid rgba(32,178,170,.15);
+        border-radius: 18px; padding: 24px;
+        backdrop-filter: blur(8px); height: 100%;
+    }
+    .nx-panel-title {
+        font-size: .92rem; font-weight: 700; color: rgba(255,255,255,.85);
+        margin-bottom: 20px; padding-bottom: 14px;
+        border-bottom: 1px solid rgba(32,178,170,.12);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .nx-panel-title i { color: #20b2aa; font-size: .85rem; }
+
+    /* ── Action btn ── */
+    .nx-action-btn {
+        display: flex; flex-direction: column; align-items: center; gap: 10px;
+        padding: 20px 16px;
+        background: rgba(255,255,255,.03);
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 14px;
+        color: rgba(255,255,255,.65);
+        text-decoration: none;
+        font-size: .82rem; font-weight: 500;
+        transition: all .22s; flex: 1; min-width: 140px; text-align: center;
+    }
+    .nx-action-btn i { font-size: 1.3rem; color: rgba(32,178,170,.7); transition: color .2s; }
+    .nx-action-btn:hover {
+        background: rgba(32,178,170,.08); border-color: rgba(32,178,170,.25);
+        color: #fff; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.25);
+    }
+    .nx-action-btn:hover i { color: #20b2aa; }
+
+    /* ── Progress bar (profile completion) ── */
+    .nx-progress-bar-wrap {
+        background: rgba(255,255,255,.06); border-radius: 4px; height: 6px; overflow: hidden;
+    }
+    .nx-progress-fill {
+        height: 100%; border-radius: 4px;
+        background: linear-gradient(90deg, #20b2aa, #0288d1);
+        transition: width .8s ease;
+    }
+
+    /* ── Tip card ── */
+    .nx-tip {
+        background: rgba(32,178,170,.07); border: 1px solid rgba(32,178,170,.2);
+        border-radius: 12px; padding: 14px 16px;
+        display: flex; align-items: flex-start; gap: 10px;
+        font-size: .82rem; color: rgba(255,255,255,.55); line-height: 1.6;
+    }
+    .nx-tip i { color: #20b2aa; margin-top: 2px; flex-shrink: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# Welcome banner #}
+<div class="nx-welcome">
+    <div>
+        <div class="nx-welcome-title">
+            Bonjour,
+            {% if app.user.firstName is defined and app.user.firstName %}
+                {{ app.user.firstName }} {{ app.user.lastName ?? '' }}
+            {% else %}
+                {{ app.user.userIdentifier }}
+            {% endif %}
+            &nbsp;👋
+        </div>
+        <div class="nx-welcome-sub">Bienvenue sur votre espace candidat. Voici un aperçu de votre activité.</div>
+    </div>
+    <div class="nx-welcome-badge">Candidat</div>
+</div>
+
+{# Stats #}
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <a href="{{ path('candidate_mes_candidatures') }}" class="nx-stat cyan">
+            <div class="nx-stat-icon"><i class="fa fa-file-alt"></i></div>
+            <div class="nx-stat-num">{{ myApplications }}</div>
+            <div class="nx-stat-label">Mes Candidatures</div>
+            <div class="nx-stat-bg-icon"><i class="fa fa-file-alt"></i></div>
+        </a>
+    </div>
+    <div class="col-md-6">
+        <div class="nx-stat purple">
+            <div class="nx-stat-icon"><i class="fa fa-calendar-check"></i></div>
+            <div class="nx-stat-num">{{ myInterviews }}</div>
+            <div class="nx-stat-label">Mes Entretiens</div>
+            <div class="nx-stat-bg-icon"><i class="fa fa-calendar-check"></i></div>
+        </div>
+    </div>
+</div>
+
+{# Bottom row #}
+<div class="row g-3">
+
+    {# Quick actions #}
+    <div class="col-md-8">
+        <div class="nx-panel">
+            <div class="nx-panel-title">
+                <i class="fa fa-bolt"></i> Actions Rapides
+            </div>
+            <div class="d-flex gap-3 flex-wrap">
+                <a href="{{ path('app_public_offres') }}" class="nx-action-btn">
+                    <i class="fa fa-briefcase"></i>
+                    Explorer les Offres
+                </a>
+                <a href="{{ path('planification_index') }}" class="nx-action-btn">
+                    <i class="fa fa-calendar-alt"></i>
+                    Mon Planning
+                </a>
+                <a href="{{ path('candidate_profile') }}" class="nx-action-btn">
+                    <i class="fa fa-user-edit"></i>
+                    Mon Profil
+                </a>
+                <a href="{{ path('review_index') }}" class="nx-action-btn">
+                    <i class="fa fa-comment-dots"></i>
+                    Mes Avis
+                </a>
+                <a href="{{ path('app_face_registration') }}" class="nx-action-btn">
+                    <i class="fa fa-user-shield" style="color: #20b2aa;"></i>
+                    Face ID
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Tips & profile #}
+    <div class="col-md-4">
+        <div class="nx-panel">
+            <div class="nx-panel-title">
+                <i class="fa fa-lightbulb"></i> Conseils
+            </div>
+            <div class="d-flex flex-column gap-3">
+                <div class="nx-tip">
+                    <i class="fa fa-check-circle"></i>
+                    Complétez votre profil pour augmenter vos chances d'être sélectionné par les recruteurs.
+                </div>
+                <div class="nx-tip">
+                    <i class="fa fa-bell"></i>
+                    Consultez régulièrement les nouvelles offres d'emploi pour ne rien manquer.
+                </div>
+                <div class="nx-tip">
+                    <i class="fa fa-star"></i>
+                    Laissez un avis sur votre expérience pour aider la communauté.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

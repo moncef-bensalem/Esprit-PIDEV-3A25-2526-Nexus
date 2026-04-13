@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Talent{% endblock %}
+
+{% block body %}
+    <h1>Talent</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ talent.id }}</td>
+            </tr>
+            <tr>
+                <th>Nom</th>
+                <td>{{ talent.nom }}</td>
+            </tr>
+            <tr>
+                <th>Prenom</th>
+                <td>{{ talent.prenom }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{ talent.email }}</td>
+            </tr>
+            <tr>
+                <th>Telephone</th>
+                <td>{{ talent.telephone }}</td>
+            </tr>
+            <tr>
+                <th>Poste</th>
+                <td>{{ talent.poste }}</td>
+            </tr>
+            <tr>
+                <th>Departement</th>
+                <td>{{ talent.departement }}</td>
+            </tr>
+            <tr>
+                <th>Date_embauche</th>
+                <td>{{ talent.dateEmbauche ? talent.dateEmbauche|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Annees_experience</th>
+                <td>{{ talent.anneesExperience }}</td>
+            </tr>
+            <tr>
+                <th>Niveau_etudes</th>
+                <td>{{ talent.niveauEtudes }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_talent_index') }}">back to list</a>
+
+    <a href="{{ path('app_talent_edit', {'id': talent.id}) }}">edit</a>
+
+    {{ include('talent/_delete_form.html.twig') }}
+{% endblock %}

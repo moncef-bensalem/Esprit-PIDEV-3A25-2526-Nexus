@@ -1,0 +1,213 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau mot de passe — Nexus{% endblock %}
+
+{% block stylesheets %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #070e17;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .bg-scene { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+    .bg-scene::before {
+        content: ''; position: absolute; width: 700px; height: 700px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(32,178,170,.15) 0%, transparent 70%);
+        top: -200px; left: -200px;
+        animation: pulse1 9s ease-in-out infinite;
+    }
+    .bg-scene::after {
+        content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(2,100,180,.13) 0%, transparent 70%);
+        bottom: -150px; right: -100px;
+        animation: pulse2 11s ease-in-out infinite;
+    }
+    @keyframes pulse1 { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15) translate(30px,20px)} }
+    @keyframes pulse2 { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2) translate(-20px,-30px)} }
+
+    .grid-bg {
+        position: fixed; inset: 0; z-index: 0;
+        background-image:
+            linear-gradient(rgba(32,178,170,.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(32,178,170,.04) 1px, transparent 1px);
+        background-size: 50px 50px;
+    }
+    .particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .particle {
+        position: absolute; width: 3px; height: 3px; border-radius: 50%;
+        background: rgba(32,178,170,.6);
+        animation: float linear infinite;
+    }
+    @keyframes float {
+        0%  { transform:translateY(100vh); opacity:0; }
+        10% { opacity:1; }
+        90% { opacity:1; }
+        100%{ transform:translateY(-100px) translateX(60px); opacity:0; }
+    }
+
+    /* ── Card ── */
+    .reset-wrapper {
+        position: relative; z-index: 10;
+        width: 100%; max-width: 440px; padding: 20px;
+        animation: slideUp .6s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes slideUp { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+
+    .reset-card {
+        background: rgba(13,25,42,.85);
+        backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(32,178,170,.2); border-radius: 24px;
+        padding: 44px 40px 36px;
+        box-shadow: 0 0 0 1px rgba(32,178,170,.08), 0 25px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .logo-wrapper { text-align: center; margin-bottom: 24px; }
+    .logo-ring {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 88px; height: 88px; border-radius: 50%;
+        border: 1.5px solid rgba(32,178,170,.35);
+        box-shadow: 0 0 24px rgba(32,178,170,.18), inset 0 0 24px rgba(32,178,170,.06);
+        margin-bottom: 13px; animation: glow 3s ease-in-out infinite; overflow: hidden;
+    }
+    .logo-ring img { width: 70px; height: 70px; object-fit: contain; border-radius: 50%; }
+    @keyframes glow {
+        0%,100%{box-shadow:0 0 20px rgba(32,178,170,.2),inset 0 0 20px rgba(32,178,170,.05)}
+        50%{box-shadow:0 0 40px rgba(32,178,170,.35),inset 0 0 30px rgba(32,178,170,.1)}
+    }
+    .logo-title { font-size: 1.45rem; font-weight: 700; color: #fff; }
+    .logo-subtitle { font-size: .78rem; color: rgba(32,178,170,.75); margin-top: 3px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500; }
+
+    .page-heading { text-align: center; margin-bottom: 28px; }
+    .page-heading h1 { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .page-heading p { font-size: .84rem; color: rgba(255,255,255,.4); line-height: 1.6; }
+
+    /* ── Field ── */
+    .field-group { margin-bottom: 20px; }
+    .field-label {
+        display: block; font-size: .78rem; font-weight: 500;
+        color: rgba(32,178,170,.9); margin-bottom: 8px;
+        letter-spacing: .4px; text-transform: uppercase;
+    }
+    .field-input-wrap { position: relative; }
+    .field-icon {
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        color: rgba(32,178,170,.45); font-size: .95rem; pointer-events: none; transition: color .2s;
+    }
+    .field-input {
+        width: 100%; background: rgba(255,255,255,.04);
+        border: 1px solid rgba(32,178,170,.2); border-radius: 12px;
+        padding: 13px 14px 13px 42px; color: #fff; font-size: .95rem;
+        font-family: 'Inter', sans-serif; transition: all .25s; outline: none;
+    }
+    .field-input::placeholder { color: rgba(255,255,255,.22); }
+    .field-input:focus {
+        border-color: rgba(32,178,170,.6); background: rgba(32,178,170,.06);
+        box-shadow: 0 0 0 3px rgba(32,178,170,.1);
+    }
+    .field-input-wrap:focus-within .field-icon { color: rgba(32,178,170,.9); }
+
+    .invalid-msg {
+        display: block; margin-top: 6px; font-size: .78rem; color: #ff8a80; padding-left: 4px;
+    }
+
+    /* ── Submit ── */
+    .btn-submit {
+        width: 100%; padding: 14px;
+        background: linear-gradient(135deg, #20b2aa 0%, #0288d1 100%);
+        border: none; border-radius: 12px; color: #fff;
+        font-size: .97rem; font-weight: 600; font-family: 'Inter', sans-serif;
+        letter-spacing: .4px; cursor: pointer; transition: all .25s;
+        position: relative; overflow: hidden;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(2,136,209,.4); }
+    .btn-submit .spinner { display:none; width:18px; height:18px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; margin:0 auto; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .btn-submit.loading .btn-label { display:none; }
+    .btn-submit.loading .spinner { display:block; }
+
+    @media(max-width:500px){ .reset-card{ padding:32px 22px 28px; } }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="bg-scene"></div>
+<div class="grid-bg"></div>
+<div class="particles" id="particles"></div>
+
+<main class="reset-wrapper">
+    <div class="reset-card">
+
+        <div class="logo-wrapper">
+            <div class="logo-ring">
+                <img src="{{ asset('nexus.jpg') }}" alt="Logo Nexus">
+            </div>
+            <div class="logo-title">Nexus</div>
+            <div class="logo-subtitle">Talent Intelligence Platform</div>
+        </div>
+
+        <div class="page-heading">
+            <h1>Récupération du compte</h1>
+            <p>Veuillez choisir un nouveau mot de passe fort pour protéger votre accès.</p>
+        </div>
+
+        {{ form_start(resetForm, {'attr': {'id': 'reset-form', 'data-turbo': 'false'}}) }}
+
+            <div class="field-group">
+                <label class="field-label">Nouveau mot de passe</label>
+                <div class="field-input-wrap">
+                    <i class="fa fa-lock field-icon"></i>
+                    {{ form_widget(resetForm.plainPassword.first, {
+                        'attr': {'class': 'field-input', 'placeholder': '••••••••'}
+                    }) }}
+                </div>
+                {{ form_errors(resetForm.plainPassword.first) }}
+            </div>
+
+            <div class="field-group">
+                <label class="field-label">Confirmer le mot de passe</label>
+                <div class="field-input-wrap">
+                    <i class="fa fa-shield-alt field-icon"></i>
+                    {{ form_widget(resetForm.plainPassword.second, {
+                        'attr': {'class': 'field-input', 'placeholder': '••••••••'}
+                    }) }}
+                </div>
+                {{ form_errors(resetForm.plainPassword.second) }}
+            </div>
+
+            <button type="submit" class="btn-submit" id="submit-btn">
+                <span class="btn-label">Mettre à jour le mot de passe</span>
+                <span class="spinner"></span>
+            </button>
+
+        {{ form_end(resetForm) }}
+
+    </div>
+</main>
+
+<script>
+    /* Particles */
+    (function(){
+        const c = document.getElementById('particles');
+        for(let i=0;i<16;i++){
+            const p = document.createElement('div'); p.className = 'particle';
+            p.style.cssText = `left:${Math.random()*100}%;width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;opacity:${Math.random()*.5+.2};animation-duration:${Math.random()*12+8}s;animation-delay:${Math.random()*10}s`;
+            c.appendChild(p);
+        }
+    })();
+
+    /* Submit loader */
+    document.getElementById('reset-form').addEventListener('submit', function(){
+        const btn = document.getElementById('submit-btn');
+        btn.classList.add('loading');
+        setTimeout(() => { btn.disabled = true; }, 10);
+    });
+</script>
+{% endblock %}

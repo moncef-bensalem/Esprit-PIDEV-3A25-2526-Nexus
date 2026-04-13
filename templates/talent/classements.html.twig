@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Classements - NEXUS{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <a href="{{ path('app_talent_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1><i class="fa-solid fa-chart-bar" style="color:var(--neon-blue);margin-right:.5rem;"></i>Classements</h1>
+        </div>
+        <div class="top-actions">
+            <a href="{{ path('app_talent_statistiques') }}" class="btn"><i class="fa-solid fa-chart-pie"></i> Statistiques</a>
+            <a href="{{ path('app_talent_new') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ajouter</a>
+        </div>
+    </div>
+
+    <div class="rank-layout">
+
+        {# TOP 10 par expérience #}
+        <div class="rank-section rank-section--wide">
+            <div class="rank-header">
+                <i class="fa-solid fa-trophy" style="color:#f59e0b;"></i>
+                <h2>Top 10 — Expérience</h2>
+                <span class="rank-badge">{{ total }} talents</span>
+            </div>
+            <div class="rank-list">
+                {% for t in talents_by_exp %}
+                <div class="rank-row">
+                    <div class="rank-pos rank-pos--{{ loop.index <= 3 ? loop.index : 'default' }}">
+                        {% if loop.index == 1 %}<i class="fa-solid fa-trophy"></i>
+                        {% elseif loop.index == 2 %}<i class="fa-solid fa-medal"></i>
+                        {% elseif loop.index == 3 %}<i class="fa-solid fa-award"></i>
+                        {% else %}{{ loop.index }}{% endif %}
+                    </div>
+                    <div class="rank-avatar rank-avatar--{{ loop.index % 2 == 0 ? 'purple' : 'blue' }}">
+                        {{ t.prenom|slice(0,1)|upper }}{{ t.nom|slice(0,1)|upper }}
+                    </div>
+                    <div class="rank-info">
+                        <span class="rank-name">{{ t.prenom }} {{ t.nom }}</span>
+                        <span class="rank-sub">{{ t.poste }} · {{ t.departement }}</span>
+                    </div>
+                    <div class="rank-exp-bar-wrap">
+                        {% set pct = ((t.anneesExperience ?? 0) / 30 * 100)|round %}
+                        <div class="rank-exp-bar" style="width: {{ pct > 100 ? 100 : pct }}%"></div>
+                    </div>
+                    <div class="rank-exp-value">{{ t.anneesExperience ?? 0 }} ans</div>
+                    <a href="{{ path('app_talent_show', {'id': t.id}) }}" class="btn-icon" title="Voir"><i class="fa-solid fa-eye"></i></a>
+                </div>
+                {% else %}
+                <div class="rank-empty">Aucun talent enregistré.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="rank-columns">
+            {# Classement par département #}
+            <div class="rank-section">
+                <div class="rank-header">
+                    <i class="fa-solid fa-building" style="color:var(--neon-blue);"></i>
+                    <h2>Par Département</h2>
+                </div>
+                <div class="rank-list">
+                    {% set deptMax = by_departement|first %}
+                    {% for dept, count in by_departement %}
+                    <div class="rank-row rank-row--compact">
+                        <span class="rank-ord">{{ loop.index }}</span>
+                        <span class="rank-label">{{ dept }}</span>
+                        <div class="rank-bar-wrap">
+                            <div class="rank-bar rank-bar--blue" style="width: {{ deptMax > 0 ? (count / deptMax * 100)|round : 0 }}%"></div>
+                        </div>
+                        <span class="rank-count">{{ count }}</span>
+                    </div>
+                    {% else %}
+                    <div class="rank-empty">Aucune donnée.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Classement par poste #}
+            <div class="rank-section">
+                <div class="rank-header">
+                    <i class="fa-solid fa-briefcase" style="color:var(--neon-purple);"></i>
+                    <h2>Par Poste</h2>
+                </div>
+                <div class="rank-list">
+                    {% set posteMax = by_poste|first %}
+                    {% for poste, count in by_poste %}
+                    <div class="rank-row rank-row--compact">
+                        <span class="rank-ord">{{ loop.index }}</span>
+                        <span class="rank-label">{{ poste }}</span>
+                        <div class="rank-bar-wrap">
+                            <div class="rank-bar rank-bar--purple" style="width: {{ posteMax > 0 ? (count / posteMax * 100)|round : 0 }}%"></div>
+                        </div>
+                        <span class="rank-count">{{ count }}</span>
+                    </div>
+                    {% else %}
+                    <div class="rank-empty">Aucune donnée.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
