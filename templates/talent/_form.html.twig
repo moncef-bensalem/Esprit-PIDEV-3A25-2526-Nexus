@@ -1,0 +1,6 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+    {{ form_widget(form) }}
+    <div class="form-actions" style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+        <button class="btn btn-primary" style="font-size: 1rem; padding: 0.8rem 1.5rem;"><i class="fa-solid fa-save"></i> {{ button_label|default('Enregistrer') }}</button>
+    </div>
+{{ form_end(form) }}

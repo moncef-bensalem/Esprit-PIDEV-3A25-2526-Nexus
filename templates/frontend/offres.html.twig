@@ -1,0 +1,233 @@
+{% extends 'base.html.twig' %}
+{% block title %}Offres d'emploi — Nexus Carrières{% endblock %}
+{% block page_title %}Offres d'emploi{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* ── Hero ── */
+.hero {
+    text-align: center;
+    padding: 64px 24px 52px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 48px;
+}
+.hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(32,178,170,.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 60%, rgba(2,136,209,.07) 0%, transparent 70%);
+    pointer-events: none;
+}
+.hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 16px; border-radius: 20px;
+    background: rgba(32,178,170,.12); border: 1px solid rgba(32,178,170,.25);
+    font-size: .75rem; font-weight: 700; color: #20b2aa; letter-spacing: .8px;
+    text-transform: uppercase; margin-bottom: 22px;
+}
+.hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700; color: #fff; line-height: 1.18;
+    margin-bottom: 16px;
+}
+.hero-title span {
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.hero-sub {
+    font-size: 1rem; color: rgba(255,255,255,.42);
+    max-width: 540px; margin: 0 auto 28px; line-height: 1.7;
+}
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero-btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: 10px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    color: rgba(255,255,255,.65); font-size: .86rem; font-weight: 600;
+    text-decoration: none; transition: all .18s;
+}
+.hero-btn-ghost:hover { background: rgba(255,255,255,.08); color: #fff; }
+.hero-btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: 10px;
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    color: #fff; font-size: .86rem; font-weight: 700;
+    text-decoration: none; transition: opacity .18s, transform .18s;
+}
+.hero-btn-primary:hover { opacity: .88; transform: translateY(-1px); color: #fff; }
+
+/* ── Count bar ── */
+.count-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.count-bar-title { font-size: .9rem; font-weight: 700; color: rgba(255,255,255,.7); }
+.count-bar-title span { color: #20b2aa; }
+.count-bar-line { flex: 1; height: 1px; background: rgba(32,178,170,.14); min-width: 20px; }
+
+/* ── Grid ── */
+.jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+/* ── Job Card ── */
+.job-card {
+    background: rgba(13,25,42,.75);
+    border: 1px solid rgba(32,178,170,.14);
+    border-radius: 16px;
+    padding: 22px;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    transition: transform .25s, box-shadow .25s, border-color .25s;
+    backdrop-filter: blur(10px);
+}
+.job-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 45px rgba(0,0,0,.38);
+    border-color: rgba(32,178,170,.28);
+}
+.job-card-top-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #20b2aa, #0288d1);
+    border-radius: 16px 16px 0 0;
+}
+.job-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.job-icon {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: rgba(32,178,170,.12); border: 1px solid rgba(32,178,170,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; color: #20b2aa;
+}
+.job-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 10px;
+    background: rgba(32,178,170,.1); border: 1px solid rgba(32,178,170,.2);
+    font-size: .68rem; font-weight: 700; color: #20b2aa; letter-spacing: .3px;
+}
+.job-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 5px; line-height: 1.3; }
+.job-dept {
+    font-size: .78rem; color: rgba(255,255,255,.4);
+    display: flex; align-items: center; gap: 5px; margin-bottom: 16px;
+}
+.job-divider { border: none; border-top: 1px solid rgba(255,255,255,.05); margin: 0 0 16px; }
+.job-metas { display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px; flex: 1; }
+.job-meta { display: flex; align-items: center; gap: 8px; font-size: .79rem; color: rgba(255,255,255,.46); }
+.job-meta i { color: #20b2aa; font-size: .72rem; width: 13px; text-align: center; }
+.job-meta strong { color: rgba(255,255,255,.7); }
+.job-apply-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 16px; border-radius: 10px; width: 100%;
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    color: #fff; font-size: .83rem; font-weight: 700;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: opacity .18s, transform .18s;
+}
+.job-apply-btn:hover { opacity: .88; transform: translateY(-1px); color: #fff; }
+
+/* ── Empty ── */
+.empty-state {
+    grid-column: 1 / -1; text-align: center; padding: 72px 32px;
+    background: rgba(13,25,42,.6);
+    border: 1px dashed rgba(32,178,170,.2); border-radius: 16px;
+}
+.empty-icon  { font-size: 2.8rem; color: rgba(32,178,170,.22); margin-bottom: 18px; }
+.empty-title { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,.5); margin-bottom: 7px; }
+.empty-sub   { font-size: .82rem; color: rgba(255,255,255,.26); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Hero ── #}
+<div class="hero">
+    <div class="hero-eyebrow"><i class="fa fa-rocket"></i> Rejoignez notre équipe</div>
+    <h1 class="hero-title">
+        Trouvez votre<br><span>prochain défi professionnel</span>
+    </h1>
+    <p class="hero-sub">
+        Parcourez nos offres d'emploi, trouvez le poste qui vous correspond
+        et rejoignez une équipe d'innovateurs passionnés.
+    </p>
+    <div class="hero-actions">
+        {% if app.user %}
+            <a href="{{ path('candidate_mes_candidatures') }}" class="hero-btn-primary">
+                <i class="fa fa-file-alt"></i> Mes candidatures
+            </a>
+        {% else %}
+            <a href="{{ path('app_public_suivi') }}" class="hero-btn-ghost">
+                <i class="fa fa-search"></i> Suivre ma candidature
+            </a>
+            <a href="{{ path('app_login') }}" class="hero-btn-primary">
+                <i class="fa fa-sign-in-alt"></i> Se connecter
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Count bar ── #}
+<div class="count-bar">
+    <div class="count-bar-title">
+        <span>{{ offres|length }}</span> offre{{ offres|length != 1 ? 's' : '' }} disponible{{ offres|length != 1 ? 's' : '' }}
+    </div>
+    <div class="count-bar-line"></div>
+</div>
+
+{# ── Jobs grid ── #}
+<div class="jobs-grid">
+    {% for offre in offres %}
+        <div class="job-card">
+            <div class="job-card-top-bar"></div>
+
+            <div class="job-card-header">
+                <div class="job-icon"><i class="fa fa-laptop-code"></i></div>
+                <span class="job-badge"><i class="fa fa-circle" style="font-size:.5rem;"></i> Ouvert</span>
+            </div>
+
+            <div class="job-title">{{ offre.titre_poste }}</div>
+            <div class="job-dept"><i class="fa fa-building"></i> {{ offre.departement ?? 'Non précisé' }}</div>
+
+            <hr class="job-divider">
+
+            <div class="job-metas">
+                <div class="job-meta">
+                    <i class="fa fa-money-bill-wave"></i>
+                    <span>
+                        {% if offre.salaire_propose %}
+                            <strong>{{ offre.salaire_propose|number_format(0, '.', ' ') }} {{ offre.devise }}</strong>
+                        {% else %}
+                            Salaire non spécifié
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="job-meta">
+                    <i class="fa fa-calendar-alt"></i>
+                    <span>Publiée le <strong>{{ offre.date_creation ? offre.date_creation|date('d/m/Y') : 'Récemment' }}</strong></span>
+                </div>
+                {% if offre.type_contrat is defined and offre.type_contrat %}
+                <div class="job-meta">
+                    <i class="fa fa-file-contract"></i>
+                    <span><strong>{{ offre.type_contrat }}</strong></span>
+                </div>
+                {% endif %}
+            </div>
+
+            <a href="{{ path('app_public_postuler', {'id_offre': offre.id_offre}) }}" class="job-apply-btn">
+                <i class="fa fa-paper-plane"></i> Postuler maintenant
+            </a>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fa fa-briefcase"></i></div>
+            <div class="empty-title">Aucune offre disponible actuellement</div>
+            <div class="empty-sub">Revenez bientôt, de nouvelles opportunités sont régulièrement publiées.</div>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

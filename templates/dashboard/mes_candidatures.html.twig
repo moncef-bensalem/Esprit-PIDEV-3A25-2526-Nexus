@@ -1,0 +1,375 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes Candidatures{% endblock %}
+{% block page_title %}Mes Candidatures{% endblock %}
+
+{% block stylesheets %}
+<style>
+    /* ── Header Banner ── */
+    .mc-header {
+        background: linear-gradient(135deg, rgba(32,178,170,.12) 0%, rgba(2,136,209,.08) 100%);
+        border: 1px solid rgba(32,178,170,.2);
+        border-radius: 18px;
+        padding: 26px 32px;
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 28px; gap: 16px;
+        position: relative; overflow: hidden;
+    }
+    .mc-header::before {
+        content: '';
+        position: absolute; top: -60%; right: -60px;
+        width: 280px; height: 280px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(32,178,170,.07) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .mc-header-title { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .mc-header-sub   { font-size: .84rem; color: rgba(255,255,255,.45); }
+    .mc-header-badge {
+        background: rgba(32,178,170,.15); border: 1px solid rgba(32,178,170,.3);
+        border-radius: 20px; padding: 6px 18px;
+        font-size: .75rem; font-weight: 700; color: #20b2aa; letter-spacing: .5px;
+        white-space: nowrap; flex-shrink: 0;
+    }
+
+    /* ── Summary Stats ── */
+    .mc-stat-row { display: flex; gap: 14px; margin-bottom: 28px; flex-wrap: wrap; }
+    .mc-stat {
+        flex: 1; min-width: 120px;
+        background: rgba(13,25,42,.7);
+        border: 1px solid rgba(32,178,170,.15);
+        border-radius: 14px; padding: 18px 20px;
+        display: flex; flex-direction: column; gap: 4px;
+        backdrop-filter: blur(8px);
+    }
+    .mc-stat-num   { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .mc-stat-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: rgba(255,255,255,.38); margin-top: 2px; }
+    .mc-stat.cyan  .mc-stat-num  { color: #20b2aa; }
+    .mc-stat.green .mc-stat-num  { color: #4caf50; }
+    .mc-stat.purple.mc-stat-num  { color: #ab47bc; }
+    .mc-stat.red   .mc-stat-num  { color: #ef5350; }
+
+    /* ── Cards ── */
+    .mc-card {
+        background: rgba(13,25,42,.72);
+        border: 1px solid rgba(32,178,170,.13);
+        border-radius: 18px;
+        padding: 24px 26px;
+        margin-bottom: 16px;
+        transition: transform .22s, box-shadow .22s, border-color .22s;
+        position: relative; overflow: hidden;
+        backdrop-filter: blur(8px);
+    }
+    .mc-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 38px rgba(0,0,0,.32);
+        border-color: rgba(32,178,170,.28);
+    }
+    .mc-card-accent {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+        border-radius: 18px 0 0 18px;
+    }
+    .accent-recu        { background: linear-gradient(180deg,#0288d1,#20b2aa); }
+    .accent-en_entretien{ background: linear-gradient(180deg,#ab47bc,#7b1fa2); }
+    .accent-offre_faite { background: linear-gradient(180deg,#4caf50,#2e7d32); }
+    .accent-rejete      { background: linear-gradient(180deg,#ef5350,#b71c1c); }
+
+    .mc-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .mc-card-title  { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .mc-card-dept   { font-size: .8rem; color: rgba(255,255,255,.45); display: flex; align-items: center; gap: 6px; }
+
+    /* ── Status Badge ── */
+    .mc-status {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 14px; border-radius: 20px;
+        font-size: .74rem; font-weight: 700; letter-spacing: .4px;
+        white-space: nowrap; flex-shrink: 0;
+    }
+    .status-recu         { background: rgba(2,136,209,.15); border: 1px solid rgba(2,136,209,.35); color: #29b6f6; }
+    .status-en_entretien { background: rgba(171,71,188,.15); border: 1px solid rgba(171,71,188,.35); color: #ce93d8; }
+    .status-offre_faite  { background: rgba(76,175,80,.15);  border: 1px solid rgba(76,175,80,.35);  color: #81c784; }
+    .status-rejete       { background: rgba(239,83,80,.15);  border: 1px solid rgba(239,83,80,.35);  color: #ef9a9a; }
+
+    /* ── Pipeline steps ── */
+    .mc-pipeline {
+        display: flex; align-items: center; gap: 0;
+        margin: 16px 0 0; flex-wrap: wrap;
+    }
+    .mc-step {
+        display: flex; align-items: center; gap: 6px;
+        font-size: .72rem; font-weight: 600; color: rgba(255,255,255,.22);
+        letter-spacing: .3px;
+    }
+    .mc-step.done  { color: rgba(255,255,255,.7); }
+    .mc-step.active{ color: #20b2aa; }
+    .mc-step-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: rgba(255,255,255,.15); flex-shrink: 0;
+    }
+    .mc-step.done  .mc-step-dot { background: rgba(255,255,255,.5); }
+    .mc-step.active .mc-step-dot{ background: #20b2aa; box-shadow: 0 0 8px rgba(32,178,170,.6); }
+    .mc-step.active-fail .mc-step-dot{ background: #ef5350; }
+    .mc-step-arrow { color: rgba(255,255,255,.12); margin: 0 6px; font-size: .65rem; }
+
+    /* ── Meta row ── */
+    .mc-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
+    .mc-meta-item { font-size: .78rem; color: rgba(255,255,255,.42); display: flex; align-items: center; gap: 5px; }
+    .mc-meta-item i { color: rgba(32,178,170,.6); font-size: .72rem; }
+
+    /* ── Score chip ── */
+    .mc-score {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: .75rem; font-weight: 700;
+        padding: 3px 10px; border-radius: 10px;
+        background: rgba(32,178,170,.1); color: #20b2aa;
+        border: 1px solid rgba(32,178,170,.25);
+    }
+
+    /* ── Empty state ── */
+    .mc-empty {
+        text-align: center; padding: 70px 32px;
+        background: rgba(13,25,42,.6);
+        border: 1px dashed rgba(32,178,170,.2);
+        border-radius: 18px;
+        backdrop-filter: blur(6px);
+    }
+    .mc-empty-icon { font-size: 3.2rem; color: rgba(32,178,170,.25); margin-bottom: 20px; }
+    .mc-empty-title { font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,.6); margin-bottom: 8px; }
+    .mc-empty-sub   { font-size: .84rem; color: rgba(255,255,255,.3); margin-bottom: 24px; }
+
+    /* ── Filter pills ── */
+    .mc-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+    .mc-filter-pill {
+        padding: 5px 14px; border-radius: 20px; font-size: .75rem; font-weight: 600;
+        cursor: pointer; transition: all .18s;
+        background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+        color: rgba(255,255,255,.5); text-decoration: none;
+    }
+    .mc-filter-pill:hover, .mc-filter-pill.active {
+        background: rgba(32,178,170,.12); border-color: rgba(32,178,170,.35);
+        color: #20b2aa;
+    }
+    .mc-filter-count {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 18px; height: 18px; border-radius: 50%; font-size: .65rem;
+        background: rgba(32,178,170,.2); color: #20b2aa; margin-left: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Header ── #}
+<div class="mc-header">
+    <div>
+        <div class="mc-header-title"><i class="fa fa-file-alt" style="color:#20b2aa;margin-right:8px;"></i> Mes Candidatures</div>
+        <div class="mc-header-sub">Suivez l'avancement de toutes vos postulations en temps réel.</div>
+    </div>
+    {% if candidatures|length > 0 %}
+        <div class="mc-header-badge">{{ candidatures|length }} candidature{{ candidatures|length > 1 ? 's' : '' }}</div>
+    {% endif %}
+</div>
+
+{% if candidat is null %}
+    {# No candidat profile linked to this user #}
+    <div class="mc-empty">
+        <div class="mc-empty-icon"><i class="fa fa-user-slash"></i></div>
+        <div class="mc-empty-title">Aucun profil candidat trouvé</div>
+        <div class="mc-empty-sub">Votre compte n'est pas encore lié à un profil candidat. Postulez à une offre pour créer votre profil.</div>
+        <a href="{{ path('app_public_offres') }}" class="btn" style="background: linear-gradient(135deg,#20b2aa,#0288d1); color:#fff; border:none; padding: 10px 24px; border-radius:10px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa fa-briefcase"></i> Explorer les offres
+        </a>
+    </div>
+
+{% elseif candidatures|length == 0 %}
+    {# Candidat exists but no applications yet #}
+    <div class="mc-empty">
+        <div class="mc-empty-icon"><i class="fa fa-inbox"></i></div>
+        <div class="mc-empty-title">Vous n'avez pas encore postulé</div>
+        <div class="mc-empty-sub">Explorez nos offres d'emploi et envoyez votre première candidature !</div>
+        <a href="{{ path('app_public_offres') }}" class="btn" style="background: linear-gradient(135deg,#20b2aa,#0288d1); color:#fff; border:none; padding: 10px 24px; border-radius:10px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa fa-briefcase"></i> Voir les offres disponibles
+        </a>
+    </div>
+
+{% else %}
+
+    {# ── Count stats ── #}
+    {% set cnt_recu = 0 %}
+    {% set cnt_entretien = 0 %}
+    {% set cnt_offre = 0 %}
+    {% set cnt_rejete = 0 %}
+    {% for c in candidatures %}
+        {% if c.etat_avancement == 'RECU' %}{% set cnt_recu = cnt_recu + 1 %}
+        {% elseif c.etat_avancement == 'EN_ENTRETIEN' %}{% set cnt_entretien = cnt_entretien + 1 %}
+        {% elseif c.etat_avancement == 'OFFRE_FAITE' %}{% set cnt_offre = cnt_offre + 1 %}
+        {% elseif c.etat_avancement == 'REJETE' %}{% set cnt_rejete = cnt_rejete + 1 %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="mc-stat-row">
+        <div class="mc-stat cyan">
+            <div class="mc-stat-num">{{ candidatures|length }}</div>
+            <div class="mc-stat-label">Total</div>
+        </div>
+        <div class="mc-stat">
+            <div class="mc-stat-num" style="color:#29b6f6;">{{ cnt_recu }}</div>
+            <div class="mc-stat-label">Reçues</div>
+        </div>
+        <div class="mc-stat">
+            <div class="mc-stat-num" style="color:#ce93d8;">{{ cnt_entretien }}</div>
+            <div class="mc-stat-label">En entretien</div>
+        </div>
+        <div class="mc-stat">
+            <div class="mc-stat-num" style="color:#81c784;">{{ cnt_offre }}</div>
+            <div class="mc-stat-label">Offre faite</div>
+        </div>
+        <div class="mc-stat">
+            <div class="mc-stat-num" style="color:#ef9a9a;">{{ cnt_rejete }}</div>
+            <div class="mc-stat-label">Rejetées</div>
+        </div>
+    </div>
+
+    {# ── Filter pills (JS) ── #}
+    <div class="mc-filters">
+        <a href="#" class="mc-filter-pill active" data-filter="all" id="pill-all">
+            Toutes <span class="mc-filter-count">{{ candidatures|length }}</span>
+        </a>
+        {% if cnt_recu > 0 %}
+        <a href="#" class="mc-filter-pill" data-filter="RECU">
+            Reçues <span class="mc-filter-count">{{ cnt_recu }}</span>
+        </a>
+        {% endif %}
+        {% if cnt_entretien > 0 %}
+        <a href="#" class="mc-filter-pill" data-filter="EN_ENTRETIEN">
+            En entretien <span class="mc-filter-count">{{ cnt_entretien }}</span>
+        </a>
+        {% endif %}
+        {% if cnt_offre > 0 %}
+        <a href="#" class="mc-filter-pill" data-filter="OFFRE_FAITE">
+            Offre faite <span class="mc-filter-count">{{ cnt_offre }}</span>
+        </a>
+        {% endif %}
+        {% if cnt_rejete > 0 %}
+        <a href="#" class="mc-filter-pill" data-filter="REJETE">
+            Rejetées <span class="mc-filter-count">{{ cnt_rejete }}</span>
+        </a>
+        {% endif %}
+    </div>
+
+    {# ── Cards list ── #}
+    <div id="mc-list">
+    {% for c in candidatures %}
+        {% set etat = c.etat_avancement %}
+        {% set etat_lower = etat|lower %}
+
+        <div class="mc-card" data-etat="{{ etat }}">
+            <div class="mc-card-accent accent-{{ etat_lower }}"></div>
+
+            <div class="mc-card-header">
+                <div>
+                    <div class="mc-card-title">
+                        {% if c.offreEmploi is not null %}
+                            {{ c.offreEmploi.titre_poste ?? c.offreEmploi.titre ?? 'Offre sans titre' }}
+                        {% else %}
+                            Offre supprimée
+                        {% endif %}
+                    </div>
+                    <div class="mc-card-dept">
+                        <i class="fa fa-building"></i>
+                        {% if c.offreEmploi is not null and c.offreEmploi.departement is not null %}
+                            {{ c.offreEmploi.departement }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;">
+                    {# Status badge #}
+                    <span class="mc-status status-{{ etat_lower }}">
+                        {% if etat == 'RECU' %}<i class="fa fa-inbox"></i> Reçue
+                        {% elseif etat == 'EN_ENTRETIEN' %}<i class="fa fa-comments"></i> En Entretien
+                        {% elseif etat == 'OFFRE_FAITE' %}<i class="fa fa-check-circle"></i> Offre Faite !
+                        {% elseif etat == 'REJETE' %}<i class="fa fa-times-circle"></i> Rejetée
+                        {% else %}<i class="fa fa-question-circle"></i> {{ etat }}
+                        {% endif %}
+                    </span>
+
+                    {# Score matching #}
+                    {% if c.score_matching is not null %}
+                        <span class="mc-score"><i class="fa fa-star"></i> Score: {{ c.score_matching }}%</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── Pipeline steps ── #}
+            <div class="mc-pipeline">
+                <div class="mc-step {{ etat in ['RECU','EN_ENTRETIEN','OFFRE_FAITE'] or etat == 'REJETE' ? 'done' : '' }} {{ etat == 'RECU' ? 'active' : '' }}">
+                    <div class="mc-step-dot"></div> Reçue
+                </div>
+                <div class="mc-step-arrow"><i class="fa fa-chevron-right"></i></div>
+                <div class="mc-step {{ etat in ['EN_ENTRETIEN','OFFRE_FAITE'] ? 'done' : '' }} {{ etat == 'EN_ENTRETIEN' ? 'active' : '' }}">
+                    <div class="mc-step-dot"></div> En Entretien
+                </div>
+                <div class="mc-step-arrow"><i class="fa fa-chevron-right"></i></div>
+                <div class="mc-step {{ etat == 'OFFRE_FAITE' ? 'done active' : '' }} {{ etat == 'REJETE' ? 'active-fail' : '' }}">
+                    <div class="mc-step-dot"></div>
+                    {% if etat == 'REJETE' %}
+                        <span style="color:#ef5350;">Rejetée</span>
+                    {% else %}
+                        Offre faite
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── Meta info ── #}
+            <div class="mc-meta">
+                <div class="mc-meta-item">
+                    <i class="fa fa-calendar-alt"></i>
+                    Postuléle {{ c.date_postulation|date('d/m/Y') }}
+                </div>
+                {% if c.offreEmploi is not null and c.offreEmploi.type_contrat is defined and c.offreEmploi.type_contrat %}
+                <div class="mc-meta-item">
+                    <i class="fa fa-file-contract"></i>
+                    {{ c.offreEmploi.type_contrat }}
+                </div>
+                {% endif %}
+                {% if c.source_candidature %}
+                <div class="mc-meta-item">
+                    <i class="fa fa-globe"></i>
+                    {{ c.source_candidature }}
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    {% endfor %}
+    </div>
+
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const pills = document.querySelectorAll('.mc-filter-pill');
+    const cards = document.querySelectorAll('#mc-list .mc-card');
+
+    pills.forEach(pill => {
+        pill.addEventListener('click', function (e) {
+            e.preventDefault();
+            pills.forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.dataset.filter;
+            cards.forEach(card => {
+                if (filter === 'all' || card.dataset.etat === filter) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+
+{% endblock %}

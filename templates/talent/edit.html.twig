@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Talent{% endblock %}
+
+{% block body %}
+    <h1>Edit Talent</h1>
+
+    {{ include('talent/_form.html.twig', {'button_label': 'Update'}) }}
+
+    <a href="{{ path('app_talent_index') }}">back to list</a>
+
+    {{ include('talent/_delete_form.html.twig') }}
+{% endblock %}
