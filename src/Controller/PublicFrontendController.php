@@ -32,9 +32,18 @@ class PublicFrontendController extends AbstractController
     }
 
     #[Route('/jobs', name: 'app_public_offres', methods: ['GET'])]
-    public function offres(EntityManagerInterface $em): Response
+    public function offres(EntityManagerInterface $em, \Knp\Component\Pager\PaginatorInterface $paginator, Request $request): Response
     {
-        $offres = $em->getRepository(OffreEmploi::class)->findBy(['statut_offre' => ['Publiée', 'PUBLIEE']], ['date_creation' => 'DESC']);
+        $queryBuilder = $em->getRepository(OffreEmploi::class)->createQueryBuilder('o')
+            ->where('o.statut_offre IN (:statuts)')
+            ->setParameter('statuts', ['Publiée', 'PUBLIEE'])
+            ->orderBy('o.date_creation', 'DESC');
+            
+        $offres = $paginator->paginate(
+            $queryBuilder,
+            $request->query->getInt('page', 1),
+            9 // limit per page
+        );
         
         return $this->render('frontend/offres.html.twig', [
             'offres' => $offres
