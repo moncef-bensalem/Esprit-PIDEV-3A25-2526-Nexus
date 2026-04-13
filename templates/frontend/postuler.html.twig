@@ -187,6 +187,18 @@
                     <div class="offer-row-value">{{ offre.date_creation ? offre.date_creation|date('d/m/Y') : 'Récemment' }}</div>
                 </div>
             </div>
+            
+            <hr class="section-divider" style="margin: 15px 0;">
+            
+            <div class="offer-info-row" style="align-items: flex-start;">
+                <div class="offer-row-icon" style="margin-top: 2px;"><i class="fa fa-align-left"></i></div>
+                <div>
+                    <div class="offer-row-label">Description du Poste</div>
+                    <div class="offer-row-value" style="font-weight: normal; font-size: 0.80rem; margin-top: 6px; line-height: 1.55; color: rgba(255,255,255,0.75);">
+                        {{ offre.description|nl2br }}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
