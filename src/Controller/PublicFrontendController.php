@@ -51,7 +51,7 @@ class PublicFrontendController extends AbstractController
     }
 
     #[Route('/postuler/{id_offre}', name: 'app_public_postuler', methods: ['GET', 'POST'])]
-    public function postuler(string $id_offre, Request $request, EntityManagerInterface $em, SluggerInterface $slugger, \App\Service\CvAnalysisService $cvAnalysisService): Response
+    public function postuler(string $id_offre, Request $request, EntityManagerInterface $em, SluggerInterface $slugger, \App\Service\CvAnalysisService $cvAnalysisService, \App\Service\EmailNotificationService $emailService): Response
     {
         $offre = $em->getRepository(OffreEmploi::class)->find($id_offre);
         $statutDb = $offre ? $offre->getStatut_offre() : '';
@@ -133,7 +133,16 @@ class PublicFrontendController extends AbstractController
 
             $em->flush();
 
-            $this->addFlash('success', 'Votre candidature a été envoyée avec succès! Vous pouvez la suivre via notre portail.');
+            // Trigger the asynchronous Email API
+            if ($candidature->getCandidat() && $candidature->getCandidat()->getEmailContact()) {
+                $emailService->sendCandidatureReceipt(
+                    $candidature->getCandidat()->getEmailContact(),
+                    $candidature->getCandidat()->getNomComplet(),
+                    $offre->getTitre_poste()
+                );
+            }
+
+            $this->addFlash('success', 'Votre candidature a été soumise avec succès ! Vous pouvez la suivre via notre portail.');
             return $this->redirectToRoute('app_public_suivi', ['email' => $email]);
         }
 
