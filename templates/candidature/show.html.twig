@@ -42,7 +42,11 @@
 </div>
 
 <div class="mc-show-card">
-    <div class="mc-detail-row">
+    <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+        
+        <!-- Left Column: Data -->
+        <div style="flex: 1; min-width: 350px;">
+            <div class="mc-detail-row">
         <div class="mc-detail-label">Candidat</div>
         <div class="mc-detail-value" style="font-size: 1.2rem; font-weight: 700; color: #fff;">
             <i class="fas fa-user-circle" style="color:rgba(255,255,255,0.3); margin-right: 6px;"></i> 
@@ -90,5 +94,64 @@
         <div class="mc-detail-label">Notes des recruteurs</div>
         <div class="mc-detail-value" style="white-space: pre-wrap; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03);">{{ candidature.notes|default('Aucune note enregistrée.') }}</div>
     </div>
+            </div>
+        </div>
+        
+        <!-- Right Column: Radar Chart -->
+        <div style="width: 380px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,23,42,0.5); border-radius: 16px; padding: 25px; border: 1px solid rgba(6,182,212,0.15);">
+            <h4 style="color: rgba(255,255,255,0.8); font-size: 0.85rem; margin-top: 0; margin-bottom: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;"><i class="fas fa-radar" style="color: #06b6d4; margin-right: 6px;"></i> Mapping IA Nexus</h4>
+            <div style="position: relative; height: 300px; width: 100%;">
+                <canvas id="scoreSpiderChart"></canvas>
+            </div>
+        </div>
+        
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('scoreSpiderChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Technique', 'Expérience', 'Formation', 'Langues', 'Soft Skills'],
+                datasets: [{
+                    label: 'Profil du Candidat',
+                    data: [
+                        {{ candidature.candidat.score_technique|default(0) }},
+                        {{ candidature.candidat.score_experience|default(0) }},
+                        {{ candidature.candidat.score_formation|default(0) }},
+                        {{ candidature.candidat.score_langues|default(0) }},
+                        {{ candidature.candidat.score_soft_skills|default(0) }}
+                    ],
+                    backgroundColor: 'rgba(6, 182, 212, 0.25)',
+                    borderColor: 'rgba(6, 182, 212, 1)',
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: 'rgba(6, 182, 212, 1)',
+                    pointHoverBackgroundColor: 'rgba(6, 182, 212, 1)',
+                    pointHoverBorderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        pointLabels: { color: 'rgba(255,255,255,0.6)', font: { size: 11, family: 'sans-serif' } },
+                        ticks: { display: false, min: 0, max: 100 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
