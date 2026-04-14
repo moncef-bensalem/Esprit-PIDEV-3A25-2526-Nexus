@@ -289,14 +289,33 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Injecting Map API logic safely inside the block
     if (document.getElementById('job-map')) {
-        // We use Tunis as the base location for ESPRIT logic, with slight offsets based on ID to make it dynamic
-        let baseLat = 36.8065 + (Math.random() * 0.05 - 0.025);
-        let baseLng = 10.1815 + (Math.random() * 0.05 - 0.025);
+        // --- Region Mapping Logic ---
+        const currency = "{{ offre.devise|default('TND')|upper }}";
+        let baseLat, baseLng, zoomLevel, regionName;
+
+        if (currency === 'EUR') {
+            // Europe Bounds (Approx: Paris/Berlin/Rome focus)
+            baseLat = 48.8566 + (Math.random() * 8 - 4);
+            baseLng = 2.3522 + (Math.random() * 15 - 7.5);
+            zoomLevel = 4;
+            regionName = "Europe";
+        } else if (currency === 'USD') {
+            // USA Bounds (Approx: East Coast to Mid-West focus)
+            baseLat = 39.8283 + (Math.random() * 10 - 5);
+            baseLng = -98.5795 + (Math.random() * 30 - 15);
+            zoomLevel = 4;
+            regionName = "États-Unis";
+        } else {
+            // Tunisia Bounds (Default: TND)
+            baseLat = 36.8065 + (Math.random() * 2 - 1);
+            baseLng = 10.1815 + (Math.random() * 1 - 0.5);
+            zoomLevel = 7;
+            regionName = "Tunisie";
+        }
         
         try {
-            const map = L.map('job-map').setView([baseLat, baseLng], 13);
+            const map = L.map('job-map').setView([baseLat, baseLng], zoomLevel);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; OpenStreetMap'
             }).addTo(map);
@@ -312,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             L.marker([baseLat, baseLng], {icon: customIcon}).addTo(map)
-                .bindPopup('<b style="color:#000;">{{ offre.departement|default('Nouveau Poste')|escape('js') }}</b><br><span style="color:#666;">Laboratoire Nexus</span>')
+                .bindPopup('<b style="color:#000;">{{ offre.departement|default('Recrutement Nexus')|escape('js') }}</b><br><span style="color:#666;">Laboratoire Nexus (' + regionName + ')</span>')
                 .openPopup();
         } catch (e) {
             console.log("Map initialization skipped.", e);
