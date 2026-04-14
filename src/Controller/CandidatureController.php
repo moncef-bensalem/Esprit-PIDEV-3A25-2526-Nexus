@@ -68,16 +68,22 @@ final class CandidatureController extends AbstractController
     }
 
     #[Route('/{id_candidature}/edit', name: 'app_candidature_edit', methods: ['GET', 'POST'])]
-    public function edit(string $id_candidature, Request $request, EntityManagerInterface $entityManager): Response
+    public function edit(string $id_candidature, Request $request, EntityManagerInterface $entityManager, \App\Service\EmailNotificationService $emailService): Response
     {
         $candidature = $entityManager->getRepository(Candidature::class)->find($id_candidature);
         if (!$candidature) throw $this->createNotFoundException('Candidature introuvable');
+
+        $oldStatus = $candidature->getEtat_avancement();
 
         $form = $this->createForm(CandidatureType::class, $candidature);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
+
+            if ($oldStatus !== $candidature->getEtat_avancement()) {
+                $emailService->sendStatusUpdateEmail($candidature);
+            }
 
             return $this->redirectToRoute('app_candidature_index', [], Response::HTTP_SEE_OTHER);
         }

@@ -133,15 +133,6 @@ class PublicFrontendController extends AbstractController
 
             $em->flush();
 
-            // Trigger the asynchronous Email API
-            if ($candidature->getCandidat() && $candidature->getCandidat()->getEmailContact()) {
-                $emailService->sendCandidatureReceipt(
-                    $candidature->getCandidat()->getEmailContact(),
-                    $candidature->getCandidat()->getNomComplet(),
-                    $offre->getTitre_poste()
-                );
-            }
-
             $this->addFlash('success', 'Votre candidature a été soumise avec succès ! Vous pouvez la suivre via notre portail.');
             return $this->redirectToRoute('app_public_suivi', ['email' => $email]);
         }
