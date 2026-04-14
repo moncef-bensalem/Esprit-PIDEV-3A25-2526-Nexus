@@ -320,10 +320,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 attribution: '&copy; OpenStreetMap'
             }).addTo(map);
 
-            let markerUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-teal.png';
+            let markerUrl = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png';
             let customIcon = L.icon({
                 iconUrl: markerUrl,
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
                 iconSize: [25, 41],
                 iconAnchor: [12, 41],
                 popupAnchor: [1, -34],
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             L.marker([baseLat, baseLng], {icon: customIcon}).addTo(map)
-                .bindPopup('<b style="color:#000;">{{ offre.departement|default('Recrutement Nexus')|escape('js') }}</b><br><span style="color:#666;">Laboratoire Nexus (' + regionName + ')</span>')
+                .bindPopup('<b style="color:#000;">{{ offre.titre_poste|escape('js') }}</b><br><span style="color:#666;">Département: {{ offre.departement|default('Recrutement')|escape('js') }} (' + regionName + ')</span>')
                 .openPopup();
         } catch (e) {
             console.log("Map initialization skipped.", e);
