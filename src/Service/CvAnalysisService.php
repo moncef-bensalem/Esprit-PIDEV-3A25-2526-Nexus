@@ -13,6 +13,7 @@ class CvAnalysisService
     public function __construct(
         private HttpClientInterface $httpClient,
         private LoggerInterface $logger,
+        private SmsNotificationService $smsNotificationService,
         #[Autowire(env: 'GEMINI_API_KEY')] private string $apiKey
     ) {
     }
@@ -125,6 +126,15 @@ Format JSON attendu :
                     
                     $candidature->setScoreMatching((float) ($result['score_matching'] ?? 0));
                     $this->logger->info("Scores successfully parsed and mapped for Candidat " . $candidat->getNomComplet());
+
+                    // Envoi d'une alerte SMS si le score de matching est exceptionnel (>= 95%)
+                    if ($candidature->getScoreMatching() >= 95.0) {
+                        $this->smsNotificationService->sendAdminHighToScoreAlert(
+                            $candidat->getNomComplet(),
+                            $candidature->getScoreMatching(),
+                            $offre->getTitrePoste()
+                        );
+                    }
                 } else {
                     $this->logger->error("Gemini API: Failed to parse JSON: " . $jsonStr);
                 }
