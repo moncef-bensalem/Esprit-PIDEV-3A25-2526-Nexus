@@ -20,11 +20,17 @@ class ReviewController extends AbstractController
     public function index(
         PlanificationRepository $planifRepo,
         ReviewRepository $reviewRepo,
-        Request $request
+        Request $request,
+        \Knp\Component\Pager\PaginatorInterface $paginator
     ): Response {
         $filterLowRating = $request->query->getBoolean('low_rating', false);
 
-        $planifications = $planifRepo->findAll();
+        $queryBuilder = $planifRepo->createQueryBuilder('p')->orderBy('p.idEvent', 'DESC');
+        $planifications = $paginator->paginate(
+            $queryBuilder,
+            $request->query->getInt('page', 1),
+            6
+        );
 
         $totalReviews   = count($reviewRepo->findAll());
         $avgRating      = $reviewRepo->averageRating();

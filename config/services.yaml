@@ -22,6 +22,14 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Service\WeatherService:
+        arguments:
+            $apiKey: '%env(OPENWEATHERMAP_API_KEY)%'
+
+    App\Service\GrokService:
+        arguments:
+            $apiKey: '%env(GROQ_API_KEY)%'
+
     App\Service\SmsNotificationService:
         arguments:
             $twilioSid: '%env(TWILIO_SID)%'

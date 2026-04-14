@@ -6,6 +6,7 @@ use App\Entity\Planification;
 use App\Entity\User;
 use App\Form\PlanificationType;
 use App\Repository\PlanificationRepository;
+use App\Service\WeatherService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,14 +27,14 @@ class PlanificationController extends AbstractController
             ? $repo->findAll()
             : ($currentUser instanceof User ? $repo->findByUser($currentUser) : []);
 
-        $total   = count($planifications);
-        $actifs  = $isAdmin ? $repo->countActifs() : 0;
+        $total = count($planifications);
+        $actifs = $isAdmin ? $repo->countActifs() : 0;
         $nouveaux = $isAdmin ? $repo->countNouveaux(7) : 0;
 
         return $this->render('planification/index.html.twig', [
             'planifications' => $planifications,
-            'total'   => $total,
-            'actifs'  => $actifs,
+            'total' => $total,
+            'actifs' => $actifs,
             'nouveaux' => $nouveaux,
         ]);
     }
@@ -137,10 +138,20 @@ class PlanificationController extends AbstractController
     }
 
     #[Route('/{id}', name: 'planification_show', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function show(Planification $planification): Response
+    public function show(Planification $planification, WeatherService $weather): Response
     {
+        $weatherData = null;
+        if ($planification->getDate() !== null) {
+            $weatherData = $weather->getWeatherForEvent(
+                $planification->getDate(),
+                $planification->getLocalisation(),
+                $planification->getHeureDebut(),
+            );
+        }
+
         return $this->render('planification/show.html.twig', [
             'planification' => $planification,
+            'weather' => $weatherData,
         ]);
     }
 

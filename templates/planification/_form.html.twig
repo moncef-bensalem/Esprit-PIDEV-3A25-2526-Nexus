@@ -78,6 +78,25 @@
     border-color: rgba(255, 255, 255, 0.2);
     color: #fff;
 }
+
+.btn-map-loc {
+    background: rgba(79, 195, 247, 0.12);
+    border: 1px solid rgba(79, 195, 247, 0.35);
+    border-left: none;
+    color: #4fc3f7;
+    border-radius: 0 10px 10px 0;
+    padding: 0 13px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+}
+.btn-map-loc:hover {
+    background: rgba(79, 195, 247, 0.25);
+    color: #fff;
+}
+.input-group .form-control {
+    border-radius: 10px 0 0 10px !important;
+}
 </style>
 
 {{ form_start(form) }}
@@ -130,7 +149,14 @@
     </div>
     <div class="col-md-6">
         {{ form_label(form.localisation) }}
-        {{ form_widget(form.localisation) }}
+        <div class="input-group">
+            {{ form_widget(form.localisation, {'attr': {'id': 'planification_localisation', 'class': 'form-control'}}) }}
+            <button type="button" id="open-map-btn" class="btn btn-map-loc" title="Voir sur Mapbox">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                </svg>
+            </button>
+        </div>
         {{ form_errors(form.localisation) }}
     </div>
     <div class="col-12">
