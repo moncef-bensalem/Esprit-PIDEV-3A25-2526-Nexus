@@ -35,7 +35,7 @@ class EmailNotificationService
 
         // 2. Build the Email
         $email = (new Email())
-            ->from('recrutement@nexus-esprit.tn')
+            ->from('haifagaied2@gmail.com')
             ->to($emailAddress)
             ->subject('Mise à jour de votre candidature : ' . $jobTitle)
             ->html($content);
