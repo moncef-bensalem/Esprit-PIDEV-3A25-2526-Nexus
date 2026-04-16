@@ -15,17 +15,14 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 class Evaluation
 {
     #[ORM\Id]
-    //#[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
     #[Assert\Positive(message: "L'identifiant de l'evaluation doit etre positif.")]
     private ?int $idEvaluation = null;
 
-    // Null: No → NOT nullable
     #[ORM\Column(type: "datetime")]
     #[Assert\NotNull(message: "La date de creation est obligatoire.")]
     private \DateTimeInterface $dateCreation;
 
-    // longtext, Null: No
     #[ORM\Column(type: "text")]
     #[Assert\NotBlank(message: "Le commentaire global est obligatoire.")]
     #[Assert\Length(
@@ -36,7 +33,6 @@ class Evaluation
     )]
     private string $commentaireGlobal;
 
-    // varchar(255), Null: No
     #[ORM\Column(type: "string", length: 255)]
     #[Assert\NotBlank(message: "La decision preliminaire est obligatoire.")]
     #[Assert\Choice(
@@ -45,16 +41,13 @@ class Evaluation
     )]
     private string $decisionPreliminaire;
 
-    // date, Null: Yes (required only when decision is A_REVOIR)
     #[ORM\Column(type: "date", nullable: true)]
     private ?\DateTimeInterface $reviewDeadline = null;
 
-    // Null: Yes → nullable
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsCandidat")]
     #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
     private ?User $candidat = null;
 
-    // Null: Yes → nullable
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsRecruteur")]
     #[ORM\JoinColumn(name: "fk_recruteur_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
     private ?User $recruteur = null;
@@ -86,7 +79,6 @@ class Evaluation
 
     public function setDateCreation(\DateTimeInterface $value): static
     {
-        // Doctrine "datetime" expects a mutable \DateTime instance.
         if ($value instanceof \DateTimeImmutable) {
             $value = \DateTime::createFromImmutable($value);
         }
@@ -124,9 +116,6 @@ class Evaluation
 
     public function setReviewDeadline(?\DateTimeInterface $value): static
     {
-        // La colonne SQL est NOT NULL: si le formulaire envoie null
-        // (cas FAVORABLE/DEFAVORABLE), on garde la date existante
-        // ou on initialise a aujourd'hui pour eviter l'erreur DB.
         if ($value === null) {
             if (!$this->reviewDeadline instanceof \DateTimeInterface) {
                 $this->reviewDeadline = new \DateTimeImmutable('today');

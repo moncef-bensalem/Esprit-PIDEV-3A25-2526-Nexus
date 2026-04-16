@@ -1,0 +1,28 @@
+{% if evaluations is empty %}
+    <div class="empty-state">Aucune evaluation trouvee.</div>
+{% else %}
+<div class="cards-grid">
+    {% for evaluation in evaluations %}
+        {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
+        {% set avgScore = averageScoresById[evaluation.idEvaluation]|default(null) %}
+        <div class="evaluation-card {{ decisionClass }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
+            <div class="card-title">Evaluation #{{ evaluation.idEvaluation }}</div>
+            <div class="card-meta">
+                <div>📅 Date creation: {{ evaluation.dateCreation|date('Y-m-d H:i') }}</div>
+                <div>⭐ Score: {{ avgScore is null ? 'N/A' : (avgScore | number_format(2, '.', ',')) }}</div>
+                <div>👤 Candidat: {{ evaluation.candidat ? (evaluation.candidat.firstName ~ ' ' ~ evaluation.candidat.lastName) : 'Non assigne' }}</div>
+                <div>📌 Decision: {{ evaluation.decisionPreliminaire }}</div>
+            </div>
+
+            <div class="card-actions">
+                <a href="{{ path('evaluation_edit', {idEvaluation: evaluation.idEvaluation}) }}" class="btn-edit" onclick="event.stopPropagation();">Modifier</a>
+                <form method="post" action="{{ path('evaluation_delete', {idEvaluation: evaluation.idEvaluation}) }}" onsubmit="event.stopPropagation(); return confirm('Supprimer cette evaluation ?');" style="margin:0;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_evaluation_' ~ evaluation.idEvaluation) }}">
+                    <button type="submit" class="btn-delete">Supprimer</button>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
