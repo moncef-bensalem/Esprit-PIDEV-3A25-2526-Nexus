@@ -1,0 +1,259 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard Admin{% endblock %}
+
+{% block stylesheets %}
+<style>
+    /* ── Page-level tokens ── */
+    .page-lead { font-size: .85rem; color: rgba(255,255,255,.35); margin-top: 2px; }
+
+    /* ── Stat cards ── */
+    .nx-stat {
+        background: rgba(13,25,42,.7);
+        border: 1px solid rgba(32,178,170,.15);
+        border-radius: 18px;
+        padding: 26px 24px;
+        position: relative; overflow: hidden;
+        transition: transform .25s, box-shadow .25s;
+        backdrop-filter: blur(8px);
+    }
+    .nx-stat:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+    .nx-stat::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        border-radius: 18px 18px 0 0;
+    }
+    .nx-stat.cyan::before   { background: linear-gradient(90deg,#20b2aa,transparent); }
+    .nx-stat.green::before  { background: linear-gradient(90deg,#4caf50,transparent); }
+    .nx-stat.orange::before { background: linear-gradient(90deg,#ff9800,transparent); }
+    .nx-stat.purple::before { background: linear-gradient(90deg,#ab47bc,transparent); }
+
+    .nx-stat-icon {
+        width: 46px; height: 46px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem; margin-bottom: 16px; flex-shrink: 0;
+    }
+    .nx-stat.cyan   .nx-stat-icon { background: rgba(32,178,170,.15); color: #20b2aa; }
+    .nx-stat.green  .nx-stat-icon { background: rgba(76,175,80,.15);  color: #4caf50; }
+    .nx-stat.orange .nx-stat-icon { background: rgba(255,152,0,.15);  color: #ff9800; }
+    .nx-stat.purple .nx-stat-icon { background: rgba(171,71,188,.15); color: #ab47bc; }
+
+    .nx-stat-num   { font-size: 2.4rem; font-weight: 800; line-height: 1; color: #fff; }
+    .nx-stat-label { font-size: .78rem; font-weight: 500; text-transform: uppercase; letter-spacing: .8px; color: rgba(255,255,255,.4); margin-top: 4px; }
+    .nx-stat-trend { font-size: .76rem; margin-top: 10px; }
+    .nx-stat-trend .up   { color: #4caf50; }
+    .nx-stat-trend .down { color: #ef5350; }
+
+    .nx-stat-bg-icon {
+        position: absolute; right: 16px; bottom: 12px; font-size: 3.5rem;
+        opacity: .05; transition: opacity .25s, transform .25s;
+    }
+    .nx-stat:hover .nx-stat-bg-icon { opacity: .08; transform: scale(1.1); }
+
+    /* ── Panels ── */
+    .nx-panel {
+        background: rgba(13,25,42,.7);
+        border: 1px solid rgba(32,178,170,.15);
+        border-radius: 18px; padding: 24px;
+        backdrop-filter: blur(8px); height: 100%;
+    }
+    .nx-panel-title {
+        font-size: .92rem; font-weight: 700; color: rgba(255,255,255,.85);
+        margin-bottom: 20px; padding-bottom: 14px;
+        border-bottom: 1px solid rgba(32,178,170,.12);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .nx-panel-title i { color: #20b2aa; font-size: .85rem; }
+
+    /* ── Quick action buttons ── */
+    .nx-action-btn {
+        display: flex; flex-direction: column; align-items: center; gap: 10px;
+        padding: 20px 16px;
+        background: rgba(255,255,255,.03);
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 14px;
+        color: rgba(255,255,255,.65);
+        text-decoration: none;
+        font-size: .82rem; font-weight: 500;
+        transition: all .22s;
+        flex: 1; min-width: 140px;
+        text-align: center;
+    }
+    .nx-action-btn i { font-size: 1.3rem; color: rgba(32,178,170,.7); transition: color .2s; }
+    .nx-action-btn:hover {
+        background: rgba(32,178,170,.08);
+        border-color: rgba(32,178,170,.25);
+        color: #fff; transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,.25);
+    }
+    .nx-action-btn:hover i { color: #20b2aa; }
+
+    /* ── Activity list ── */
+    .nx-activity-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 11px 0;
+        border-bottom: 1px solid rgba(32,178,170,.07);
+    }
+    .nx-activity-item:last-child { border-bottom: none; }
+    .nx-activity-dot {
+        width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .nx-activity-text { font-size: .83rem; color: rgba(255,255,255,.65); flex: 1; }
+    .nx-activity-time { font-size: .73rem; color: rgba(255,255,255,.25); white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# Page header #}
+<div style="margin-bottom: 28px;">
+    <h1 style="font-size: 1.4rem; font-weight: 700; color: #fff; margin: 0;">
+        Tableau de bord
+    </h1>
+    <p class="page-lead">Vue d'ensemble de la plateforme Nexus en temps réel.</p>
+</div>
+
+{# ── Stat Cards ── #}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="nx-stat cyan">
+            <div class="nx-stat-icon"><i class="fa fa-users"></i></div>
+            <div class="nx-stat-num">{{ totalUsers }}</div>
+            <div class="nx-stat-label">Total Utilisateurs</div>
+            <div class="nx-stat-bg-icon"><i class="fa fa-users"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="nx-stat green">
+            <div class="nx-stat-icon"><i class="fa fa-user-graduate"></i></div>
+            <div class="nx-stat-num">{{ totalCandidates }}</div>
+            <div class="nx-stat-label">Total Candidats</div>
+            <div class="nx-stat-bg-icon"><i class="fa fa-user-graduate"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="nx-stat orange">
+            <div class="nx-stat-icon"><i class="fa fa-calendar-check"></i></div>
+            <div class="nx-stat-num">{{ totalInterviews }}</div>
+            <div class="nx-stat-label">Entretiens Planifiés</div>
+            <div class="nx-stat-bg-icon"><i class="fa fa-calendar-check"></i></div>
+        </div>
+    </div>
+</div>
+
+{# ── Bottom Row ── #}
+<div class="row g-3">
+
+    {# Quick actions #}
+    <div class="col-md-7">
+        <div class="nx-panel">
+            <div class="nx-panel-title">
+                <i class="fa fa-bolt"></i> Actions Rapides
+            </div>
+            <div class="d-flex gap-3 flex-wrap">
+                <a href="{{ path('admin_user_index') }}" class="nx-action-btn">
+                    <i class="fa fa-users-cog"></i>
+                    Gérer les Utilisateurs
+                </a>
+                <a href="{{ path('planification_index') }}" class="nx-action-btn">
+                    <i class="fa fa-calendar-alt"></i>
+                    Voir l'Agenda
+                </a>
+                <a href="{{ path('app_offre_emploi_index') }}" class="nx-action-btn">
+                    <i class="fa fa-briefcase"></i>
+                    Offres d'emploi
+                </a>
+                <a href="{{ path('evaluation_index') }}" class="nx-action-btn">
+                    <i class="fa fa-clipboard-list"></i>
+                    Évaluations
+                </a>
+            </div>
+            <div class="nx-panel-title mt-4">
+                <i class="fa fa-file-export"></i> Exportations
+            </div>
+            <div class="d-flex gap-3 flex-wrap">
+                <a href="{{ path('admin_export_dashboard_pdf') }}" class="nx-action-btn">
+                    <i class="fa fa-file-pdf" style="color: #ff5252;"></i>
+                    Rapport Synthèse (PDF)
+                </a>
+                <a href="{{ path('admin_export_users_excel') }}" class="nx-action-btn">
+                    <i class="fa fa-file-excel" style="color: #4caf50;"></i>
+                    Liste Utilisateurs (Excel)
+                </a>
+                <a href="{{ path('app_face_registration') }}" class="nx-action-btn">
+                    <i class="fa fa-fingerprint" style="color: #20b2aa;"></i>
+                    Configurer Face ID
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Role chart #}
+    <div class="col-md-5">
+        <div class="nx-panel">
+            <div class="nx-panel-title">
+                <i class="fa fa-chart-pie"></i> Répartition des Rôles
+            </div>
+            <div style="height: 220px; position: relative;">
+                <canvas id="rolesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('rolesChart').getContext('2d');
+    const roleData = {{ roleDistribution|json_encode|raw }};
+    const labels = Object.keys(roleData);
+    const data   = Object.values(roleData);
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: ['rgba(32,178,170,.75)', 'rgba(171,71,188,.75)'],
+                borderColor:     ['#20b2aa', '#ab47bc'],
+                borderWidth: 2,
+                hoverOffset: 12
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: 'rgba(255,255,255,.6)',
+                        padding: 20,
+                        font: { family: "'Inter', sans-serif", size: 12, weight: '500' },
+                        boxWidth: 12, boxHeight: 12, borderRadius: 3
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(13,25,42,.95)',
+                    titleColor: '#fff', bodyColor: 'rgba(255,255,255,.7)',
+                    borderColor: 'rgba(32,178,170,.3)', borderWidth: 1, padding: 12,
+                    callbacks: {
+                        label: (c) => ` ${c.label} : ${c.parsed}`
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

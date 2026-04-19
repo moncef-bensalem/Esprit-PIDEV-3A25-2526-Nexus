@@ -1,0 +1,73 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="field-wrapper">
+            {{ form_widget(form.firstName, {'attr': {'class': 'modern-input', 'placeholder': ' '}}) }}
+            <i class="fa fa-user field-icon-left"></i>
+            <label class="modern-label">{{ form.firstName.vars.label|default('Prénom') }}</label>
+            {% for error in form.firstName.vars.errors %}
+                <span class="error-msg"><i class="fa fa-exclamation-circle"></i> {{ error.message }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="field-wrapper">
+            {{ form_widget(form.lastName, {'attr': {'class': 'modern-input', 'placeholder': ' '}}) }}
+            <i class="fa fa-user field-icon-left"></i>
+            <label class="modern-label">{{ form.lastName.vars.label|default('Nom') }}</label>
+            {% for error in form.lastName.vars.errors %}
+                <span class="error-msg"><i class="fa fa-exclamation-circle"></i> {{ error.message }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="field-wrapper">
+    {{ form_widget(form.email, {'attr': {'class': 'modern-input', 'placeholder': ' '}}) }}
+    <i class="fa fa-envelope field-icon-left"></i>
+    <label class="modern-label">{{ form.email.vars.label|default('Adresse Email') }}</label>
+    {% for error in form.email.vars.errors %}
+        <span class="error-msg"><i class="fa fa-exclamation-circle"></i> {{ error.message }}</span>
+    {% endfor %}
+</div>
+
+<div class="field-wrapper">
+    {{ form_widget(form.roles, {'attr': {'class': 'modern-input js-choice'}}) }}
+    <label class="modern-label" style="transform: translateY(-28px) translateX(30px) scale(0.85); left: 20px; color: #20b2aa; background: #09131d; padding: 0 8px;">
+        {{ form.roles.vars.label|default('Rôle du compte') }}
+    </label>
+    {% for error in form.roles.vars.errors %}
+        <span class="error-msg"><i class="fa fa-exclamation-circle"></i> {{ error.message }}</span>
+    {% endfor %}
+</div>
+
+<div class="field-wrapper" style="margin-bottom: 2rem;">
+    {{ form_widget(form.plainPassword, {'attr': {'class': 'modern-input', 'placeholder': ' '}}) }}
+    <i class="fa fa-lock field-icon-left"></i>
+    <label class="modern-label">{{ form.plainPassword.vars.label|default('Mot de passe') }} {% if button_label|default('Créer le compte') == 'Mettre à jour le profil' %}(laisser vide pour ne pas modifier){% endif %}</label>
+    {% for error in form.plainPassword.vars.errors %}
+        <span class="error-msg"><i class="fa fa-exclamation-circle"></i> {{ error.message }}</span>
+    {% endfor %}
+</div>
+
+<div class="d-flex justify-content-end align-items-center pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);">
+    <button type="submit" class="btn-glow" id="submit-btn">
+        <span>{{ button_label|default('Créer le compte') }}</span>
+        <i class="fa fa-arrow-right"></i>
+    </button>
+</div>
+
+{{ form_end(form) }}
+
+<script>
+    document.querySelector('form').addEventListener('submit', function() {
+        const btn = document.getElementById('submit-btn');
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+        btn.querySelector('span').innerHTML = 'Traitement en cours...';
+        btn.querySelector('i').className = 'fa fa-spinner fa-spin';
+    });
+</script>
+    

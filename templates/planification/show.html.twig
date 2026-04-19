@@ -1,0 +1,873 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Planification #{{ planification.idEvent }}{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & base ───────────────────────── */
+:root {
+    --bg:       #07111f;
+    --surface:  #0d1d30;
+    --surface2: #102136;
+    --border:   rgba(79,195,247,.15);
+    --accent:   #4fc3f7;
+    --accent-hover: #0288d1;
+    --accent2:  #6c63ff;
+    --text:     #e2eaf4;
+    --muted:    #6b8ba4;
+    --radius:   18px;
+    --shadow:   0 8px 32px rgba(0,0,0,.45);
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    min-height: 100vh;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 15% 10%, rgba(79,195,247,.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 85% 80%, rgba(108,99,255,.07) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.page-wrapper {
+    position: relative;
+    z-index: 1;
+    padding: 40px 20px;
+    animation: fadeUp .5s cubic-bezier(.22,1,.36,1) both;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.detail-card {
+    background: rgba(13, 29, 48, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px 45px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.detail-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.header-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.badge-statut {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.badge-statut.bg-success { background: rgba(34, 197, 94, 0.15) !important; color: #4ade80 !important; border: 1px solid rgba(34, 197, 94, 0.3); }
+.badge-statut.bg-danger { background: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; border: 1px solid rgba(239, 68, 68, 0.3); }
+.badge-statut.bg-secondary { background: rgba(148, 163, 184, 0.15) !important; color: #cbd5e1 !important; border: 1px solid rgba(148, 163, 184, 0.3); }
+.badge-statut.bg-warning { background: rgba(245, 158, 11, 0.15) !important; color: #fbbf24 !important; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+.info-row {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+    border-radius: 8px;
+}
+.info-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    width: 170px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 500;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(79, 195, 247, 0.1);
+    color: var(--accent);
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.info-value {
+    font-weight: 500;
+    color: var(--text);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.info-value a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.info-value a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+.btn-edit {
+    background: linear-gradient(135deg, #4fc3f7, #0288d1);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(79, 195, 247, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-edit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
+    color: #fff;
+}
+
+/* ── Weather widget ── */
+.weather-card {
+    background: rgba(13, 29, 48, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    margin-top: 20px;
+}
+.weather-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4fc3f7, #0288d1, #6c63ff);
+}
+.weather-title {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.weather-badge {
+    font-size: .65rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(79,195,247,.15);
+    color: var(--accent);
+    border: 1px solid rgba(79,195,247,.3);
+    font-weight: 700;
+    letter-spacing: .05em;
+}
+.weather-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.weather-icon img {
+    width: 72px;
+    height: 72px;
+    filter: drop-shadow(0 4px 12px rgba(79,195,247,.3));
+}
+.weather-temp {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.weather-temp sup {
+    font-size: 1.2rem;
+    font-weight: 600;
+    -webkit-text-fill-color: var(--muted);
+    vertical-align: super;
+}
+.weather-condition {
+    font-size: .95rem;
+    color: var(--muted);
+    margin-top: 4px;
+}
+.weather-feels {
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: 2px;
+}
+.weather-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+.weather-stat {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+}
+.weather-stat-icon { font-size: 1.2rem; margin-bottom: 4px; }
+.weather-stat-val  { font-size: .95rem; font-weight: 700; color: var(--text); }
+.weather-stat-lbl  { font-size: .68rem; color: var(--muted); margin-top: 2px; }
+.weather-city {
+    font-size: .75rem;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 14px;
+    opacity: .7;
+}
+.weather-unavailable {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    color: var(--muted);
+    font-size: .88rem;
+}
+.weather-unavailable span { font-size: 1.5rem; }
+
+/* ── Chatbot widget ── */
+#chatbot-fab {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    color: #fff;
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(79,195,247,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: transform .2s, box-shadow .2s;
+}
+#chatbot-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 10px 30px rgba(79,195,247,.6);
+}
+#chatbot-fab .fab-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    background: #4ade80;
+    border-radius: 50%;
+    font-size: .6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg);
+    color: #07111f;
+}
+
+#chatbot-panel {
+    position: fixed;
+    bottom: 100px;
+    right: 32px;
+    width: 380px;
+    max-height: 560px;
+    background: rgba(13, 29, 48, 0.96);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    display: flex;
+    flex-direction: column;
+    z-index: 9998;
+    overflow: hidden;
+    transform: translateY(20px) scale(.96);
+    opacity: 0;
+    pointer-events: none;
+    transition: all .25s cubic-bezier(.22,1,.36,1);
+}
+#chatbot-panel.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.chat-header-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.chat-header-info { flex: 1; }
+.chat-header-name { font-size: .9rem; font-weight: 700; color: var(--text); }
+.chat-header-sub  { font-size: .72rem; color: var(--accent); }
+#chatbot-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px;
+    transition: color .15s;
+}
+#chatbot-close:hover { color: var(--text); }
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(79,195,247,.2) transparent;
+}
+
+.chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: .855rem;
+    line-height: 1.55;
+    word-wrap: break-word;
+}
+.chat-bubble.bot {
+    background: rgba(79, 195, 247, 0.1);
+    border: 1px solid rgba(79, 195, 247, 0.2);
+    color: var(--text);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+.chat-bubble.user {
+    background: linear-gradient(135deg, rgba(79,195,247,.25), rgba(108,99,255,.25));
+    border: 1px solid rgba(79,195,247,.3);
+    color: var(--text);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+.chat-bubble.typing {
+    background: rgba(79, 195, 247, 0.07);
+    border: 1px solid rgba(79, 195, 247, 0.15);
+    align-self: flex-start;
+}
+.typing-dots span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 0 2px;
+    animation: bounce 1.2s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: .2s; }
+.typing-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40%           { transform: translateY(-6px); }
+}
+
+.chat-suggestions {
+    padding: 8px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-top: 1px solid rgba(255,255,255,.04);
+    flex-shrink: 0;
+}
+.suggestion-chip {
+    background: rgba(79,195,247,.08);
+    border: 1px solid rgba(79,195,247,.2);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: .72rem;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+}
+.suggestion-chip:hover {
+    background: rgba(79,195,247,.18);
+}
+
+.chat-input-row {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+#chatbot-input {
+    flex: 1;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-size: .85rem;
+    font-family: inherit;
+    resize: none;
+    max-height: 100px;
+    outline: none;
+    transition: border-color .2s;
+}
+#chatbot-input:focus {
+    border-color: rgba(79,195,247,.5);
+}
+#chatbot-send {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    color: #fff;
+    font-size: .95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity .2s;
+    flex-shrink: 0;
+}
+#chatbot-send:hover { opacity: .85; }
+#chatbot-send:disabled { opacity: .4; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+    #chatbot-panel { width: calc(100vw - 24px); right: 12px; }
+    #chatbot-fab   { right: 20px; bottom: 20px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="container" style="max-width: 800px;">
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <a href="{{ path('planification_index') }}" style="color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 0.9rem;">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Retour au calendrier
+            </a>
+            
+            <div class="d-flex gap-2">
+                <button type="button" id="btn-fb-share" class="btn btn-sm px-3" style="border-radius: 8px; background: #1877F2; color: white; border: none; display: flex; align-items: center; box-shadow: 0 4px 14px rgba(24, 119, 242, 0.3); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(24, 119, 242, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(24, 119, 242, 0.3)'">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" class="me-2"><path d="M24 12.072a12 12 0 10-13.875 11.854v-8.384H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.313 0 2.686.234 2.686.234v2.953H15.83c-1.49 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.384A12 12 0 0024 12.072z"/></svg>
+                    Partager (Facebook)
+                </button>
+                <a href="{{ path('planification_edit', {id: planification.idEvent}) }}" class="btn btn-sm btn-edit px-3" style="border-radius: 8px;">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    Modifier
+                </a>
+                <form method="post" action="{{ path('planification_delete', {id: planification.idEvent}) }}" onsubmit="return confirm('Souhaitez-vous vraiment supprimer cet événement ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ planification.idEvent) }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger px-3" style="border-radius: 8px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <div class="d-flex align-items-center justify-content-between mb-4 border-bottom border-secondary pb-4" style="border-color: rgba(255,255,255,0.1) !important;">
+                <h2 class="header-title">{{ planification.typeEvent|capitalize }}</h2>
+                {% if planification.statut %}
+                    <span class="badge-statut badge
+                        {% if planification.statut == 'confirmé' %}bg-success
+                        {% elseif planification.statut == 'annulé' %}bg-danger
+                        {% elseif planification.statut == 'terminé' %}bg-secondary
+                        {% else %}bg-warning{% endif %}">
+                        {{ planification.statut }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">
+                    <div class="info-icon">📅</div>
+                    Date
+                </div>
+                <div class="info-value">{{ planification.date ? planification.date|date('d/m/Y') : '-' }}</div>
+            </div>
+            
+            <div class="info-row">
+                <div class="info-label">
+                    <div class="info-icon">🕒</div>
+                    Horaire
+                </div>
+                <div class="info-value">
+                    <span style="color: var(--accent); font-weight: 700; margin-right: 8px;">De</span>
+                    {{ planification.heureDebut ? planification.heureDebut|date('H:i') : '-' }} 
+                    <span style="color: var(--accent); font-weight: 700; margin: 0 8px;">à</span> 
+                    {{ planification.heureFin ? planification.heureFin|date('H:i') : '-' }}
+                </div>
+            </div>
+
+            {% if planification.mode %}
+            <div class="info-row">
+                <div class="info-label">
+                    <div class="info-icon">📡</div>
+                    Mode
+                </div>
+                <div class="info-value">{{ planification.mode|capitalize|replace({'_': ' '}) }}</div>
+            </div>
+            {% endif %}
+
+            {% if planification.localisation %}
+            <div class="info-row">
+                <div class="info-label">
+                    <div class="info-icon">📍</div>
+                    Localisation
+                </div>
+                <div class="info-value">{{ planification.localisation }}</div>
+            </div>
+            {% endif %}
+
+            {% if planification.lienMeeting %}
+            <div class="info-row">
+                <div class="info-label">
+                    <div class="info-icon">🔗</div>
+                    Lien Meeting
+                </div>
+                <div class="info-value"><a href="{{ planification.lienMeeting }}" target="_blank">{{ planification.lienMeeting }}</a></div>
+            </div>
+            {% endif %}
+
+            {% if planification.description %}
+            <div class="info-row flex-column align-items-start gap-2">
+                <div class="info-label w-100">
+                    <div class="info-icon">📝</div>
+                    Description
+                </div>
+                <div class="info-value w-100" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); font-weight: 400; line-height: 1.6;">
+                    {{ planification.description|nl2br }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if planification.candidature %}
+            <div class="info-row mt-2">
+                <div class="info-label">
+                    <div class="info-icon">👤</div>
+                    Candidature
+                </div>
+                <div class="info-value" style="background: rgba(79, 195, 247, 0.1); padding: 4px 12px; border-radius: 6px; color: var(--accent);">
+                    #{{ planification.candidature.idCandidature }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if planification.user %}
+            <div class="info-row">
+                <div class="info-label">
+                    <div class="info-icon">👥</div>
+                    Responsable
+                </div>
+                <div class="info-value">{{ planification.user.email }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {# ── Weather widget ── #}
+        {% if weather is not null %}
+        <div class="weather-card">
+            <div class="weather-title">
+                🌤 Météo le jour de l'événement
+                {% if weather.unavailable is not defined or not weather.unavailable %}
+                    <span class="weather-badge">{{ weather.is_forecast ? 'Prévision' : 'Temps actuel' }}</span>
+                {% endif %}
+            </div>
+
+            {% if weather.unavailable is defined and weather.unavailable %}
+                <div class="weather-unavailable">
+                    <span>📭</span>
+                    <span>{{ weather.message }}</span>
+                </div>
+            {% else %}
+                <div class="weather-main">
+                    <div class="weather-icon">
+                        <img src="{{ weather.icon_url }}" alt="{{ weather.condition }}">
+                    </div>
+                    <div>
+                        <div class="weather-temp">{{ weather.temp }}<sup>°C</sup></div>
+                        <div class="weather-condition">{{ weather.condition }}</div>
+                        <div class="weather-feels">Ressenti {{ weather.feels_like }}°C</div>
+                    </div>
+                </div>
+
+                <div class="weather-stats">
+                    <div class="weather-stat">
+                        <div class="weather-stat-icon">💧</div>
+                        <div class="weather-stat-val">{{ weather.humidity }}%</div>
+                        <div class="weather-stat-lbl">Humidité</div>
+                    </div>
+                    <div class="weather-stat">
+                        <div class="weather-stat-icon">💨</div>
+                        <div class="weather-stat-val">{{ weather.wind_speed }} km/h</div>
+                        <div class="weather-stat-lbl">Vent</div>
+                    </div>
+                    <div class="weather-stat">
+                        <div class="weather-stat-icon">📍</div>
+                        <div class="weather-stat-val" style="font-size:.8rem">{{ weather.city }}</div>
+                        <div class="weather-stat-lbl">Localisation</div>
+                    </div>
+                </div>
+
+                <div class="weather-city">
+                    Source : OpenWeatherMap
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{# ── Chatbot floating widget ── #}
+<button id="chatbot-fab" aria-label="Ouvrir le chatbot">
+    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"/>
+    </svg>
+    <span class="fab-badge">AI</span>
+</button>
+
+<div id="chatbot-panel" role="dialog" aria-label="Assistant événement">
+    <div class="chat-header">
+        <div class="chat-header-avatar">🤖</div>
+        <div class="chat-header-info">
+            <div class="chat-header-name">Assistant Nexus</div>
+            <div class="chat-header-sub">Propulsé par Grok · IA</div>
+        </div>
+        <button id="chatbot-close" aria-label="Fermer">✕</button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages"></div>
+
+    <div class="chat-suggestions" id="chat-suggestions">
+        <button class="suggestion-chip">Quand a lieu l'événement ?</button>
+        <button class="suggestion-chip">Où se tient-il ?</button>
+        <button class="suggestion-chip">Quel est le mode ?</button>
+        <button class="suggestion-chip">De quoi s'agit-il ?</button>
+    </div>
+
+    <div class="chat-input-row">
+        <textarea id="chatbot-input" rows="1"
+                  placeholder="Posez votre question sur cet événement…"
+                  aria-label="Message"></textarea>
+        <button id="chatbot-send" aria-label="Envoyer">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+    /* ── Event context injected from Twig ── */
+    const EVENT_CONTEXT = {
+        type:        {{ planification.typeEvent|json_encode|raw }},
+        statut:      {{ planification.statut|default('')|json_encode|raw }},
+        date:        {{ (planification.date ? planification.date|date('d/m/Y') : '')|json_encode|raw }},
+        heureDebut:  {{ (planification.heureDebut ? planification.heureDebut|date('H:i') : '')|json_encode|raw }},
+        heureFin:    {{ (planification.heureFin ? planification.heureFin|date('H:i') : '')|json_encode|raw }},
+        mode:        {{ planification.mode|default('')|json_encode|raw }},
+        localisation:{{ planification.localisation|default('')|json_encode|raw }},
+        lienMeeting: {{ planification.lienMeeting|default('')|json_encode|raw }},
+        description: {{ planification.description|default('')|json_encode|raw }},
+        responsable: {{ planification.user ? planification.user.email|json_encode|raw : '""' }},
+        candidature: {{ planification.candidature ? planification.candidature.idCandidature|json_encode|raw : 'null' }},
+    };
+
+    const ASK_URL = '{{ path('chatbot_ask') }}';
+
+    /* ── DOM refs ── */
+    const fab        = document.getElementById('chatbot-fab');
+    const panel      = document.getElementById('chatbot-panel');
+    const closeBtn   = document.getElementById('chatbot-close');
+    const messagesEl = document.getElementById('chat-messages');
+    const input      = document.getElementById('chatbot-input');
+    const sendBtn    = document.getElementById('chatbot-send');
+    const suggestEl  = document.getElementById('chat-suggestions');
+
+    /* ── Toggle ── */
+    fab.addEventListener('click', () => {
+        panel.classList.toggle('open');
+        if (panel.classList.contains('open') && messagesEl.children.length === 0) {
+            addBotMessage('Bonjour ! Je suis votre assistant pour cet événement. Posez-moi n\'importe quelle question à son sujet.');
+        }
+    });
+    closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+
+    /* ── Suggestion chips ── */
+    suggestEl.addEventListener('click', (e) => {
+        const chip = e.target.closest('.suggestion-chip');
+        if (chip) sendMessage(chip.textContent.trim());
+    });
+
+    /* ── Send on Enter (Shift+Enter = new line) ── */
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage(input.value.trim());
+        }
+    });
+    sendBtn.addEventListener('click', () => sendMessage(input.value.trim()));
+
+    /* ── Auto-resize textarea ── */
+    input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+    });
+
+    /* ── Core send logic ── */
+    async function sendMessage(question) {
+        if (!question) return;
+        input.value = '';
+        input.style.height = 'auto';
+        sendBtn.disabled = true;
+
+        addUserMessage(question);
+        const typingEl = addTypingIndicator();
+
+        try {
+            const res = await fetch(ASK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, eventContext: EVENT_CONTEXT }),
+            });
+            const data = await res.json();
+            typingEl.remove();
+            if (data.error) {
+                addBotMessage('⚠️ ' + data.error, true);
+            } else {
+                addBotMessage(data.answer);
+            }
+        } catch (err) {
+            typingEl.remove();
+            addBotMessage('⚠️ Une erreur réseau est survenue. Veuillez réessayer.', true);
+        } finally {
+            sendBtn.disabled = false;
+            input.focus();
+        }
+    }
+
+    /* ── Message helpers ── */
+    function addUserMessage(text) {
+        const el = document.createElement('div');
+        el.className = 'chat-bubble user';
+        el.textContent = text;
+        messagesEl.appendChild(el);
+        scrollBottom();
+    }
+
+    function addBotMessage(text, isError = false) {
+        const el = document.createElement('div');
+        el.className = 'chat-bubble bot';
+        if (isError) el.style.borderColor = 'rgba(239,68,68,.4)';
+        el.textContent = text;
+        messagesEl.appendChild(el);
+        scrollBottom();
+        return el;
+    }
+
+    function addTypingIndicator() {
+        const el = document.createElement('div');
+        el.className = 'chat-bubble typing';
+        el.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+        messagesEl.appendChild(el);
+        scrollBottom();
+        return el;
+    }
+
+    function scrollBottom() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+})();
+
+document.getElementById('btn-fb-share')?.addEventListener('click', function() {
+    const title = {{ planification.typeEvent|default('Événement')|json_encode|raw }};
+    const date = {{ (planification.date ? planification.date|date('d/m/Y') : '')|json_encode|raw }};
+    const time = `{{ planification.heureDebut ? planification.heureDebut|date('H:i') : '' }} - {{ planification.heureFin ? planification.heureFin|date('H:i') : '' }}`;
+    const location = {{ planification.localisation|default('En ligne')|json_encode|raw }};
+    const description = {{ planification.description|default('')|striptags|json_encode|raw }};
+    
+    const textToCopy = `📣 Événement : ${title}\n📅 Date & Heure : ${date} | ${time}\n📍 Lieu : ${location}\n\n📝 Description :\n${description}`;
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        alert("Les informations de l'événement ont été copiées dans votre presse-papiers !\n\nL'interface Facebook va s'ouvrir. Faites simplement 'Ctrl+V' (ou Coller) pour créer votre publication !");
+        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+        window.open(fbUrl, 'facebook-share-dialog', 'width=800,height=600');
+    }).catch(err => {
+        console.error('Erreur de copie:', err);
+        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+        window.open(fbUrl, 'facebook-share-dialog', 'width=800,height=600');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Compétences des Talents - NEXUS{% endblock %}
+{% block page_title %}Compétences des Talents{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1><i class="fa-solid fa-trophy"></i> Compétences des Talents</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_talent_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i> Retour Talents</a>
+            <a href="{{ path('app_talent_competence_new') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ajouter</a>
+        </div>
+    </div>
+
+    {% for msg in app.flashes('success') %}
+        <div class="alert-success"><i class="fa fa-check-circle"></i> {{ msg }}</div>
+    {% endfor %}
+    {% for msg in app.flashes('error') %}
+        <div class="alert-error"><i class="fa fa-exclamation-circle"></i> {{ msg }}</div>
+    {% endfor %}
+
+    <div class="table-card">
+        <table class="nx-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Talent</th>
+                    <th>Compétence</th>
+                    <th>Niveau de maîtrise</th>
+                    <th>Années pratique</th>
+                    <th>Date d'acquisition</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for tc in talent_competences %}
+                <tr>
+                    <td class="text-muted">{{ tc.id }}</td>
+                    <td>
+                        {% if tc.talent is defined and tc.talent %}
+                            <span class="badge-talent">{{ tc.talent.prenom }} {{ tc.talent.nom }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if tc.competence is defined and tc.competence %}
+                            <span class="badge-competence">{{ tc.competence.nom ?? tc.competence }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% set lvl = tc.niveauMaitrise %}
+                        {% set color = lvl == 'expert' ? '#20b2aa' : (lvl == 'avancé' or lvl == 'avance' ? '#0288d1' : '#5a7a9a') %}
+                        <span class="level-badge" style="background:{{ color }}22; color:{{ color }}; border:1px solid {{ color }}44;">
+                            {{ lvl|capitalize }}
+                        </span>
+                    </td>
+                    <td>{{ tc.anneesPratique ?? '—' }} {% if tc.anneesPratique %}ans{% endif %}</td>
+                    <td>{{ tc.dateAcquisition ? tc.dateAcquisition|date('d/m/Y') : '—' }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="{{ path('app_talent_competence_show', {'id': tc.id}) }}" class="btn-icon" title="Voir"><i class="fa-solid fa-eye"></i></a>
+                            <a href="{{ path('app_talent_competence_edit', {'id': tc.id}) }}" class="btn-icon" title="Éditer"><i class="fa-solid fa-pen"></i></a>
+                            <form method="post" action="{{ path('app_talent_competence_delete', {'id': tc.id}) }}" onsubmit="return confirm('Supprimer cette compétence ?');" style="display:inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ tc.id) }}">
+                                <button class="btn-icon btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7" class="empty-row">
+                        <i class="fa-solid fa-inbox" style="font-size:2rem;color:rgba(32,178,170,.3);display:block;margin-bottom:8px;"></i>
+                        Aucune compétence associée pour l'instant.
+                        <a href="{{ path('app_talent_competence_new') }}" style="color:#20b2aa;margin-left:6px;">En ajouter une</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.dashboard-container { max-width: 1200px; }
+.top-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+.top-bar h1 { font-size:1.4rem; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px; margin:0; }
+.top-actions { display:flex; gap:10px; }
+.btn { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:9px; font-size:.84rem; font-weight:600; cursor:pointer; text-decoration:none; border:1px solid rgba(32,178,170,.3); background:rgba(32,178,170,.08); color:rgba(32,178,170,.9); transition:all .18s; }
+.btn:hover { background:rgba(32,178,170,.18); color:#fff; }
+.btn-primary { background:linear-gradient(135deg,#20b2aa,#0288d1); border-color:transparent; color:#fff; }
+.btn-primary:hover { opacity:.88; color:#fff; }
+
+.table-card { background:rgba(13,25,42,.85); border:1px solid rgba(32,178,170,.15); border-radius:16px; overflow:hidden; }
+.nx-table { width:100%; border-collapse:collapse; font-size:.86rem; }
+.nx-table thead tr { background:rgba(32,178,170,.07); border-bottom:1px solid rgba(32,178,170,.15); }
+.nx-table th { padding:13px 16px; text-align:left; font-size:.75rem; font-weight:600; color:rgba(32,178,170,.8); text-transform:uppercase; letter-spacing:.8px; }
+.nx-table tbody tr { border-bottom:1px solid rgba(255,255,255,.04); transition:background .15s; }
+.nx-table tbody tr:hover { background:rgba(32,178,170,.04); }
+.nx-table td { padding:12px 16px; color:rgba(255,255,255,.75); vertical-align:middle; }
+.text-muted { color:rgba(255,255,255,.25) !important; font-size:.8rem; }
+
+.badge-talent { background:rgba(2,136,209,.15); color:#4fc3f7; border:1px solid rgba(2,136,209,.25); padding:3px 10px; border-radius:20px; font-size:.8rem; font-weight:600; }
+.badge-competence { background:rgba(139,92,246,.15); color:#a78bfa; border:1px solid rgba(139,92,246,.25); padding:3px 10px; border-radius:20px; font-size:.8rem; font-weight:600; }
+.level-badge { padding:3px 10px; border-radius:20px; font-size:.78rem; font-weight:600; }
+
+.action-btns { display:flex; gap:6px; align-items:center; }
+.btn-icon { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; border:1px solid rgba(32,178,170,.2); background:rgba(32,178,170,.06); color:rgba(32,178,170,.7); font-size:.8rem; text-decoration:none; cursor:pointer; transition:all .15s; }
+.btn-icon:hover { background:rgba(32,178,170,.15); color:#fff; border-color:rgba(32,178,170,.4); }
+.btn-delete { border-color:rgba(239,83,80,.2); background:rgba(239,83,80,.06); color:rgba(239,83,80,.6); }
+.btn-delete:hover { background:rgba(239,83,80,.15); color:#ef5350; }
+
+.empty-row { text-align:center; padding:40px !important; color:rgba(255,255,255,.3); font-size:.9rem; }
+
+.alert-success { background:rgba(76,175,80,.1); border:1px solid rgba(76,175,80,.25); border-radius:10px; padding:12px 16px; margin-bottom:16px; color:#a5d6a7; font-size:.85rem; display:flex; gap:8px; align-items:center; }
+.alert-error { background:rgba(239,83,80,.1); border:1px solid rgba(239,83,80,.3); border-radius:10px; padding:12px 16px; margin-bottom:16px; color:#ff8a80; font-size:.85rem; display:flex; gap:8px; align-items:center; }
+</style>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ talent.prenom }} {{ talent.nom }} — Nexus{% endblock %}
+{% block page_title %}Fiche Talent{% endblock %}
+
+{% block content %}
+<div style="max-width:960px; margin:0 auto;">
+
+    {# ── HERO ── #}
+    <div class="sh-hero">
+        <div class="sh-avatar">{{ talent.prenom|slice(0,1)|upper }}{{ talent.nom|slice(0,1)|upper }}</div>
+        <div class="sh-hero-info">
+            <h1 class="sh-name">{{ talent.prenom }} {{ talent.nom }}</h1>
+            <div class="sh-poste">{{ talent.poste }}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                <span class="sh-badge sh-badge-dept">🏢 {{ talent.departement }}</span>
+                {% if talent.niveauEtudes %}<span class="sh-badge sh-badge-edu">🎓 {{ talent.niveauEtudes }}</span>{% endif %}
+                <span class="sh-badge sh-badge-exp">⚡ {{ talent.anneesExperience ?? 0 }} ans d'exp.</span>
+            </div>
+        </div>
+        <div class="sh-qr-box">
+            <a href="{{ path('app_talent_profil_public', {'id': talent.id}) }}">
+                <img src="{{ qrUrl }}" alt="QR Code" class="sh-qr-img">
+            </a>
+            <div class="sh-qr-lbl">Profil public</div>
+        </div>
+    </div>
+
+    <div class="sh-grid">
+
+        {# ── INFOS DE BASE ── #}
+        <div class="sh-card">
+            <div class="sh-card-title"><i class="fa-solid fa-user"></i> Informations</div>
+            <div class="sh-info-row"><span class="sh-lbl">Email</span><span class="sh-val"><a href="mailto:{{ talent.email }}" style="color:#20b2aa">{{ talent.email }}</a></span></div>
+            <div class="sh-info-row"><span class="sh-lbl">Téléphone</span><span class="sh-val">{{ talent.telephone ?? '—' }}</span></div>
+            <div class="sh-info-row"><span class="sh-lbl">Date embauche</span><span class="sh-val">{{ talent.dateEmbauche ? talent.dateEmbauche|date('d/m/Y') : '—' }}</span></div>
+            <div class="sh-info-row"><span class="sh-lbl">Département</span><span class="sh-val">{{ talent.departement }}</span></div>
+        </div>
+
+
+
+    </div>
+
+    {# ── SALAIRE DU MARCHÉ (ADZUNA) ── #}
+    <div class="sh-card sh-salary-card">
+        <div class="sh-card-title">
+            <i class="fa-solid fa-chart-bar"></i> Salaire du marché pour « {{ talent.poste }} »
+            <span class="api-badge adzuna-badge">Adzuna API</span>
+            {% if salaryData.fallback is defined %}<span class="fallback-note">données estimées</span>{% endif %}
+        </div>
+
+        <div class="salary-kpis">
+            <div class="salary-kpi salary-kpi--min">
+                <div class="kpi-label">Salaire Min</div>
+                <div class="kpi-value">{{ salaryData.min|number_format(0, ',', ' ') }} {{ salaryData.currency }}</div>
+            </div>
+            <div class="salary-kpi salary-kpi--mid">
+                <div class="kpi-label">Médiane</div>
+                <div class="kpi-value">{{ salaryData.median|number_format(0, ',', ' ') }} {{ salaryData.currency }}</div>
+            </div>
+            <div class="salary-kpi salary-kpi--max">
+                <div class="kpi-label">Salaire Max</div>
+                <div class="kpi-value">{{ salaryData.max|number_format(0, ',', ' ') }} {{ salaryData.currency }}</div>
+            </div>
+            <div class="salary-kpi salary-kpi--exp">
+                <div class="kpi-label">Expérience talent</div>
+                <div class="kpi-value">{{ talent.anneesExperience ?? 0 }} ans</div>
+            </div>
+        </div>
+
+        {# ── Barre de progression du salaire ── #}
+        {% set range = salaryData.max - salaryData.min %}
+        {% set talentPct = range > 0 ? min(((salaryData.median - salaryData.min) / range * 100)|round, 100) : 50 %}
+        <div style="margin-top:18px;">
+            <div style="display:flex;justify-content:space-between;font-size:.75rem;color:rgba(255,255,255,.3);margin-bottom:6px;">
+                <span>{{ salaryData.min|number_format(0, ',', ' ') }} {{ salaryData.currency }}</span>
+                <span style="color:#20b2aa;font-weight:600;">Médiane : {{ salaryData.median|number_format(0, ',', ' ') }} {{ salaryData.currency }}</span>
+                <span>{{ salaryData.max|number_format(0, ',', ' ') }} {{ salaryData.currency }}</span>
+            </div>
+            <div class="salary-bar-track">
+                <div class="salary-bar-fill" style="width:{{ talentPct }}%"></div>
+                <div class="salary-bar-marker" style="left:{{ talentPct }}%">
+                    <div class="salary-bar-tooltip">Médiane marché</div>
+                </div>
+            </div>
+        </div>
+
+        {% if salaryData.note is defined %}
+            <div class="salary-note"><i class="fa-solid fa-circle-info"></i> {{ salaryData.note }}</div>
+        {% endif %}
+    </div>
+
+    {# ── ACTIONS ── #}
+    <div class="sh-actions">
+        <a href="{{ path('app_talent_index') }}" class="btn-action btn-back"><i class="fa-solid fa-arrow-left"></i> Retour</a>
+        <a href="{{ path('app_talent_edit', {'id': talent.id}) }}" class="btn-action btn-edit"><i class="fa-solid fa-pen"></i> Modifier</a>
+        <a href="{{ path('app_talent_profil_public', {'id': talent.id}) }}" class="btn-action btn-profile" target="_blank"><i class="fa-solid fa-qrcode"></i> Profil public</a>
+        {{ include('talent/_delete_form.html.twig') }}
+    </div>
+</div>
+
+<style>
+/* ── Hero ── */
+.sh-hero { display:flex; align-items:center; gap:22px; background:rgba(13,25,42,.9); border:1px solid rgba(32,178,170,.2); border-radius:20px; padding:26px 30px; margin-bottom:22px; position:relative; overflow:hidden; }
+.sh-hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at top left, rgba(32,178,170,.07) 0%, transparent 60%); pointer-events:none; }
+.sh-avatar { width:84px; height:84px; border-radius:50%; background:linear-gradient(135deg,#20b2aa,#0288d1); display:flex; align-items:center; justify-content:center; font-size:1.9rem; font-weight:800; color:#fff; flex-shrink:0; box-shadow:0 0 24px rgba(32,178,170,.35); }
+.sh-hero-info { flex:1; }
+.sh-name { font-size:1.6rem; font-weight:800; color:#fff; margin:0 0 4px; }
+.sh-poste { color:rgba(255,255,255,.5); font-size:.95rem; margin-bottom:8px; }
+.sh-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:20px; font-size:.75rem; font-weight:600; }
+.sh-badge-dept  { background:rgba(32,178,170,.12); color:#20b2aa; border:1px solid rgba(32,178,170,.25); }
+.sh-badge-edu   { background:rgba(245,158,11,.12); color:#f59e0b; border:1px solid rgba(245,158,11,.25); }
+.sh-badge-exp   { background:rgba(139,92,246,.12); color:#a78bfa; border:1px solid rgba(139,92,246,.25); }
+.sh-qr-box { text-align:center; flex-shrink:0; }
+.sh-qr-img { width:100px; height:100px; border-radius:10px; border:2px solid rgba(32,178,170,.25); padding:5px; background:#fff; }
+.sh-qr-lbl { font-size:.66rem; color:rgba(255,255,255,.3); margin-top:5px; }
+
+/* ── Grid 1 col ── */
+.sh-grid { display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:16px; }
+@media(max-width:700px){ .sh-grid { grid-template-columns:1fr; } }
+
+/* ── Cards ── */
+.sh-card { background:rgba(13,25,42,.85); border:1px solid rgba(32,178,170,.13); border-radius:16px; padding:20px 22px; }
+.sh-card-title { font-size:.88rem; font-weight:700; color:#fff; margin-bottom:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.sh-card-title i { color:#20b2aa; }
+.sh-salary-card { margin-bottom:16px; }
+
+.sh-info-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.sh-info-row:last-child { border:none; }
+.sh-lbl { font-size:.76rem; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.7px; }
+.sh-val { font-size:.9rem; color:#fff; font-weight:500; text-align:right; }
+.sh-val.translated { color:#20b2aa; }
+
+/* ── API badges ── */
+.api-badge { font-size:.65rem; padding:2px 8px; border-radius:6px; font-weight:700; letter-spacing:.5px; margin-left:auto; }
+.deepl-badge { background:rgba(2,136,209,.15); color:#4fc3f7; border:1px solid rgba(2,136,209,.3); }
+.adzuna-badge { background:rgba(245,158,11,.12); color:#f59e0b; border:1px solid rgba(245,158,11,.3); }
+.fallback-note { font-size:.65rem; color:rgba(255,255,255,.25); font-weight:400; font-style:italic; }
+
+/* ── DeepL form ── */
+.lang-select { background:rgba(255,255,255,.05); border:1px solid rgba(32,178,170,.25); border-radius:8px; color:#fff; padding:7px 12px; font-size:.84rem; cursor:pointer; }
+.lang-select option { background:#0d1926; }
+.btn-translate { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; background:linear-gradient(135deg,#20b2aa,#0288d1); border:none; color:#fff; font-size:.82rem; font-weight:600; cursor:pointer; transition:opacity .2s; }
+.btn-translate:hover { opacity:.88; }
+.translate-note { margin-top:10px; font-size:.75rem; color:#20b2aa; display:flex; align-items:center; gap:6px; }
+.translate-hint { font-size:.82rem; color:rgba(255,255,255,.3); font-style:italic; line-height:1.6; }
+
+/* ── Salary KPIs ── */
+.salary-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+@media(max-width:600px){ .salary-kpis { grid-template-columns:repeat(2,1fr); } }
+.salary-kpi { background:rgba(255,255,255,.04); border-radius:12px; padding:14px 16px; text-align:center; border:1px solid rgba(255,255,255,.06); }
+.salary-kpi--min .kpi-value { color:#4fc3f7; }
+.salary-kpi--mid .kpi-value { color:#20b2aa; font-size:1.2rem; font-weight:800; }
+.salary-kpi--max .kpi-value { color:#a78bfa; }
+.salary-kpi--exp .kpi-value { color:#f59e0b; }
+.kpi-label { font-size:.7rem; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.7px; margin-bottom:5px; }
+.kpi-value { font-size:1rem; font-weight:700; color:#fff; }
+
+/* ── Salary bar ── */
+.salary-bar-track { position:relative; height:8px; background:rgba(255,255,255,.07); border-radius:4px; }
+.salary-bar-fill { height:100%; background:linear-gradient(90deg,#20b2aa,#0288d1); border-radius:4px; transition:width 1s ease; }
+.salary-bar-marker { position:absolute; top:-4px; transform:translateX(-50%); }
+.salary-bar-marker::before { content:''; display:block; width:16px; height:16px; border-radius:50%; background:#20b2aa; border:2px solid #fff; box-shadow:0 0 8px rgba(32,178,170,.5); }
+.salary-bar-tooltip { position:absolute; top:-30px; left:50%; transform:translateX(-50%); background:#20b2aa; color:#fff; font-size:.65rem; padding:2px 8px; border-radius:5px; white-space:nowrap; }
+.salary-note { margin-top:12px; font-size:.75rem; color:rgba(255,255,255,.3); display:flex; align-items:center; gap:6px; font-style:italic; }
+
+/* ── Actions ── */
+.sh-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.btn-action { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px; font-size:.85rem; font-weight:600; text-decoration:none; transition:all .2s; cursor:pointer; border:none; }
+.btn-back    { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:rgba(255,255,255,.7); }
+.btn-back:hover { background:rgba(255,255,255,.1); color:#fff; }
+.btn-edit    { background:rgba(32,178,170,.1); border:1px solid rgba(32,178,170,.3); color:#20b2aa; }
+.btn-edit:hover { background:rgba(32,178,170,.2); color:#fff; }
+.btn-profile { background:linear-gradient(135deg,#20b2aa,#0288d1); color:#fff; }
+.btn-profile:hover { opacity:.88; color:#fff; }
+</style>
+{% endblock %}

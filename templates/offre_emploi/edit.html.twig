@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Éditer OffreEmploi{% endblock %}
+
+{% block page_title %}Modifier l'offre d'emploi{% endblock %}
+
+{% block content %}
+<div class="mc-header">
+    <div>
+        <div class="mc-header-title"><i class="fas fa-edit" style="color:var(--cyan); margin-right: 12px;"></i> Modifier l'offre</div>
+        <div class="mc-header-sub">Mettez à jour les détails de cette offre.</div>
+    </div>
+    <div class="mc-header-actions" style="display:flex; align-items:center; gap: 16px;">
+        <a href="{{ path('app_offre_emploi_index') }}" style="color:rgba(255,255,255,0.6); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <div style="background:rgba(239,83,80,.1); border-radius:10px; padding: 6px 12px;">
+            {{ include('offre_emploi/_delete_form.html.twig') }}
+        </div>
+    </div>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    {{ include('offre_emploi/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+</div>
+{% endblock %}
