@@ -6,11 +6,13 @@ use App\Entity\Evaluation;
 use App\Entity\ScoreCompetence;
 use App\Entity\User;
 use App\Form\EvaluationType;
+use App\Service\EvaluationDecisionMailer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 
@@ -185,6 +187,34 @@ class EvaluationController extends AbstractController
         return $this->render('evaluation/show.html.twig', [
             'evaluation' => $evaluation,
             'scoreCompetences' => $scoreCompetences,
+        ]);
+    }
+
+    #[Route('/{idEvaluation}/send-decision-email', name: 'evaluation_send_decision_email', methods: ['POST'])]
+    public function sendDecisionEmail(
+        #[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation,
+        Request $request,
+        EvaluationDecisionMailer $evaluationDecisionMailer,
+    ): Response {
+        if (!$this->isCsrfTokenValid('send_decision_email_'.$evaluation->getIdEvaluation(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('evaluation_show', [
+                'idEvaluation' => $evaluation->getIdEvaluation(),
+            ]);
+        }
+
+        try {
+            $evaluationDecisionMailer->sendDecisionEmail($evaluation);
+            $this->addFlash('success', 'Email envoye au candidat avec succes.');
+        } catch (\InvalidArgumentException $exception) {
+            $this->addFlash('error', $exception->getMessage());
+        } catch (TransportExceptionInterface $exception) {
+            $this->addFlash('error', 'Erreur SMTP lors de l envoi de l email.');
+        }
+
+        return $this->redirectToRoute('evaluation_show', [
+            'idEvaluation' => $evaluation->getIdEvaluation(),
         ]);
     }
 

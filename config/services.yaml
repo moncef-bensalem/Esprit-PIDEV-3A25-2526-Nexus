@@ -4,6 +4,17 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    gemini.api_key: '%env(string:GEMINI_API_KEY)%'
+    gemini.model.default: 'gemini-1.5-flash'
+    gemini.hate_threshold.default: 'BLOCK_MEDIUM_AND_ABOVE'
+    gemini.timeout.default: 3.0
+    gemini.model: '%env(default:gemini.model.default:string:GEMINI_MODEL)%'
+    gemini.hate_threshold: '%env(default:gemini.hate_threshold.default:string:GEMINI_HATE_THRESHOLD)%'
+    gemini.timeout: '%env(default:gemini.timeout.default:float:GEMINI_TIMEOUT)%'
+    mailer.from_email.default: 'no-reply@example.com'
+    mailer.from_name.default: 'Nexus RH'
+    mailer.from_email: '%env(default:mailer.from_email.default:string:MAILER_FROM_EMAIL)%'
+    mailer.from_name: '%env(default:mailer.from_name.default:string:MAILER_FROM_NAME)%'
 
 services:
     # default configuration for services in *this* file
@@ -22,3 +33,14 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Service\GeminiSafetyClient:
+        arguments:
+            $apiKey: '%gemini.api_key%'
+            $model: '%gemini.model%'
+            $hateThreshold: '%gemini.hate_threshold%'
+            $timeout: '%gemini.timeout%'
+
+    App\Service\EvaluationDecisionMailer:
+        arguments:
+            $fromEmail: '%mailer.from_email%'
+            $fromName: '%mailer.from_name%'

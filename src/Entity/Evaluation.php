@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
 use App\Entity\User;
 use App\Entity\ScoreCompetence;
+use App\Validator\NoHateSpeech;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -25,6 +26,7 @@ class Evaluation
 
     #[ORM\Column(type: "text")]
     #[Assert\NotBlank(message: "Le commentaire global est obligatoire.")]
+    #[NoHateSpeech]
     #[Assert\Length(
         min: 5,
         max: 5000,
@@ -117,10 +119,12 @@ class Evaluation
     public function setReviewDeadline(?\DateTimeInterface $value): static
     {
         if ($value === null) {
-            if (!$this->reviewDeadline instanceof \DateTimeInterface) {
-                $this->reviewDeadline = new \DateTimeImmutable('today');
-            }
+            $this->reviewDeadline = null;
             return $this;
+        }
+
+        if ($value instanceof \DateTimeImmutable) {
+            $value = \DateTime::createFromImmutable($value);
         }
 
         $this->reviewDeadline = $value;

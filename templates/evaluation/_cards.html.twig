@@ -1,12 +1,27 @@
 {% if evaluations is empty %}
     <div class="empty-state">Aucune evaluation trouvee.</div>
 {% else %}
+{% set bestId = null %}
+{% set bestScore = null %}
+{% for e in evaluations %}
+    {% set s = averageScoresById[e.idEvaluation]|default(null) %}
+    {% if s is not null and (bestScore is null or s > bestScore) %}
+        {% set bestScore = s %}
+        {% set bestId = e.idEvaluation %}
+    {% endif %}
+{% endfor %}
 <div class="cards-grid">
     {% for evaluation in evaluations %}
         {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
         {% set avgScore = averageScoresById[evaluation.idEvaluation]|default(null) %}
-        <div class="evaluation-card {{ decisionClass }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
-            <div class="card-title">Evaluation #{{ evaluation.idEvaluation }}</div>
+        {% set isBest = bestId is not null and evaluation.idEvaluation == bestId %}
+        <div class="evaluation-card {{ decisionClass }}{{ isBest ? ' best-score' : '' }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
+            <div class="card-title">
+                Evaluation #{{ evaluation.idEvaluation }}
+                {% if isBest %}
+                    <span class="best-score-badge" title="Meilleur score">✨ Meilleur score ✨</span>
+                {% endif %}
+            </div>
             <div class="card-meta">
                 <div>📅 Date creation: {{ evaluation.dateCreation|date('Y-m-d H:i') }}</div>
                 <div>⭐ Score: {{ avgScore is null ? 'N/A' : (avgScore | number_format(2, '.', ',')) }}</div>

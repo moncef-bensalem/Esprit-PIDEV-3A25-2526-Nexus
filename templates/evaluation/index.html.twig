@@ -198,6 +198,28 @@
     .btn-delete:hover { background: rgba(127,29,29,.8); }
     .flash-wrap { margin: 12px 24px 0; }
     .empty-state { margin: 36px 24px; color: #9fb4c8; font-size: .95rem; }
+    .evaluation-card.best-score {
+        border: 2px solid rgba(34, 197, 94, .95);
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, .22) inset, 0 10px 26px rgba(0,0,0,.28);
+        position: relative;
+    }
+    .best-score-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 8px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 800;
+        letter-spacing: .2px;
+        color: #052e16;
+        background: rgba(34, 197, 94, .92);
+        border: 1px solid rgba(187, 247, 208, .65);
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .deadline-reminder-strong { color: #fff; font-weight: 800; }
 </style>
 {% endblock %}
 
@@ -284,7 +306,7 @@
         </div>
 
         <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-success w-100">Filtrer</button>
+            <button type="button" class="btn btn-outline-light w-100" id="resetFiltersBtn">Reinitialiser</button>
         </div>
     </form>
 </div>
@@ -307,6 +329,32 @@
         {% include 'evaluation/_cards.html.twig' with { evaluations: evaluations, averageScoresById: averageScoresById } %}
     </div>
 {% endif %}
+
+{# Reminder modal (closest reviewDeadline) #}
+<div class="modal fade" id="deadlineReminderModal" tabindex="-1" aria-labelledby="deadlineReminderTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(2,6,23,.96); border: 1px solid rgba(255,255,255,.18); color: #e2e8f0;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,.12);">
+                <h5 class="modal-title" id="deadlineReminderTitle" style="color:#fff; font-weight: 800;">Rappel : deadline de review</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    La date limite la plus proche est le
+                    <span class="deadline-reminder-strong" id="deadlineReminderDate">—</span>
+                    (<span id="deadlineReminderDays">—</span>).
+                </div>
+                <div class="mt-2">
+                    Evaluation concerne : <span class="deadline-reminder-strong" id="deadlineReminderEval">—</span>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,.12);">
+                <a href="#" class="btn btn-success" id="deadlineReminderLink">Ouvrir l evaluation</a>
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Plus tard</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -318,10 +366,12 @@ window.addEventListener('DOMContentLoaded', () => {
     const dataUrl = {{ path('evaluation_index_data')|json_encode|raw }};
     const cardsEl = document.getElementById('evaluationsCards');
     const formEl = document.querySelector('form[action="{{ path('evaluation_index') }}"]');
+    const resetBtn = document.getElementById('resetFiltersBtn');
 
     let evaluations = {{ evaluationsJson|raw }};
     let deadlinesByDate = new Map();
     let pieChart = null;
+    let hasShownDeadlineReminder = false;
 
     function rebuildDeadlinesMap() {
         const map = new Map();
@@ -511,6 +561,55 @@ window.addEventListener('DOMContentLoaded', () => {
     rebuildDeadlinesMap();
     setDashboardData(evaluations, getCountsFromEvaluations(evaluations));
 
+    function formatFrDate(iso) {
+        // iso attendu: YYYY-MM-DD
+        const parts = String(iso ?? '').split('-');
+        if (parts.length !== 3) return String(iso ?? '');
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function showClosestReviewDeadlineReminder(list) {
+        if (hasShownDeadlineReminder) return;
+        hasShownDeadlineReminder = true;
+        if (!Array.isArray(list) || !window.bootstrap) return;
+
+        const todayLocal = new Date();
+        todayLocal.setHours(0,0,0,0);
+
+        const candidates = list
+            .filter(e => e && e.decision === 'A_REVOIR' && e.reviewDeadline)
+            .map(e => {
+                const d = new Date(`${e.reviewDeadline}T00:00:00`);
+                return { ...e, _d: d };
+            })
+            .filter(e => e._d instanceof Date && !Number.isNaN(e._d.getTime()) && e._d.getTime() >= todayLocal.getTime())
+            .sort((a, b) => a._d.getTime() - b._d.getTime());
+
+        if (candidates.length === 0) return;
+        const next = candidates[0];
+
+        const daysLeft = Math.round((next._d.getTime() - todayLocal.getTime()) / (24 * 60 * 60 * 1000));
+        const daysLabel = daysLeft === 0 ? "aujourd'hui" : (daysLeft === 1 ? 'dans 1 jour' : `dans ${daysLeft} jours`);
+
+        const dateEl = document.getElementById('deadlineReminderDate');
+        const daysEl = document.getElementById('deadlineReminderDays');
+        const evalEl = document.getElementById('deadlineReminderEval');
+        const linkEl = document.getElementById('deadlineReminderLink');
+        const modalEl = document.getElementById('deadlineReminderModal');
+
+        if (!modalEl || !dateEl || !daysEl || !evalEl || !linkEl) return;
+
+        dateEl.textContent = formatFrDate(next.reviewDeadline);
+        daysEl.textContent = daysLabel;
+        evalEl.textContent = `#${next.id}`;
+        linkEl.href = next.url || '#';
+
+        const modal = new bootstrap.Modal(modalEl, { backdrop: true, focus: true });
+        modal.show();
+    }
+
+    showClosestReviewDeadlineReminder(evaluations);
+
     let abortController = null;
     let debounceTimer = null;
 
@@ -548,6 +647,30 @@ window.addEventListener('DOMContentLoaded', () => {
         debounceTimer = window.setTimeout(refreshWithAjax, 250);
     }
 
+    function resetFiltersToDefault() {
+        if (!formEl) return;
+        const q = formEl.querySelector('input[name="q"]');
+        const sort = formEl.querySelector('select[name="sort"]');
+        const decision = formEl.querySelector('select[name="decision"]');
+        const recruteur = formEl.querySelector('select[name="recruteur"]');
+        const candidat = formEl.querySelector('select[name="candidat"]');
+
+        if (q) q.value = '';
+        if (sort) sort.value = 'dateCreation';
+        if (decision) decision.value = '';
+        if (recruteur) recruteur.value = '';
+        if (candidat) candidat.value = '';
+
+        // On remet aussi l'URL "propre" (sans querystring) même si on reste en AJAX.
+        try {
+            window.history.replaceState({}, '', formEl.action);
+        } catch (e) {
+            // ignore
+        }
+
+        scheduleRefresh();
+    }
+
     if (formEl) {
         formEl.addEventListener('submit', (ev) => {
             ev.preventDefault();
@@ -556,6 +679,8 @@ window.addEventListener('DOMContentLoaded', () => {
         formEl.addEventListener('input', scheduleRefresh);
         formEl.addEventListener('change', scheduleRefresh);
     }
+
+    resetBtn?.addEventListener('click', resetFiltersToDefault);
 });
 </script>
 {% endblock %}

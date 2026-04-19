@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Evaluation;
+use App\Validator\NoHateSpeech;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -39,6 +40,7 @@ class ScoreCompetence
 
     // longtext, Null: No
     #[ORM\Column(type: "text")]
+    #[NoHateSpeech]
     #[Assert\Length(
         max: 5000,
         maxMessage: "L'appreciation specifique ne doit pas depasser {{ limit }} caracteres."

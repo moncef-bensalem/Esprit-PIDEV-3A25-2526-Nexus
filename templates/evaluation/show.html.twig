@@ -52,6 +52,7 @@
     .btn-delete-mini:hover { background: rgba(127,29,29,.85); }
     .empty-state { color: #9fb4c8; font-size: .95rem; margin-bottom: 14px; }
     .flash-wrap { margin-bottom: 12px; }
+    .decision-actions { margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap; }
 </style>
 {% endblock %}
 
@@ -106,6 +107,22 @@
                     <div class="label">Commentaire global</div>
                     <div class="value" style="font-weight: 500;">{{ evaluation.commentaireGlobal }}</div>
                 </div>
+            </div>
+
+            <div class="decision-actions">
+                {% if evaluation.decisionPreliminaire == 'A_REVOIR' %}
+                    <button type="button" class="btn btn-secondary" disabled>
+                        Envoyer l'email au candidat
+                    </button>
+                    <span class="text-warning align-self-center">Le bouton sera active apres modification de la decision.</span>
+                {% else %}
+                    <form method="post" action="{{ path('evaluation_send_decision_email', {idEvaluation: evaluation.idEvaluation}) }}" style="margin: 0;">
+                        <input type="hidden" name="_token" value="{{ csrf_token('send_decision_email_' ~ evaluation.idEvaluation) }}">
+                        <button type="submit" class="btn btn-success">
+                            Envoyer l'email au candidat
+                        </button>
+                    </form>
+                {% endif %}
             </div>
         </div>
     </div>

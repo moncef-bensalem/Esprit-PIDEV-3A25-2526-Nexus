@@ -16,8 +16,6 @@ class EvaluationType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $today = (new \DateTimeImmutable('today'))->format('Y-m-d');
-
         $builder
             ->add('commentaireGlobal', TextareaType::class, [
                 'label' => 'Commentaire global',
@@ -43,10 +41,8 @@ class EvaluationType extends AbstractType
                 'label' => 'Date limite de review',
                 'required' => false,
                 'widget' => 'single_text',
-                'html5' => true,
                 'attr' => [
                     'class' => 'form-control',
-                    'min' => $today,
                 ],
             ])
             ->add('candidat', EntityType::class, [
