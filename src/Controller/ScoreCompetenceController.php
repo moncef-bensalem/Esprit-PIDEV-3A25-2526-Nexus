@@ -5,14 +5,17 @@ namespace App\Controller;
 use App\Entity\Evaluation;
 use App\Entity\ScoreCompetence;
 use App\Form\ScoreCompetenceType;
+use App\Security\EvaluationVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/evaluations/{idEvaluation}/scores')]
+#[IsGranted('ROLE_RH')]
 class ScoreCompetenceController extends AbstractController
 {
     #[Route('/new', name: 'score_competence_new', methods: ['GET', 'POST'])]
@@ -21,6 +24,8 @@ class ScoreCompetenceController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager
     ): Response {
+        $this->denyAccessUnlessGranted(EvaluationVoter::EDIT, $evaluation);
+
         $scoreCompetence = new ScoreCompetence();
         $scoreCompetence->setEvaluation($evaluation);
         $scoreCompetence->setAppreciationSpecifique('');
@@ -51,9 +56,12 @@ class ScoreCompetenceController extends AbstractController
     #[Route('/{idDetail}', name: 'score_competence_show', methods: ['GET'])]
     public function show(
         #[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation,
-        #[MapEntity(mapping: ['idDetail' => 'id_detail'])] ScoreCompetence $scoreCompetence
+        int $idDetail,
+        EntityManagerInterface $entityManager
     ): Response {
-        $this->ensureSameEvaluation($evaluation, $scoreCompetence);
+        $this->denyAccessUnlessGranted(EvaluationVoter::VIEW, $evaluation);
+
+        $scoreCompetence = $this->resolveScoreCompetence($evaluation, $idDetail, $entityManager);
 
         return $this->render('score_competence/show.html.twig', [
             'evaluation' => $evaluation,
@@ -64,11 +72,13 @@ class ScoreCompetenceController extends AbstractController
     #[Route('/{idDetail}/edit', name: 'score_competence_edit', methods: ['GET', 'POST'])]
     public function edit(
         #[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation,
-        #[MapEntity(mapping: ['idDetail' => 'id_detail'])] ScoreCompetence $scoreCompetence,
+        int $idDetail,
         Request $request,
         EntityManagerInterface $entityManager
     ): Response {
-        $this->ensureSameEvaluation($evaluation, $scoreCompetence);
+        $this->denyAccessUnlessGranted(EvaluationVoter::EDIT, $evaluation);
+
+        $scoreCompetence = $this->resolveScoreCompetence($evaluation, $idDetail, $entityManager);
 
         if ($scoreCompetence->getAppreciationSpecifique() === null) {
             $scoreCompetence->setAppreciationSpecifique('');
@@ -102,11 +112,13 @@ class ScoreCompetenceController extends AbstractController
     #[Route('/{idDetail}/delete', name: 'score_competence_delete', methods: ['POST'])]
     public function delete(
         #[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation,
-        #[MapEntity(mapping: ['idDetail' => 'id_detail'])] ScoreCompetence $scoreCompetence,
+        int $idDetail,
         Request $request,
         EntityManagerInterface $entityManager
     ): Response {
-        $this->ensureSameEvaluation($evaluation, $scoreCompetence);
+        $this->denyAccessUnlessGranted(EvaluationVoter::EDIT, $evaluation);
+
+        $scoreCompetence = $this->resolveScoreCompetence($evaluation, $idDetail, $entityManager);
 
         if ($this->isCsrfTokenValid('delete_score_competence_'.$scoreCompetence->getIdDetail(), (string) $request->request->get('_token'))) {
             $entityManager->remove($scoreCompetence);
@@ -126,10 +138,21 @@ class ScoreCompetenceController extends AbstractController
         }
     }
 
+    private function resolveScoreCompetence(Evaluation $evaluation, int $idDetail, EntityManagerInterface $entityManager): ScoreCompetence
+    {
+        $scoreCompetence = $entityManager->find(ScoreCompetence::class, $idDetail);
+        if (!$scoreCompetence instanceof ScoreCompetence) {
+            throw $this->createNotFoundException('Score competence introuvable.');
+        }
+        $this->ensureSameEvaluation($evaluation, $scoreCompetence);
+
+        return $scoreCompetence;
+    }
+
     private function nextScoreDetailId(EntityManagerInterface $entityManager): int
     {
         $max = $entityManager->createQueryBuilder()
-            ->select('MAX(s.id_detail)')
+            ->select('MAX(s.idDetail)')
             ->from(ScoreCompetence::class, 's')
             ->getQuery()
             ->getSingleScalarResult();

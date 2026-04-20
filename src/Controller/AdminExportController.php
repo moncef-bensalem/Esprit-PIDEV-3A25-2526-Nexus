@@ -11,11 +11,12 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/export')]
-#[IsGranted('ROLE_ADMIN')]
+#[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_RH')"))]
 class AdminExportController extends AbstractController
 {
     #[Route('/dashboard/pdf', name: 'admin_export_dashboard_pdf', methods: ['GET'])]

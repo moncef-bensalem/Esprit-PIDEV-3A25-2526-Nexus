@@ -6,26 +6,311 @@ use App\Entity\Evaluation;
 use App\Entity\ScoreCompetence;
 use App\Entity\User;
 use App\Form\EvaluationType;
+use App\Security\EvaluationVoter;
+use App\Service\EvaluationDecisionMailer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/evaluations')]
+#[IsGranted('ROLE_RH')]
 class EvaluationController extends AbstractController
 {
     #[Route('', name: 'evaluation_index', methods: ['GET'])]
     public function index(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $user = $this->requireUser();
+        $data = $this->buildIndexData($request, $entityManager, $user, $this->isGranted('ROLE_ADMIN'));
+        $evaluationsJson = $this->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
+
+        return $this->render('evaluation/index.html.twig', [
+            'evaluations' => $data['evaluations'],
+            'averageScoresById' => $data['averageScoresById'],
+            'q' => $data['q'],
+            'sort' => $data['sort'],
+            'decision' => $data['decision'],
+            'recruteur' => $data['recruteur'],
+            'candidat' => $data['candidat'],
+            'decisionOptions' => $data['decisionOptions'],
+            'recruteurOptions' => $data['recruteurOptions'],
+            'candidatOptions' => $data['candidatOptions'],
+            'evaluationsJson' => json_encode($evaluationsJson, JSON_THROW_ON_ERROR),
+        ]);
+    }
+
+    #[Route('/data', name: 'evaluation_index_data', methods: ['GET'])]
+    public function indexData(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $user = $this->requireUser();
+        $data = $this->buildIndexData($request, $entityManager, $user, $this->isGranted('ROLE_ADMIN'));
+
+        $evaluationsJson = $this->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
+
+        $counts = ['FAVORABLE' => 0, 'DEFAVORABLE' => 0, 'A_REVOIR' => 0];
+        foreach ($evaluationsJson as $e) {
+            $decision = (string) ($e['decision'] ?? '');
+            if (array_key_exists($decision, $counts)) {
+                $counts[$decision]++;
+            }
+        }
+
+        $cardsHtml = $this->renderView('evaluation/_cards.html.twig', [
+            'evaluations' => $data['evaluations'],
+            'averageScoresById' => $data['averageScoresById'],
+        ]);
+
+        return $this->json([
+            'evaluations' => $evaluationsJson,
+            'counts' => $counts,
+            'cardsHtml' => $cardsHtml,
+        ]);
+    }
+
+    #[Route('/new', name: 'evaluation_new', methods: ['GET', 'POST'])]
+    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $recruteur = $this->requireUser();
+        $evaluation = new Evaluation();
+        $evaluation->setDateCreation(new \DateTimeImmutable());
+
+        $candidates = $this->getCandidateUsers($entityManager);
+
+        $form = $this->createForm(EvaluationType::class, $evaluation, [
+            'candidates' => $candidates,
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $decision = $evaluation->getDecisionPreliminaire();
+            if ($decision === 'A_REVOIR') {
+                $deadline = $form->get('reviewDeadline')->getData();
+                if (!$deadline instanceof \DateTimeInterface) {
+                    $this->addFlash('error', 'La date limite de review est obligatoire pour la decision A_REVOIR.');
+                    return $this->render('evaluation/new.html.twig', [
+                        'form' => $form,
+                    ]);
+                }
+                $today = new \DateTimeImmutable('today');
+                if ($deadline < $today) {
+                    $this->addFlash('error', 'La date limite de review doit être aujourd\'hui ou plus tard.');
+                    return $this->render('evaluation/new.html.twig', [
+                        'form' => $form,
+                    ]);
+                }
+            } else {
+                $evaluation->setReviewDeadline(null);
+            }
+
+            $evaluation->setRecruteur($recruteur);
+            $evaluation->setIdEvaluation($this->nextEvaluationId($entityManager));
+
+            $entityManager->persist($evaluation);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Evaluation créée avec succès.');
+
+            return $this->redirectToRoute('evaluation_index');
+        }
+
+        return $this->render('evaluation/new.html.twig', [
+            'form' => $form,
+        ]);
+    }
+
+    #[Route('/{idEvaluation}/edit', name: 'evaluation_edit', methods: ['GET', 'POST'])]
+    public function edit(#[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $this->denyAccessUnlessGranted(EvaluationVoter::EDIT, $evaluation);
+
+        $user = $this->requireUser();
+        $candidates = $this->getCandidateUsers($entityManager);
+
+        $form = $this->createForm(EvaluationType::class, $evaluation, [
+            'candidates' => $candidates,
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $decision = $evaluation->getDecisionPreliminaire();
+            if ($decision === 'A_REVOIR') {
+                $deadline = $form->get('reviewDeadline')->getData();
+                if (!$deadline instanceof \DateTimeInterface) {
+                    $this->addFlash('error', 'La date limite de review est obligatoire pour la decision A_REVOIR.');
+                    return $this->render('evaluation/edit.html.twig', [
+                        'form' => $form,
+                        'evaluation' => $evaluation,
+                    ]);
+                }
+                $today = new \DateTimeImmutable('today');
+                if ($deadline < $today) {
+                    $this->addFlash('error', 'La date limite de review doit être aujourd\'hui ou plus tard.');
+                    return $this->render('evaluation/edit.html.twig', [
+                        'form' => $form,
+                        'evaluation' => $evaluation,
+                    ]);
+                }
+            } else {
+                $evaluation->setReviewDeadline(null);
+            }
+
+            $evaluation->setRecruteur($user);
+
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Evaluation modifiée avec succès.');
+
+            return $this->redirectToRoute('evaluation_index');
+        }
+
+        return $this->render('evaluation/edit.html.twig', [
+            'form' => $form,
+            'evaluation' => $evaluation,
+        ]);
+    }
+
+    #[Route('/{idEvaluation}', name: 'evaluation_show', methods: ['GET'])]
+    public function show(#[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation): Response
+    {
+        $this->denyAccessUnlessGranted(EvaluationVoter::VIEW, $evaluation);
+
+        $scoreCompetences = $evaluation->getScoreCompetences()->toArray();
+        usort($scoreCompetences, static function (ScoreCompetence $a, ScoreCompetence $b): int {
+            return ($a->getIdDetail() ?? 0) <=> ($b->getIdDetail() ?? 0);
+        });
+
+        return $this->render('evaluation/show.html.twig', [
+            'evaluation' => $evaluation,
+            'scoreCompetences' => $scoreCompetences,
+        ]);
+    }
+
+    #[Route('/{idEvaluation}/send-decision-email', name: 'evaluation_send_decision_email', methods: ['POST'])]
+    public function sendDecisionEmail(
+        #[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation,
+        Request $request,
+        EvaluationDecisionMailer $evaluationDecisionMailer,
+    ): Response {
+        $this->denyAccessUnlessGranted(EvaluationVoter::EDIT, $evaluation);
+
+        if (!$this->isCsrfTokenValid('send_decision_email_'.$evaluation->getIdEvaluation(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('evaluation_show', [
+                'idEvaluation' => $evaluation->getIdEvaluation(),
+            ]);
+        }
+
+        try {
+            $evaluationDecisionMailer->sendDecisionEmail($evaluation);
+            $this->addFlash('success', 'Email envoye au candidat avec succes.');
+        } catch (\InvalidArgumentException $exception) {
+            $this->addFlash('error', $exception->getMessage());
+        } catch (TransportExceptionInterface $exception) {
+            $this->addFlash('error', 'Erreur SMTP lors de l envoi de l email.');
+        }
+
+        return $this->redirectToRoute('evaluation_show', [
+            'idEvaluation' => $evaluation->getIdEvaluation(),
+        ]);
+    }
+
+    #[Route('/{idEvaluation}/delete', name: 'evaluation_delete', methods: ['POST'])]
+    public function delete(#[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $this->denyAccessUnlessGranted(EvaluationVoter::DELETE, $evaluation);
+
+        if ($this->isCsrfTokenValid('delete_evaluation_'.$evaluation->getIdEvaluation(), (string) $request->request->get('_token'))) {
+            $entityManager->remove($evaluation);
+            $entityManager->flush();
+            $this->addFlash('success', 'Evaluation supprimée.');
+        }
+
+        return $this->redirectToRoute('evaluation_index');
+    }
+
+    /**
+     * @return list<User>
+     */
+    private function getCandidateUsers(EntityManagerInterface $entityManager): array
+    {
+        $users = $entityManager->getRepository(User::class)->findAll();
+
+        return array_values(array_filter($users, static function (User $user): bool {
+            return in_array('ROLE_CANDIDAT', $user->getRoles(), true);
+        }));
+    }
+
+    private function requireUser(): User
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
             throw $this->createAccessDeniedException();
         }
 
-        $isCandidateOnly = $this->isCandidateOnly($user);
+        return $user;
+    }
 
+    private function nextEvaluationId(EntityManagerInterface $entityManager): int
+    {
+        $max = $entityManager->createQueryBuilder()
+            ->select('MAX(e.idEvaluation)')
+            ->from(Evaluation::class, 'e')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return ((int) $max) + 1;
+    }
+
+    private function computeAverageScore(Evaluation $evaluation): ?float
+    {
+        $sum = 0.0;
+        $count = 0;
+
+        foreach ($evaluation->getScoreCompetences() as $scoreCompetence) {
+            $raw = trim($scoreCompetence->getNoteAttribuee());
+            if ($raw === '') {
+                continue;
+            }
+
+            // Le champ est un string: on normalise "," => "."
+            $normalized = str_replace(',', '.', $raw);
+            if (!is_numeric($normalized)) {
+                continue;
+            }
+
+            $sum += (float) $normalized;
+            $count++;
+        }
+
+        if ($count === 0) {
+            return null;
+        }
+
+        return $sum / $count;
+    }
+
+    /**
+     * @return array{
+     *   evaluations: list<Evaluation>,
+     *   averageScoresById: array<int, ?float>,
+     *   q: string,
+     *   sort: string,
+     *   decision: string,
+     *   recruteur: string,
+     *   candidat: string,
+     *   decisionOptions: list<string>,
+     *   recruteurOptions: array<string, string>,
+     *   candidatOptions: array<string, string>
+     * }
+     */
+    private function buildIndexData(Request $request, EntityManagerInterface $entityManager, User $currentUser, bool $isAdmin): array
+    {
         $q = trim((string) $request->query->get('q', ''));
         $sort = (string) $request->query->get('sort', 'dateCreation'); // 'score' | 'dateCreation'
 
@@ -33,9 +318,16 @@ class EvaluationController extends AbstractController
         $recruteurFilter = (string) $request->query->get('recruteur', '');
         $candidatFilter = (string) $request->query->get('candidat', '');
 
-        $evaluationsAll = $isCandidateOnly
-            ? $entityManager->getRepository(Evaluation::class)->findBy(['candidat' => $user], ['dateCreation' => 'DESC'])
-            : $entityManager->getRepository(Evaluation::class)->findBy([], ['dateCreation' => 'DESC']);
+        if (!$isAdmin) {
+            $recruteurFilter = (string) $currentUser->getId();
+        }
+
+        $criteria = [];
+        if (!$isAdmin) {
+            $criteria['recruteur'] = $currentUser;
+        }
+
+        $evaluationsAll = $entityManager->getRepository(Evaluation::class)->findBy($criteria, ['dateCreation' => 'DESC']);
 
         $averageScoresById = [];
         foreach ($evaluationsAll as $evaluation) {
@@ -52,13 +344,13 @@ class EvaluationController extends AbstractController
             if ($evaluation->getRecruteur() === null) {
                 $recruteurOptions['none'] = 'Non assigne';
             } else {
-                $recruteurOptions[$evaluation->getRecruteur()->getId()] = $evaluation->getRecruteur()->getFirstName().' '.$evaluation->getRecruteur()->getLastName();
+                $recruteurOptions[(string) $evaluation->getRecruteur()->getId()] = $evaluation->getRecruteur()->getFirstName().' '.$evaluation->getRecruteur()->getLastName();
             }
 
             if ($evaluation->getCandidat() === null) {
                 $candidatOptions['none'] = 'Non assigne';
             } else {
-                $candidatOptions[$evaluation->getCandidat()->getId()] = $evaluation->getCandidat()->getFirstName().' '.$evaluation->getCandidat()->getLastName();
+                $candidatOptions[(string) $evaluation->getCandidat()->getId()] = $evaluation->getCandidat()->getFirstName().' '.$evaluation->getCandidat()->getLastName();
             }
         }
 
@@ -116,7 +408,6 @@ class EvaluationController extends AbstractController
                 $avgA = $averageScoresById[$a->getIdEvaluation()] ?? null;
                 $avgB = $averageScoresById[$b->getIdEvaluation()] ?? null;
 
-                // Scores entre 0 et 20 => null (pas de score) passe en dernier
                 $valA = $avgA === null ? -1 : $avgA;
                 $valB = $avgB === null ? -1 : $avgB;
 
@@ -133,7 +424,7 @@ class EvaluationController extends AbstractController
             });
         }
 
-        return $this->render('evaluation/index.html.twig', [
+        return [
             'evaluations' => $evaluations,
             'averageScoresById' => $averageScoresById,
             'q' => $q,
@@ -144,236 +435,36 @@ class EvaluationController extends AbstractController
             'decisionOptions' => array_keys($decisionOptions),
             'recruteurOptions' => $recruteurOptions,
             'candidatOptions' => $candidatOptions,
-            'is_candidate_only' => $isCandidateOnly,
-        ]);
-    }
-
-    #[Route('/new', name: 'evaluation_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $evaluation = new Evaluation();
-        $evaluation->setDateCreation(new \DateTime());
-
-        $candidates = $this->getCandidateUsers($entityManager);
-
-        $form = $this->createForm(EvaluationType::class, $evaluation, [
-            'candidates' => $candidates,
-        ]);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $decision = $evaluation->getDecisionPreliminaire();
-            if ($decision === 'A_REVOIR') {
-                $deadline = $form->get('reviewDeadline')->getData();
-                if (!$deadline instanceof \DateTimeInterface) {
-                    $this->addFlash('error', 'La date limite de review est obligatoire pour la decision A_REVOIR.');
-                    return $this->render('evaluation/new.html.twig', [
-                        'form' => $form,
-                    ]);
-                }
-                $today = new \DateTimeImmutable('today');
-                if ($deadline < $today) {
-                    $this->addFlash('error', 'La date limite de review doit être aujourd\'hui ou plus tard.');
-                    return $this->render('evaluation/new.html.twig', [
-                        'form' => $form,
-                    ]);
-                }
-            } else {
-                $evaluation->setReviewDeadline(null);
-            }
-
-            $currentUser = $this->getUser();
-            if (!$currentUser instanceof User) {
-                throw $this->createAccessDeniedException();
-            }
-
-            if ($this->isAdmin($currentUser)) {
-                $evaluation->setRecruteur($currentUser);
-            } elseif ($this->isCandidateOnly($currentUser)) {
-                $evaluation->setCandidat($currentUser);
-            }
-
-            $evaluation->setIdEvaluation($this->nextEvaluationId($entityManager));
-
-            $entityManager->persist($evaluation);
-            $entityManager->flush();
-
-            $this->addFlash('success', 'Evaluation créée avec succès.');
-
-            return $this->redirectToRoute('evaluation_index');
-        }
-
-        return $this->render('evaluation/new.html.twig', [
-            'form' => $form,
-        ]);
-    }
-
-    #[Route('/{idEvaluation}/edit', name: 'evaluation_edit', methods: ['GET', 'POST'])]
-    public function edit(#[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation, Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $user = $this->getUser();
-        if (!$user instanceof User || $this->isCandidateOnly($user)) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $candidates = $this->getCandidateUsers($entityManager);
-
-        $form = $this->createForm(EvaluationType::class, $evaluation, [
-            'candidates' => $candidates,
-        ]);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $decision = $evaluation->getDecisionPreliminaire();
-            if ($decision === 'A_REVOIR') {
-                $deadline = $form->get('reviewDeadline')->getData();
-                if (!$deadline instanceof \DateTimeInterface) {
-                    $this->addFlash('error', 'La date limite de review est obligatoire pour la decision A_REVOIR.');
-                    return $this->render('evaluation/edit.html.twig', [
-                        'form' => $form,
-                        'evaluation' => $evaluation,
-                    ]);
-                }
-                $today = new \DateTimeImmutable('today');
-                if ($deadline < $today) {
-                    $this->addFlash('error', 'La date limite de review doit être aujourd\'hui ou plus tard.');
-                    return $this->render('evaluation/edit.html.twig', [
-                        'form' => $form,
-                        'evaluation' => $evaluation,
-                    ]);
-                }
-            } else {
-                $evaluation->setReviewDeadline(null);
-            }
-
-            $currentUser = $this->getUser();
-            if (!$currentUser instanceof User) {
-                throw $this->createAccessDeniedException();
-            }
-            if ($this->isAdmin($currentUser)) {
-                $evaluation->setRecruteur($currentUser);
-            } elseif ($this->isCandidateOnly($currentUser)) {
-                $evaluation->setCandidat($currentUser);
-            }
-
-            $entityManager->flush();
-
-            $this->addFlash('success', 'Evaluation modifiée avec succès.');
-
-            return $this->redirectToRoute('evaluation_index');
-        }
-
-        return $this->render('evaluation/edit.html.twig', [
-            'form' => $form,
-            'evaluation' => $evaluation,
-        ]);
-    }
-
-    #[Route('/{idEvaluation}', name: 'evaluation_show', methods: ['GET'])]
-    public function show(#[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation): Response
-    {
-        $user = $this->getUser();
-        if ($user instanceof User && $this->isCandidateOnly($user) && $evaluation->getCandidat()?->getId() !== $user->getId()) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $scoreCompetences = $evaluation->getScoreCompetences()->toArray();
-        usort($scoreCompetences, static function (ScoreCompetence $a, ScoreCompetence $b): int {
-            return ($a->getIdDetail() ?? 0) <=> ($b->getIdDetail() ?? 0);
-        });
-
-        return $this->render('evaluation/show.html.twig', [
-            'evaluation' => $evaluation,
-            'scoreCompetences' => $scoreCompetences,
-        ]);
-    }
-
-    #[Route('/{idEvaluation}/delete', name: 'evaluation_delete', methods: ['POST'])]
-    public function delete(#[MapEntity(mapping: ['idEvaluation' => 'idEvaluation'])] Evaluation $evaluation, Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $user = $this->getUser();
-        if (!$user instanceof User || $this->isCandidateOnly($user)) {
-            throw $this->createAccessDeniedException();
-        }
-
-        if ($this->isCsrfTokenValid('delete_evaluation_'.$evaluation->getIdEvaluation(), (string) $request->request->get('_token'))) {
-            $entityManager->remove($evaluation);
-            $entityManager->flush();
-            $this->addFlash('success', 'Evaluation supprimée.');
-        }
-
-        return $this->redirectToRoute('evaluation_index');
+        ];
     }
 
     /**
-     * @return list<User>
+     * @param list<Evaluation> $evaluations
+     * @param array<int, ?float> $averageScoresById
+     * @return list<array{
+     *   id:int,
+     *   decision:string,
+     *   reviewDeadline:?string,
+     *   url:string,
+     *   avgScore:?float,
+     *   dateCreation:string
+     * }>
      */
-    private function getCandidateUsers(EntityManagerInterface $entityManager): array
+    private function serializeEvaluationsForDashboard(array $evaluations, array $averageScoresById): array
     {
-        $users = $entityManager->getRepository(User::class)->findAll();
-
-        return array_values(array_filter($users, static function (User $user): bool {
-            $roles = $user->getRoles();
-
-            return in_array('ROLE_CANDIDAT', $roles, true) || in_array('ROLE_CANDIDATE', $roles, true);
-        }));
-    }
-
-    private function isAdmin(User $user): bool
-    {
-        return in_array('ROLE_ADMIN', $user->getRoles(), true);
-    }
-
-    /**
-     * Candidat (ROLE_CANDIDAT ou ROLE_CANDIDATE) sans etre administrateur.
-     */
-    private function isCandidateOnly(User $user): bool
-    {
-        if ($this->isAdmin($user)) {
-            return false;
+        $out = [];
+        foreach ($evaluations as $e) {
+            $id = $e->getIdEvaluation();
+            $out[] = [
+                'id' => $id,
+                'decision' => (string) $e->getDecisionPreliminaire(),
+                'reviewDeadline' => $e->getReviewDeadline() ? $e->getReviewDeadline()->format('Y-m-d') : null,
+                'url' => $this->generateUrl('evaluation_show', ['idEvaluation' => $id]),
+                'avgScore' => $averageScoresById[$id] ?? null,
+                'dateCreation' => $e->getDateCreation()->format('Y-m-d H:i'),
+            ];
         }
 
-        $roles = $user->getRoles();
-
-        return in_array('ROLE_CANDIDAT', $roles, true) || in_array('ROLE_CANDIDATE', $roles, true);
-    }
-
-    private function nextEvaluationId(EntityManagerInterface $entityManager): int
-    {
-        $max = $entityManager->createQueryBuilder()
-            ->select('MAX(e.idEvaluation)')
-            ->from(Evaluation::class, 'e')
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        return ((int) $max) + 1;
-    }
-
-    private function computeAverageScore(Evaluation $evaluation): ?float
-    {
-        $sum = 0.0;
-        $count = 0;
-
-        foreach ($evaluation->getScoreCompetences() as $scoreCompetence) {
-            $raw = trim($scoreCompetence->getNoteAttribuee());
-            if ($raw === '') {
-                continue;
-            }
-
-            // Le champ est un string: on normalise "," => "."
-            $normalized = str_replace(',', '.', $raw);
-            if (!is_numeric($normalized)) {
-                continue;
-            }
-
-            $sum += (float) $normalized;
-            $count++;
-        }
-
-        if ($count === 0) {
-            return null;
-        }
-
-        return $sum / $count;
+        return $out;
     }
 }

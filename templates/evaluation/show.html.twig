@@ -52,10 +52,11 @@
     .btn-delete-mini:hover { background: rgba(127,29,29,.85); }
     .empty-state { color: #9fb4c8; font-size: .95rem; margin-bottom: 14px; }
     .flash-wrap { margin-bottom: 12px; }
+    .decision-actions { margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap; }
 </style>
 {% endblock %}
 
-{% block body %}
+{% block content %}
 <div class="wrapper">
     <div class="flash-wrap">
         {% for type, messages in app.flashes %}
@@ -106,6 +107,24 @@
                     <div class="value" style="font-weight: 500;">{{ evaluation.commentaireGlobal }}</div>
                 </div>
             </div>
+
+            {% if is_granted(constant('App\\Security\\EvaluationVoter::EDIT'), evaluation) %}
+            <div class="decision-actions">
+                {% if evaluation.decisionPreliminaire == 'A_REVOIR' %}
+                    <button type="button" class="btn btn-secondary" disabled>
+                        Envoyer l'email au candidat
+                    </button>
+                    <span class="text-warning align-self-center">Le bouton sera active apres modification de la decision.</span>
+                {% else %}
+                    <form method="post" action="{{ path('evaluation_send_decision_email', {idEvaluation: evaluation.idEvaluation}) }}" style="margin: 0;">
+                        <input type="hidden" name="_token" value="{{ csrf_token('send_decision_email_' ~ evaluation.idEvaluation) }}">
+                        <button type="submit" class="btn btn-success">
+                            Envoyer l'email au candidat
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -126,6 +145,7 @@
                     <div class="score-name">{{ score.nomCritere }}</div>
                     <div class="score-note">Note attribuee: {{ score.noteAttribuee }}/20</div>
                     <div class="score-actions">
+                        {% if is_granted(constant('App\\Security\\EvaluationVoter::EDIT'), evaluation) %}
                         <a href="{{ path('score_competence_edit', {idEvaluation: evaluation.idEvaluation, idDetail: score.idDetail}) }}"
                            class="btn-mini"
                            onclick="event.stopPropagation();">Modifier</a>
@@ -136,15 +156,18 @@
                             <input type="hidden" name="_token" value="{{ csrf_token('delete_score_competence_' ~ score.idDetail) }}">
                             <button type="submit" class="btn-delete-mini">Supprimer</button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
+    {% if is_granted(constant('App\\Security\\EvaluationVoter::EDIT'), evaluation) %}
     <div class="mt-3">
         <a href="{{ path('score_competence_new', {idEvaluation: evaluation.idEvaluation}) }}" class="btn btn-primary">+ Creer un score competence</a>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
 

@@ -15,6 +15,10 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('admin_dashboard');
         }
 
+        if ($this->isGranted('ROLE_RH')) {
+            return $this->redirectToRoute('evaluation_index');
+        }
+
         if ($this->isGranted('ROLE_CANDIDATE')) {
             return $this->redirectToRoute('candidate_dashboard');
         }

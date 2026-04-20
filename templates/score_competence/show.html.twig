@@ -13,7 +13,7 @@
 </style>
 {% endblock %}
 
-{% block body %}
+{% block content %}
 <div class="wrapper">
     <div class="card card-dark">
         <div class="card-header text-white d-flex justify-content-between align-items-center">
@@ -39,6 +39,7 @@
                     <div class="value" style="font-weight: 500;">{{ scoreCompetence.appreciationSpecifique is not empty ? scoreCompetence.appreciationSpecifique : 'Aucune appreciation specifique.' }}</div>
                 </div>
             </div>
+            {% if is_granted(constant('App\\Security\\EvaluationVoter::EDIT'), evaluation) %}
             <div class="d-flex gap-2 mt-4">
                 <a href="{{ path('score_competence_edit', {idEvaluation: evaluation.idEvaluation, idDetail: scoreCompetence.idDetail}) }}" class="btn btn-outline-light btn-sm">Modifier</a>
                 <form method="post" action="{{ path('score_competence_delete', {idEvaluation: evaluation.idEvaluation, idDetail: scoreCompetence.idDetail}) }}" onsubmit="return confirm('Supprimer ce score competence ?');" style="margin:0;">
@@ -46,6 +47,7 @@
                     <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                 </form>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>

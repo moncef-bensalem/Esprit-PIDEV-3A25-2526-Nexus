@@ -4,114 +4,95 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Evaluation;
+use App\Validator\NoHateSpeech;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity]
 #[ORM\Table(name: "score_competence")]
+#[Assert\Callback("validateNoteAttribuee")]
 class ScoreCompetence
 {
-
     #[ORM\Id]
     #[ORM\Column(type: "integer")]
-    private int $id_detail;
+    #[Assert\Positive(message: "L'identifiant du score doit etre positif.")]
+    private ?int $idDetail = null;
 
+    // varchar(255), Null: No
     #[ORM\Column(type: "string", length: 255)]
-    private string $nom_critere;
+    #[Assert\NotBlank(message: "Le nom du critere est obligatoire.")]
+    #[Assert\Length(
+        min: 2,
+        max: 255,
+        minMessage: "Le nom du critere doit contenir au moins {{ limit }} caracteres.",
+        maxMessage: "Le nom du critere ne doit pas depasser {{ limit }} caracteres."
+    )]
+    private string $nomCritere;
 
+    // varchar(255), Null: No  ← screenshot shows varchar not float
     #[ORM\Column(type: "string", length: 255)]
-    private string $note_attribuee;
+    #[Assert\NotBlank(message: "La note attribuee est obligatoire.")]
+    #[Assert\Regex(
+        pattern: "/^\\d+(?:[\\.,]\\d+)?$/",
+        message: "La note doit etre un nombre valide."
+    )]
+    private string $noteAttribuee;
 
+    // longtext, Null: No
     #[ORM\Column(type: "text")]
-    private string $appreciation_specifique;
+    #[NoHateSpeech]
+    #[Assert\Length(
+        max: 5000,
+        maxMessage: "L'appreciation specifique ne doit pas depasser {{ limit }} caracteres."
+    )]
+    private string $appreciationSpecifique;
 
-    #[ORM\ManyToOne(targetEntity: Evaluation::class, inversedBy: "score_competences")]
-    #[ORM\JoinColumn(name: 'fk_evaluation_id', referencedColumnName: 'id_evaluation', nullable: true, onDelete: 'CASCADE')]
+    // Null: Yes → nullable
+    #[ORM\ManyToOne(targetEntity: Evaluation::class, inversedBy: "scoreCompetences")]
+    #[ORM\JoinColumn(name: "fk_evaluation_id", referencedColumnName: "id_evaluation", nullable: true, onDelete: "CASCADE")]
     private ?Evaluation $evaluation = null;
 
-    public function getId_detail(): int
+    public function getIdDetail(): ?int
     {
-        return $this->id_detail;
-    }
-
-    public function setId_detail(int $value): static
-    {
-        $this->id_detail = $value;
-        return $this;
-    }
-
-    public function getIdDetail(): int
-    {
-        return $this->id_detail;
+        return $this->idDetail;
     }
 
     public function setIdDetail(int $value): static
     {
-        $this->id_detail = $value;
-        return $this;
-    }
-
-    public function getNom_critere(): string
-    {
-        return $this->nom_critere;
-    }
-
-    public function setNom_critere(string $value): static
-    {
-        $this->nom_critere = $value;
+        $this->idDetail = $value;
         return $this;
     }
 
     public function getNomCritere(): string
     {
-        return $this->nom_critere;
+        return $this->nomCritere;
     }
 
     public function setNomCritere(string $value): static
     {
-        $this->nom_critere = $value;
-        return $this;
-    }
-
-    public function getNote_attribuee(): string
-    {
-        return $this->note_attribuee;
-    }
-
-    public function setNote_attribuee(string $value): static
-    {
-        $this->note_attribuee = $value;
+        $this->nomCritere = $value;
         return $this;
     }
 
     public function getNoteAttribuee(): string
     {
-        return $this->note_attribuee;
+        return $this->noteAttribuee;
     }
 
     public function setNoteAttribuee(string $value): static
     {
-        $this->note_attribuee = $value;
-        return $this;
-    }
-
-    public function getAppreciation_specifique(): string
-    {
-        return $this->appreciation_specifique;
-    }
-
-    public function setAppreciation_specifique(string $value): static
-    {
-        $this->appreciation_specifique = $value;
+        $this->noteAttribuee = $value;
         return $this;
     }
 
     public function getAppreciationSpecifique(): string
     {
-        return $this->appreciation_specifique;
+        return $this->appreciationSpecifique;
     }
 
     public function setAppreciationSpecifique(string $value): static
     {
-        $this->appreciation_specifique = $value;
+        $this->appreciationSpecifique = $value;
         return $this;
     }
 
@@ -120,9 +101,29 @@ class ScoreCompetence
         return $this->evaluation;
     }
 
-    public function setEvaluation(?Evaluation $evaluation): static
+    public function setEvaluation(?Evaluation $value): static
     {
-        $this->evaluation = $evaluation;
+        $this->evaluation = $value;
         return $this;
+    }
+
+    public function validateNoteAttribuee(ExecutionContextInterface $context): void
+    {
+        $raw = trim($this->noteAttribuee ?? '');
+        if ($raw === '') {
+            return;
+        }
+
+        $normalized = str_replace(',', '.', $raw);
+        if (!is_numeric($normalized)) {
+            return;
+        }
+
+        $score = (float) $normalized;
+        if ($score < 0 || $score > 20) {
+            $context->buildViolation('La note doit etre comprise entre 0 et 20.')
+                ->atPath('noteAttribuee')
+                ->addViolation();
+        }
     }
 }

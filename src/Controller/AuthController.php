@@ -60,7 +60,7 @@ class AuthController extends AbstractController
     #[Route('/after-login', name: 'app_after_login', methods: ['GET'])]
     public function afterLogin(): Response
     {
-        if ($this->isGranted('ROLE_ADMIN')) {
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_RH')) {
             return $this->redirectToRoute('admin_dashboard');
         }
 

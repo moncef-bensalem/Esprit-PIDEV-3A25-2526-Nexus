@@ -198,13 +198,37 @@
     .btn-delete:hover { background: rgba(127,29,29,.8); }
     .flash-wrap { margin: 12px 24px 0; }
     .empty-state { margin: 36px 24px; color: #9fb4c8; font-size: .95rem; }
+    .evaluation-card.best-score {
+        border: 2px solid rgba(34, 197, 94, .95);
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, .22) inset, 0 10px 26px rgba(0,0,0,.28);
+        position: relative;
+    }
+    .best-score-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 8px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 800;
+        letter-spacing: .2px;
+        color: #052e16;
+        background: rgba(34, 197, 94, .92);
+        border: 1px solid rgba(187, 247, 208, .65);
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .deadline-reminder-strong { color: #fff; font-weight: 800; }
 </style>
 {% endblock %}
 
-{% block body %}
+{% block content %}
 <div class="topbar">
     <div class="topbar-title">{% if is_candidate_only|default(false) %}Votre decision preliminaire{% else %}Liste des evaluations{% endif %}</div>
+    {% if not is_candidate_only|default(false) %}
     <a href="{{ path('evaluation_new') }}" class="btn-create">+ Creer une evaluation</a>
+    {% endif %}
 </div>
 
 <div class="dash-grid">
@@ -262,6 +286,7 @@
                     </select>
                 </div>
 
+                {% if is_granted('ROLE_ADMIN') %}
                 <div class="col-md-4">
                     <select name="recruteur" class="form-select">
                         <option value="">Tous recruteurs</option>
@@ -270,6 +295,7 @@
                         {% endfor %}
                     </select>
                 </div>
+                {% endif %}
 
                 <div class="col-md-4">
                     <select name="candidat" class="form-select">
@@ -283,7 +309,7 @@
         </div>
 
         <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-success w-100">Filtrer</button>
+            <button type="button" class="btn btn-outline-light w-100" id="resetFiltersBtn">Reinitialiser</button>
         </div>
     </form>
 </div>
@@ -303,37 +329,50 @@
 {% if evaluations is empty %}
     <div class="empty-state">{% if is_candidate_only|default(false) %}Aucune decision preliminaire enregistree pour votre compte.{% else %}Aucune evaluation trouvee.{% endif %}</div>
 {% else %}
-<div class="cards-grid">
-    {% for evaluation in evaluations %}
-        {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
-        {% set avgScore = averageScoresById[evaluation.idEvaluation]|default(null) %}
-        <div class="evaluation-card {{ decisionClass }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
-            {% if is_candidate_only|default(false) %}
+    {% if is_candidate_only|default(false) %}
+    <div class="cards-grid">
+        {% for evaluation in evaluations %}
+            {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
+            <div class="evaluation-card {{ decisionClass }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
                 <div class="card-title">Decision preliminaire</div>
                 <div class="card-meta">
                     <div>📌 {{ evaluation.decisionPreliminaire }}</div>
                 </div>
-            {% else %}
-                <div class="card-title">Evaluation #{{ evaluation.idEvaluation }}</div>
-                <div class="card-meta">
-                    <div>📅 Date creation: {{ evaluation.dateCreation|date('Y-m-d H:i') }}</div>
-                    <div>⭐ Score: {{ avgScore is null ? 'N/A' : (avgScore | number_format(2, '.', ',')) }}</div>
-                    <div>👤 Candidat: {{ evaluation.candidat ? (evaluation.candidat.firstName ~ ' ' ~ evaluation.candidat.lastName) : 'Non assigne' }}</div>
-                    <div>📌 Decision: {{ evaluation.decisionPreliminaire }}</div>
-                </div>
-
-                <div class="card-actions">
-                    <a href="{{ path('evaluation_edit', {idEvaluation: evaluation.idEvaluation}) }}" class="btn-edit" onclick="event.stopPropagation();">Modifier</a>
-                    <form method="post" action="{{ path('evaluation_delete', {idEvaluation: evaluation.idEvaluation}) }}" onsubmit="event.stopPropagation(); return confirm('Supprimer cette evaluation ?');" style="margin:0;">
-                        <input type="hidden" name="_token" value="{{ csrf_token('delete_evaluation_' ~ evaluation.idEvaluation) }}">
-                        <button type="submit" class="btn-delete">Supprimer</button>
-                    </form>
-                </div>
-            {% endif %}
-        </div>
-    {% endfor %}
-</div>
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div id="evaluationsCards">
+        {% include 'evaluation/_cards.html.twig' with { evaluations: evaluations, averageScoresById: averageScoresById } %}
+    </div>
+    {% endif %}
 {% endif %}
+
+{# Reminder modal (closest reviewDeadline) #}
+<div class="modal fade" id="deadlineReminderModal" tabindex="-1" aria-labelledby="deadlineReminderTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(2,6,23,.96); border: 1px solid rgba(255,255,255,.18); color: #e2e8f0;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,.12);">
+                <h5 class="modal-title" id="deadlineReminderTitle" style="color:#fff; font-weight: 800;">Rappel : deadline de review</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    La date limite la plus proche est le
+                    <span class="deadline-reminder-strong" id="deadlineReminderDate">—</span>
+                    (<span id="deadlineReminderDays">—</span>).
+                </div>
+                <div class="mt-2">
+                    Evaluation concerne : <span class="deadline-reminder-strong" id="deadlineReminderEval">—</span>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,.12);">
+                <a href="#" class="btn btn-success" id="deadlineReminderLink">Ouvrir l evaluation</a>
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Plus tard</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -342,22 +381,24 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', () => {
-    const evaluations = [
-        {% for e in evaluations %}
-        {
-            id: {{ e.idEvaluation }},
-            decision: {{ e.decisionPreliminaire|json_encode|raw }},
-            reviewDeadline: {{ (e.reviewDeadline ? e.reviewDeadline|date('Y-m-d') : null)|json_encode|raw }},
-            url: {{ path('evaluation_show', {idEvaluation: e.idEvaluation})|json_encode|raw }}
-        }{{ not loop.last ? ',' : '' }}
-        {% endfor %}
-    ];
+    const dataUrl = {{ path('evaluation_index_data')|json_encode|raw }};
+    const cardsEl = document.getElementById('evaluationsCards');
+    const formEl = document.querySelector('form[action="{{ path('evaluation_index') }}"]');
+    const resetBtn = document.getElementById('resetFiltersBtn');
 
-    const deadlinesByDate = new Map();
-    for (const e of evaluations) {
-        if (e.decision !== 'A_REVOIR' || !e.reviewDeadline) continue;
-        if (!deadlinesByDate.has(e.reviewDeadline)) deadlinesByDate.set(e.reviewDeadline, []);
-        deadlinesByDate.get(e.reviewDeadline).push(e);
+    let evaluations = {{ evaluationsJson|raw }};
+    let deadlinesByDate = new Map();
+    let pieChart = null;
+    let hasShownDeadlineReminder = false;
+
+    function rebuildDeadlinesMap() {
+        const map = new Map();
+        for (const e of evaluations) {
+            if (e.decision !== 'A_REVOIR' || !e.reviewDeadline) continue;
+            if (!map.has(e.reviewDeadline)) map.set(e.reviewDeadline, []);
+            map.get(e.reviewDeadline).push(e);
+        }
+        deadlinesByDate = map;
     }
 
     const monthNames = ['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre'];
@@ -470,50 +511,194 @@ window.addEventListener('DOMContentLoaded', () => {
     renderMonth();
 
     // Pie chart decisions preliminaires
-    const counts = { FAVORABLE: 0, DEFAVORABLE: 0, A_REVOIR: 0 };
-    for (const e of evaluations) {
-        if (e.decision in counts) counts[e.decision]++;
-    }
-    const total = counts.FAVORABLE + counts.DEFAVORABLE + counts.A_REVOIR;
-
     const ctx = document.getElementById('decisionPie');
-    if (ctx && total > 0 && window.Chart) {
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['FAVORABLE', 'DEFAVORABLE', 'A_REVOIR'],
-                datasets: [{
-                    data: [counts.FAVORABLE, counts.DEFAVORABLE, counts.A_REVOIR],
-                    backgroundColor: [
-                        'rgba(20, 83, 45, 0.85)',
-                        'rgba(127, 29, 29, 0.85)',
-                        'rgba(154, 52, 18, 0.85)'
-                    ],
-                    borderColor: 'rgba(255,255,255,0.18)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#e2e8f0', boxWidth: 14, boxHeight: 14 }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => {
-                                const val = ctx.raw ?? 0;
-                                const pct = total ? Math.round((val / total) * 100) : 0;
-                                return ` ${ctx.label}: ${val} (${pct}%)`;
+    function getCountsFromEvaluations(list) {
+        const c = { FAVORABLE: 0, DEFAVORABLE: 0, A_REVOIR: 0 };
+        for (const e of list) {
+            if (e.decision in c) c[e.decision]++;
+        }
+        return c;
+    }
+
+    function renderOrUpdatePie(counts) {
+        const total = counts.FAVORABLE + counts.DEFAVORABLE + counts.A_REVOIR;
+        if (!ctx || !window.Chart) return;
+
+        const data = [counts.FAVORABLE, counts.DEFAVORABLE, counts.A_REVOIR];
+
+        if (!pieChart) {
+            if (total <= 0) return;
+            pieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['FAVORABLE', 'DEFAVORABLE', 'A_REVOIR'],
+                    datasets: [{
+                        data,
+                        backgroundColor: [
+                            'rgba(20, 83, 45, 0.85)',
+                            'rgba(127, 29, 29, 0.85)',
+                            'rgba(154, 52, 18, 0.85)'
+                        ],
+                        borderColor: 'rgba(255,255,255,0.18)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#e2e8f0', boxWidth: 14, boxHeight: 14 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (tip) => {
+                                    const val = tip.raw ?? 0;
+                                    const pct = total ? Math.round((val / total) * 100) : 0;
+                                    return ` ${tip.label}: ${val} (${pct}%)`;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            pieChart.data.datasets[0].data = data;
+            pieChart.update();
+        }
     }
+
+    function setDashboardData(nextEvaluations, nextCounts) {
+        evaluations = Array.isArray(nextEvaluations) ? nextEvaluations : [];
+        rebuildDeadlinesMap();
+        renderMonth();
+        renderOrUpdatePie(nextCounts ?? getCountsFromEvaluations(evaluations));
+    }
+
+    rebuildDeadlinesMap();
+    setDashboardData(evaluations, getCountsFromEvaluations(evaluations));
+
+    function formatFrDate(iso) {
+        // iso attendu: YYYY-MM-DD
+        const parts = String(iso ?? '').split('-');
+        if (parts.length !== 3) return String(iso ?? '');
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function showClosestReviewDeadlineReminder(list) {
+        if (hasShownDeadlineReminder) return;
+        hasShownDeadlineReminder = true;
+        if (!Array.isArray(list) || !window.bootstrap) return;
+
+        const todayLocal = new Date();
+        todayLocal.setHours(0,0,0,0);
+
+        const candidates = list
+            .filter(e => e && e.decision === 'A_REVOIR' && e.reviewDeadline)
+            .map(e => {
+                const d = new Date(`${e.reviewDeadline}T00:00:00`);
+                return { ...e, _d: d };
+            })
+            .filter(e => e._d instanceof Date && !Number.isNaN(e._d.getTime()) && e._d.getTime() >= todayLocal.getTime())
+            .sort((a, b) => a._d.getTime() - b._d.getTime());
+
+        if (candidates.length === 0) return;
+        const next = candidates[0];
+
+        const daysLeft = Math.round((next._d.getTime() - todayLocal.getTime()) / (24 * 60 * 60 * 1000));
+        const daysLabel = daysLeft === 0 ? "aujourd'hui" : (daysLeft === 1 ? 'dans 1 jour' : `dans ${daysLeft} jours`);
+
+        const dateEl = document.getElementById('deadlineReminderDate');
+        const daysEl = document.getElementById('deadlineReminderDays');
+        const evalEl = document.getElementById('deadlineReminderEval');
+        const linkEl = document.getElementById('deadlineReminderLink');
+        const modalEl = document.getElementById('deadlineReminderModal');
+
+        if (!modalEl || !dateEl || !daysEl || !evalEl || !linkEl) return;
+
+        dateEl.textContent = formatFrDate(next.reviewDeadline);
+        daysEl.textContent = daysLabel;
+        evalEl.textContent = `#${next.id}`;
+        linkEl.href = next.url || '#';
+
+        const modal = new bootstrap.Modal(modalEl, { backdrop: true, focus: true });
+        modal.show();
+    }
+
+    showClosestReviewDeadlineReminder(evaluations);
+
+    let abortController = null;
+    let debounceTimer = null;
+
+    async function refreshWithAjax() {
+        if (!formEl || !cardsEl) return;
+
+        const params = new URLSearchParams(new FormData(formEl));
+        if (abortController) abortController.abort();
+        abortController = new AbortController();
+
+        try {
+            cardsEl.style.opacity = '0.6';
+            const res = await fetch(`${dataUrl}?${params.toString()}`, {
+                headers: { 'Accept': 'application/json' },
+                signal: abortController.signal
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const payload = await res.json();
+
+            if (typeof payload.cardsHtml === 'string') {
+                cardsEl.innerHTML = payload.cardsHtml;
+            }
+            setDashboardData(payload.evaluations, payload.counts);
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            // En cas d'erreur, on garde l'UI actuelle sans bloquer l'utilisateur
+            console.error(e);
+        } finally {
+            cardsEl.style.opacity = '1';
+        }
+    }
+
+    function scheduleRefresh() {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(refreshWithAjax, 250);
+    }
+
+    function resetFiltersToDefault() {
+        if (!formEl) return;
+        const q = formEl.querySelector('input[name="q"]');
+        const sort = formEl.querySelector('select[name="sort"]');
+        const decision = formEl.querySelector('select[name="decision"]');
+        const recruteur = formEl.querySelector('select[name="recruteur"]');
+        const candidat = formEl.querySelector('select[name="candidat"]');
+
+        if (q) q.value = '';
+        if (sort) sort.value = 'dateCreation';
+        if (decision) decision.value = '';
+        if (recruteur) recruteur.value = '';
+        if (candidat) candidat.value = '';
+
+        // On remet aussi l'URL "propre" (sans querystring) même si on reste en AJAX.
+        try {
+            window.history.replaceState({}, '', formEl.action);
+        } catch (e) {
+            // ignore
+        }
+
+        scheduleRefresh();
+    }
+
+    if (formEl) {
+        formEl.addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            scheduleRefresh();
+        });
+        formEl.addEventListener('input', scheduleRefresh);
+        formEl.addEventListener('change', scheduleRefresh);
+    }
+
+    resetBtn?.addEventListener('click', resetFiltersToDefault);
 });
 </script>
 {% endblock %}

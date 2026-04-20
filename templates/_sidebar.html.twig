@@ -2,7 +2,7 @@
 
     {# Brand #}
     <div class="nx-sidebar-brand-inner" style="padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
-        <a href="{{ is_granted('ROLE_ADMIN') ? path('admin_dashboard') : path('candidate_dashboard') }}" class="nx-sidebar-brand" style="border-bottom: none; padding: 0;">
+        <a href="{{ is_granted('ROLE_ADMIN') ? path('admin_dashboard') : (is_granted('ROLE_RH') ? path('evaluation_index') : path('candidate_dashboard')) }}" class="nx-sidebar-brand" style="border-bottom: none; padding: 0;">
             <img src="{{ asset('nexus.jpg') }}" alt="Nexus">
             <div class="nx-sidebar-brand-text">
                 <div class="nx-sidebar-brand-name">Nexus</div>
@@ -99,6 +99,18 @@
     </a>
 
     {% endif %}{# end ROLE_ADMIN #}
+
+    {% if is_granted('ROLE_RH') and not is_granted('ROLE_ADMIN') %}
+
+    <div class="nx-nav-section">Recrutement</div>
+
+    <a href="{{ path('evaluation_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'evaluation' ? 'active' : '' }}">
+        <i class="fa fa-clipboard-list"></i>
+        <span>Évaluations</span>
+    </a>
+
+    {% endif %}
 
     {% if is_granted('ROLE_CANDIDATE') and not is_granted('ROLE_ADMIN') %}
 
