@@ -1,61 +1,122 @@
 {% extends 'base.html.twig' %}
 
 {% block title %}Liste des Departements{% endblock %}
-
 {% block page_title %}Gestion des Départements{% endblock %}
 
 {% block content %}
 <style>
-    .mc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+    .mc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
     .mc-header-title { font-size: 1.4rem; font-weight: 700; color: #fff; margin-bottom: 4px; display: flex; align-items: center; }
     .mc-header-sub { font-size: .85rem; color: rgba(255,255,255,.4); }
-    .mc-header-actions { display: flex; gap: 12px; }
-    .btn-create { background: linear-gradient(135deg, #20b2aa, #0288d1); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; transition: transform 0.2s; }
-    .btn-create:hover { transform: translateY(-2px); color:#fff; }
-    
-    .mc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-    .mc-card-dept { background: rgba(13,25,42,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 24px; transition: transform 0.2s, box-shadow 0.2s; display: flex; justify-content: space-between; align-items: center; }
-    .mc-card-dept:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-color: rgba(32,178,170,0.2); }
-    
-    .mc-card-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(32,178,170,0.1); color: var(--cyan); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-    
-    .mc-btn-icon { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.05); transition: all 0.2s; text-decoration: none; border: none; cursor: pointer; margin-left: 6px; }
+    .btn-create { background: linear-gradient(135deg, #20b2aa, #0288d1); color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; transition: all 0.2s; box-shadow: 0 4px 16px rgba(32,178,170,0.25); }
+    .btn-create:hover { transform: translateY(-2px); color:#fff; box-shadow: 0 8px 24px rgba(32,178,170,0.35); }
+
+    /* KPI row */
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 24px; }
+    .kpi-card { background: rgba(13,25,42,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 22px 26px; display: flex; align-items: center; gap: 18px; transition: border-color 0.2s; }
+    .kpi-card:hover { border-color: rgba(32,178,170,0.25); }
+    .kpi-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .kpi-icon.cyan  { background: rgba(32,178,170,0.12); color: #20b2aa; }
+    .kpi-icon.green { background: rgba(76,175,80,0.12);  color: #4caf50; }
+    .kpi-icon.blue  { background: rgba(2,136,209,0.12);  color: #0288d1; }
+    .kpi-label { font-size: 0.78rem; color: rgba(255,255,255,0.45); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .kpi-value { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .kpi-sub   { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-top: 4px; }
+
+    /* Chart + dept list split */
+    .dashboard-split { display: grid; grid-template-columns: 1fr 1.6fr; gap: 20px; margin-bottom: 32px; }
+    .chart-panel { background: rgba(13,25,42,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; }
+    .chart-panel-title { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+
+    /* Bar list inside chart panel */
+    .dept-bars { display: flex; flex-direction: column; gap: 12px; }
+    .dept-bar-row { display: flex; flex-direction: column; gap: 4px; }
+    .dept-bar-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: rgba(255,255,255,0.6); }
+    .dept-bar-label span:last-child { color: #20b2aa; font-weight: 700; }
+    .dept-bar-track { height: 7px; border-radius: 10px; background: rgba(255,255,255,0.06); overflow: hidden; }
+    .dept-bar-fill  { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #20b2aa, #0288d1); transition: width 0.8s ease; }
+
+    /* Dept grid */
+    .mc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .mc-card-dept { background: rgba(13,25,42,0.65); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 20px 22px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; position: relative; overflow: hidden; }
+    .mc-card-dept::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #20b2aa, #0288d1); border-radius: 14px 0 0 14px; }
+    .mc-card-dept:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.4); border-color: rgba(32,178,170,0.2); }
+    .mc-card-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(32,178,170,0.1); color: #20b2aa; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .dept-offer-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; background: rgba(32,178,170,0.1); border: 1px solid rgba(32,178,170,0.2); font-size: 0.7rem; font-weight: 700; color: #20b2aa; margin-top: 5px; }
+    .mc-btn-icon { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.05); transition: all 0.2s; text-decoration: none; border: none; cursor: pointer; margin-left: 5px; }
     .mc-btn-icon:hover { background: rgba(32,178,170,0.2); color: #fff; }
 </style>
 
+{# ── Header ── #}
 <div class="mc-header">
     <div>
         <div class="mc-header-title"><i class="fas fa-sitemap" style="color:var(--cyan); margin-right: 12px;"></i> Départements de l'entreprise</div>
         <div class="mc-header-sub">Structurez l'organisation interne pour le recrutement.</div>
     </div>
-    <div class="mc-header-actions">
-        <a href="{{ path('app_departement_new') }}" class="btn-create">
-            <i class="fas fa-plus"></i> Nouveau Département
-        </a>
+    <a href="{{ path('app_departement_new') }}" class="btn-create">
+        <i class="fas fa-plus"></i> Nouveau Département
+    </a>
+</div>
+
+{# ── KPI Cards ── #}
+<div class="kpi-row">
+    <div class="kpi-card">
+        <div class="kpi-icon cyan"><i class="fas fa-sitemap"></i></div>
+        <div>
+            <div class="kpi-label">Départements</div>
+            <div class="kpi-value">{{ departements|length }}</div>
+            <div class="kpi-sub">Divisions actives</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon blue"><i class="fas fa-briefcase"></i></div>
+        <div>
+            <div class="kpi-label">Total Offres</div>
+            <div class="kpi-value">{{ statGlobal.total }}</div>
+            <div class="kpi-sub">Toutes statuts confondus</div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-icon green"><i class="fas fa-check-circle"></i></div>
+        <div>
+            <div class="kpi-label">Offres Publiées</div>
+            <div class="kpi-value" style="color:#4caf50;">{{ statGlobal.actives }}</div>
+            <div class="kpi-sub">Actuellement actives</div>
+        </div>
     </div>
 </div>
 
-<!-- STATS DASHBOARD -->
-<div class="row" style="margin-bottom: 30px; display: flex; gap: 20px;">
-    <!-- Stat Cards -->
-    <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
-        <div style="background: rgba(13,25,42,0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center; height: 100%;">
-            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5);">Total Offres d'Emploi</div>
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--cyan);">{{ statGlobal.total }}</div>
-        </div>
-        <div style="background: rgba(13,25,42,0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center; height: 100%;">
-            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5);">Offres Actives (Publiées)</div>
-            <div style="font-size: 2.5rem; font-weight: 700; color: #4CAF50;">{{ statGlobal.actives }}</div>
-        </div>
-    </div>
-    
-    <!-- Chart -->
-    <div style="flex: 2; background: rgba(13,25,42,0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); min-height: 250px; display: flex; justify-content: center; align-items: center;">
+{# ── Chart + Bar Breakdown ── #}
+<div class="dashboard-split" style="margin-bottom:32px;">
+    {# Doughnut chart #}
+    <div class="chart-panel">
+        <div class="chart-panel-title"><i class="fas fa-chart-pie" style="margin-right:6px; color:#20b2aa;"></i> Répartition par département</div>
         {% if statGlobal.total > 0 %}
-            <canvas id="deptPieChart" style="max-height: 220px;"></canvas>
+            <div style="position:relative; height: 220px; display:flex; align-items:center; justify-content:center;">
+                <canvas id="deptPieChart"></canvas>
+            </div>
         {% else %}
-            <div style="color: rgba(255,255,255,0.3);">Pas assez de données pour le graphique</div>
+            <div style="color:rgba(255,255,255,0.3); text-align:center; padding: 60px 0;">Pas encore de données</div>
         {% endif %}
+    </div>
+
+    {# Bar breakdown per dept #}
+    <div class="chart-panel">
+        <div class="chart-panel-title"><i class="fas fa-bars" style="margin-right:6px; color:#20b2aa;"></i> Répartition détaillée</div>
+        <div class="dept-bars">
+            {% for s in stats %}
+                {% set percent = statGlobal.total > 0 ? ((s.total_offres / statGlobal.total) * 100)|round : 0 %}
+                <div class="dept-bar-row">
+                    <div class="dept-bar-label">
+                        <span>{{ s.libelle }}</span>
+                        <span>{{ s.total_offres }} offres ({{ percent }}%)</span>
+                    </div>
+                    <div class="dept-bar-track">
+                        <div class="dept-bar-fill" style="width: {{ percent }}%;"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
@@ -64,71 +125,94 @@
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('deptPieChart')) {
         const ctx = document.getElementById('deptPieChart').getContext('2d');
-        const labels = {{ chartLabels|raw }};
-        const data = {{ chartData|raw }};
-        
         new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: labels,
+                labels: {{ chartLabels|raw }},
                 datasets: [{
-                    data: data,
-                    backgroundColor: [
-                        '#20b2aa', '#0288d1', '#7b1fa2', '#c2185b', '#fbc02d', '#00796b'
-                    ],
-                    borderWidth: 0,
-                    hoverOffset: 4
+                    data: {{ chartData|raw }},
+                    backgroundColor: ['#20b2aa','#0288d1','#7b1fa2','#c2185b','#fbc02d','#00796b','#e65100'],
+                    borderWidth: 0, hoverOffset: 6
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
+                cutout: '68%',
                 plugins: {
-                    legend: { position: 'right', labels: { color: 'rgba(255,255,255,0.7)' } }
+                    legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)', padding: 14, boxWidth: 12 } }
                 }
             }
         });
     }
 });
 </script>
-<!-- END STATS DASHBOARD -->
 
-<h3 style="color: #fff; margin-bottom: 20px;">Liste des départements</h3>
+{# ── Orphan Warning ── #}
+{% if orphanDepts|length > 0 %}
+<div style="background: rgba(251,192,45,0.07); border: 1px solid rgba(251,192,45,0.25); border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <i class="fas fa-exclamation-triangle" style="color:#fbc02d; font-size:1rem;"></i>
+        <span style="font-size:0.85rem; font-weight:700; color:#fbc02d;">Offres avec département non enregistré</span>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        {% for orphan in orphanDepts %}
+        <div style="display:flex; align-items:center; gap:10px; background:rgba(251,192,45,0.08); border:1px solid rgba(251,192,45,0.2); border-radius:10px; padding:8px 14px;">
+            <span style="font-size:0.85rem; color:rgba(255,255,255,0.8); font-weight:600;">{{ orphan.nom }}</span>
+            <span style="font-size:0.72rem; color:#fbc02d; font-weight:700;">{{ orphan.cnt }} offre{{ orphan.cnt > 1 ? 's' : '' }}</span>
+            <a href="{{ path('app_departement_new') }}" style="font-size:0.72rem; color:#20b2aa; text-decoration:none; font-weight:700;" title="Ajouter ce département">
+                <i class="fas fa-plus-circle"></i> Créer
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    <div style="font-size:0.75rem; color:rgba(255,255,255,0.3); margin-top:10px;">
+        Ces offres sont exclues des statistiques ci-dessus. Créez les départements manquants pour les inclure.
+    </div>
+</div>
+{% endif %}
+
+{# ── Department Cards ── #}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+    <h3 style="color:#fff; font-size:1.05rem; font-weight:700; margin:0;">
+        <i class="fas fa-th-large" style="color:var(--cyan); margin-right:8px;"></i> Liste des Départements
+    </h3>
+    <span style="font-size:0.78rem; color:rgba(255,255,255,0.3);">{{ departements|length }} département{{ departements|length != 1 ? 's' : '' }}</span>
+</div>
+
 <div class="mc-grid">
 {% for departement in departements %}
     {% set deptStats = null %}
     {% for s in stats %}
-        {% if s.libelle == departement.libelle %}
-            {% set deptStats = s %}
-        {% endif %}
+        {% if s.libelle == departement.libelle %}{% set deptStats = s %}{% endif %}
     {% endfor %}
 
     <div class="mc-card-dept">
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <div class="mc-card-icon">
-                <i class="fas fa-building"></i>
-            </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+            <div class="mc-card-icon"><i class="fas fa-building"></i></div>
             <div>
-                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #fff;">{{ departement.libelle }}</h3>
-                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 4px;">Code Dept: #{{ departement.id_departement }} &nbsp;&bull;&nbsp; {{ deptStats.total_offres ?? 0 }} Offres</div>
+                <div style="font-size:1rem; font-weight:700; color:#fff;">{{ departement.libelle }}</div>
+                <div class="dept-offer-pill">
+                    <i class="fas fa-briefcase" style="font-size:0.6rem;"></i>
+                    {{ deptStats.total_offres ?? 0 }} offre{{ (deptStats.total_offres ?? 0) != 1 ? 's' : '' }}
+                </div>
             </div>
         </div>
-
         <div style="display:flex; align-items:center;">
             <a href="{{ path('app_departement_show', {'id_departement': departement.id_departement}) }}" class="mc-btn-icon" title="Voir"><i class="fas fa-eye"></i></a>
             <a href="{{ path('app_departement_edit', {'id_departement': departement.id_departement}) }}" class="mc-btn-icon" title="Modifier"><i class="fas fa-edit"></i></a>
-            <form method="post" action="{{ path('app_departement_delete', {'id_departement': departement.id_departement}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce département ?');" style="display:inline-block; margin:0; margin-left:6px;">
+            <form method="post" action="{{ path('app_departement_delete', {'id_departement': departement.id_departement}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce département ?');" style="display:inline-block; margin:0;">
                 <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ departement.id_departement) }}">
-                <button class="mc-btn-icon" style="color: #ef5350;"><i class="fas fa-trash"></i></button>
+                <button class="mc-btn-icon" style="color:#ef5350;"><i class="fas fa-trash"></i></button>
             </form>
         </div>
     </div>
 {% else %}
-    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: rgba(13,25,42,0.4); border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;">
-        <i class="fas fa-sitemap" style="font-size: 3rem; color: rgba(255,255,255,0.1); margin-bottom: 16px;"></i>
-        <h3 style="color: rgba(255,255,255,0.5); font-weight: 500;">Aucun département configuré.</h3>
-        <a href="{{ path('app_departement_new') }}" class="btn-create" style="margin-top: 16px;">Créer le premier</a>
+    <div style="grid-column:1/-1; text-align:center; padding:60px 20px; background:rgba(13,25,42,0.4); border:1px dashed rgba(255,255,255,0.1); border-radius:16px;">
+        <i class="fas fa-sitemap" style="font-size:3rem; color:rgba(255,255,255,0.1); margin-bottom:16px; display:block;"></i>
+        <h3 style="color:rgba(255,255,255,0.5); font-weight:500;">Aucun département configuré.</h3>
+        <a href="{{ path('app_departement_new') }}" class="btn-create" style="margin-top:16px;">Créer le premier</a>
     </div>
 {% endfor %}
 </div>
+
 {% endblock %}

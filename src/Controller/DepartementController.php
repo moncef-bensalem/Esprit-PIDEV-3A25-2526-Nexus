@@ -23,10 +23,13 @@ final class DepartementController extends AbstractController
         $conn = $entityManager->getConnection();
         $sql = "
             SELECT d.libelle, 
-                   COUNT(o.id_offre) as total_offres, 
+                   COUNT(DISTINCT o.id_offre) as total_offres, 
                    SUM(CASE WHEN UPPER(o.statut_offre) IN ('PUBLIEE', 'PUBLIÉE') THEN 1 ELSE 0 END) as actives
             FROM departement d
-            LEFT JOIN offre_emploi o ON d.id_departement = o.fk_departement_id
+            LEFT JOIN offre_emploi o ON (
+                d.id_departement = o.fk_departement_id
+                OR LOWER(CONVERT(d.libelle USING utf8mb4)) = LOWER(CONVERT(o.departement USING utf8mb4))
+            )
             GROUP BY d.id_departement, d.libelle
         ";
         $stats = $conn->executeQuery($sql)->fetchAllAssociative();
@@ -44,12 +47,27 @@ final class DepartementController extends AbstractController
             }
         }
 
+        // Find offers whose 'departement' text doesn't match any registered departement
+        $orphanSql = "
+            SELECT DISTINCT o.departement as nom, COUNT(o.id_offre) as cnt
+            FROM offre_emploi o
+            WHERE o.departement IS NOT NULL AND o.departement != ''
+              AND NOT EXISTS (
+                SELECT 1 FROM departement d
+                WHERE d.id_departement = o.fk_departement_id
+                   OR LOWER(CONVERT(d.libelle USING utf8mb4)) = LOWER(CONVERT(o.departement USING utf8mb4))
+              )
+            GROUP BY o.departement
+        ";
+        $orphanDepts = $conn->executeQuery($orphanSql)->fetchAllAssociative();
+
         return $this->render('departement/index.html.twig', [
-            'departements' => $departements,
-            'stats' => $stats,
-            'statGlobal' => $statGlobal,
-            'chartLabels' => json_encode($chartLabels),
-            'chartData' => json_encode($chartData),
+            'departements'  => $departements,
+            'stats'         => $stats,
+            'statGlobal'    => $statGlobal,
+            'chartLabels'   => json_encode($chartLabels),
+            'chartData'     => json_encode($chartData),
+            'orphanDepts'   => $orphanDepts,
         ]);
     }
 

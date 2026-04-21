@@ -67,20 +67,35 @@ final class OffreEmploiController extends AbstractController
         $chartStatsRow = $conn->executeQuery($sql)->fetchAllAssociative();
         
         $chartLabels = [];
-        $chartData = [];
+        $chartData   = [];
         $totalOffres = 0;
+        $statMap     = ['PUBLIEE' => 0, 'PUBLIÉE' => 0, 'BROUILLON' => 0, 'CLÔTURÉE' => 0, 'CLOTUREE' => 0];
+        
         foreach($chartStatsRow as $row) {
             $statut = $row['statut'] ?: 'NON_DEFINI';
             $chartLabels[] = $statut;
-            $chartData[] = (int) $row['total'];
-            $totalOffres += (int) $row['total'];
+            $chartData[]   = (int) $row['total'];
+            $totalOffres  += (int) $row['total'];
+            $statMap[$statut] = (int) $row['total'];
         }
 
+        $countPublished = ($statMap['PUBLIEE']  ?? 0) + ($statMap['PUBLIÉE']  ?? 0);
+        $countDraft     = $statMap['BROUILLON'] ?? 0;
+        $countClosed    = ($statMap['CLÔTURÉE'] ?? 0) + ($statMap['CLOTUREE'] ?? 0);
+
+        // Count offers created in the last 7 days
+        $recentSql = "SELECT COUNT(*) as cnt FROM offre_emploi WHERE date_creation >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        $countRecent = (int) $conn->executeQuery($recentSql)->fetchOne();
+
         return $this->render('offre_emploi/index.html.twig', [
-            'offre_emplois' => $pagerfanta,
-            'statTotal' => $totalOffres,
-            'chartLabels' => json_encode($chartLabels),
-            'chartData' => json_encode($chartData),
+            'offre_emplois'    => $pagerfanta,
+            'statTotal'        => $totalOffres,
+            'countPublished'   => $countPublished,
+            'countDraft'       => $countDraft,
+            'countClosed'      => $countClosed,
+            'countRecent'      => $countRecent,
+            'chartLabels'      => json_encode($chartLabels),
+            'chartData'        => json_encode($chartData),
         ]);
     }
 
