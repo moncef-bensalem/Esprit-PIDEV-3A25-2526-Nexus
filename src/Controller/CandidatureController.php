@@ -97,8 +97,19 @@ final class CandidatureController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
-            if ($oldStatus !== $candidature->getEtat_avancement()) {
-                $emailService->sendStatusUpdateEmail($candidature);
+            $newStatus = $candidature->getEtat_avancement();
+            if ($oldStatus !== $newStatus) {
+                $candidate = $candidature->getCandidat();
+                $email = $candidate ? $candidate->getEmailContact() : null;
+
+                if (!$email) {
+                    $this->addFlash('warning', "⚠️ Statut changé ($oldStatus → $newStatus) mais le candidat n'a pas d'email enregistré — aucun email envoyé.");
+                } else {
+                    $emailService->sendStatusUpdateEmail($candidature);
+                    $this->addFlash('success', "✅ Email de notification envoyé à : $email (statut : $newStatus)");
+                }
+            } else {
+                $this->addFlash('info', "ℹ️ Aucun changement de statut détecté (statut: $oldStatus) — pas d'email envoyé.");
             }
 
             return $this->redirectToRoute('app_candidature_index', [], Response::HTTP_SEE_OTHER);

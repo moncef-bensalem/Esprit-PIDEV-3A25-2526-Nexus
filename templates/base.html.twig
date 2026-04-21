@@ -375,6 +375,29 @@
                 </header>
 
                 <div class="nx-main">
+                    {# ── Flash Messages ── #}
+                    {% for msg in app.flashes('success') %}
+                        <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:12px;margin-bottom:18px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.25);color:#a5d6a7;font-size:.84rem;animation:fadeIn .3s ease;">
+                            <i class="fas fa-check-circle" style="color:#4caf50;font-size:1rem;flex-shrink:0;"></i> {{ msg }}
+                        </div>
+                    {% endfor %}
+                    {% for msg in app.flashes('warning') %}
+                        <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:12px;margin-bottom:18px;background:rgba(251,192,45,.08);border:1px solid rgba(251,192,45,.25);color:#ffe082;font-size:.84rem;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fbc02d;font-size:1rem;flex-shrink:0;"></i> {{ msg }}
+                        </div>
+                    {% endfor %}
+                    {% for msg in app.flashes('error') %}
+                        <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:12px;margin-bottom:18px;background:rgba(239,83,80,.1);border:1px solid rgba(239,83,80,.25);color:#ef9a9a;font-size:.84rem;">
+                            <i class="fas fa-times-circle" style="color:#ef5350;font-size:1rem;flex-shrink:0;"></i> {{ msg }}
+                        </div>
+                    {% endfor %}
+                    {% for msg in app.flashes('info') %}
+                        <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:12px;margin-bottom:18px;background:rgba(2,136,209,.08);border:1px solid rgba(2,136,209,.25);color:#90caf9;font-size:.84rem;">
+                            <i class="fas fa-info-circle" style="color:#0288d1;font-size:1rem;flex-shrink:0;"></i> {{ msg }}
+                        </div>
+                    {% endfor %}
+                    <style>@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}</style>
+
                     {% block content %}{% endblock %}
                 </div>
 

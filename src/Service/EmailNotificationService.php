@@ -40,13 +40,13 @@ class EmailNotificationService
             ->subject('Mise à jour de votre candidature : ' . $jobTitle)
             ->html($content);
 
-        // 3. FORCE SENDGRID TRANSPORT via Header
+        // Force SendGrid SMTP transport (defined in mailer.yaml + SENDGRID_DSN in .env)
         $email->getHeaders()->addTextHeader('X-Transport', 'sendgrid');
 
         try {
             $this->mailer->send($email);
         } catch (\Exception $e) {
-            // Silently fail to avoid crashing the admin panel if SendGrid API key is invalid
+            error_log('[EmailNotificationService] Failed to send email: ' . $e->getMessage());
         }
     }
 
