@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\Entity\OffreEmploi;
 use App\Form\OffreEmploiType;
+use App\Service\SalaryEstimatorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -13,6 +15,25 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin/offre-emploi')]
 final class OffreEmploiController extends AbstractController
 {
+    #[Route('/ai/salary-estimate', name: 'app_offre_emploi_salary_estimate', methods: ['GET'])]
+    public function salaryEstimate(Request $request, SalaryEstimatorService $estimator): JsonResponse
+    {
+        $dept = $request->query->get('dept', '');
+        $devise = $request->query->get('devise', 'TND');
+
+        if (!$dept) {
+            return $this->json(['error' => 'Département requis'], 400);
+        }
+
+        $result = $estimator->estimate($dept, $devise);
+
+        if (!$result) {
+            return $this->json(['error' => 'Pas assez de données'], 404);
+        }
+
+        return $this->json($result);
+    }
+
     #[Route(name: 'app_offre_emploi_index', methods: ['GET'])]
     public function index(Request $request, EntityManagerInterface $entityManager): Response
     {

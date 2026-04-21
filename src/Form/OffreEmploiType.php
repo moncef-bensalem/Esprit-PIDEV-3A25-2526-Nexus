@@ -31,7 +31,8 @@ class OffreEmploiType extends AbstractType
                 'class' => Departement::class,
                 'choice_label' => 'libelle',
                 'label' => 'Département',
-                'required' => true
+                'required' => true,
+                'placeholder' => '-- Choisir un département --',
             ])
             ->add('date_cloture', DateType::class, [
                 'widget' => 'single_text',
