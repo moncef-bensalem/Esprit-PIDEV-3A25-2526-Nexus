@@ -35,8 +35,74 @@
     </div>
 </div>
 
+<!-- STATS DASHBOARD -->
+<div class="row" style="margin-bottom: 30px; display: flex; gap: 20px;">
+    <!-- Stat Cards -->
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+        <div style="background: rgba(13,25,42,0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5);">Total Offres d'Emploi</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--cyan);">{{ statGlobal.total }}</div>
+        </div>
+        <div style="background: rgba(13,25,42,0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5);">Offres Actives (Publiées)</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #4CAF50;">{{ statGlobal.actives }}</div>
+        </div>
+    </div>
+    
+    <!-- Chart -->
+    <div style="flex: 2; background: rgba(13,25,42,0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); min-height: 250px; display: flex; justify-content: center; align-items: center;">
+        {% if statGlobal.total > 0 %}
+            <canvas id="deptPieChart" style="max-height: 220px;"></canvas>
+        {% else %}
+            <div style="color: rgba(255,255,255,0.3);">Pas assez de données pour le graphique</div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('deptPieChart')) {
+        const ctx = document.getElementById('deptPieChart').getContext('2d');
+        const labels = {{ chartLabels|raw }};
+        const data = {{ chartData|raw }};
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        '#20b2aa', '#0288d1', '#7b1fa2', '#c2185b', '#fbc02d', '#00796b'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: 'rgba(255,255,255,0.7)' } }
+                }
+            }
+        });
+    }
+});
+</script>
+<!-- END STATS DASHBOARD -->
+
+<h3 style="color: #fff; margin-bottom: 20px;">Liste des départements</h3>
 <div class="mc-grid">
 {% for departement in departements %}
+    {% set deptStats = null %}
+    {% for s in stats %}
+        {% if s.libelle == departement.libelle %}
+            {% set deptStats = s %}
+        {% endif %}
+    {% endfor %}
+
     <div class="mc-card-dept">
         <div style="display: flex; align-items: center; gap: 16px;">
             <div class="mc-card-icon">
@@ -44,7 +110,7 @@
             </div>
             <div>
                 <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #fff;">{{ departement.libelle }}</h3>
-                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 4px;">Code Dept: #{{ departement.id_departement }}</div>
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 4px;">Code Dept: #{{ departement.id_departement }} &nbsp;&bull;&nbsp; {{ deptStats.total_offres ?? 0 }} Offres</div>
             </div>
         </div>
 

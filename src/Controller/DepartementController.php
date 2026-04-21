@@ -20,8 +20,36 @@ final class DepartementController extends AbstractController
             ->getRepository(Departement::class)
             ->findAll();
 
+        $conn = $entityManager->getConnection();
+        $sql = "
+            SELECT d.libelle, 
+                   COUNT(o.id_offre) as total_offres, 
+                   SUM(CASE WHEN UPPER(o.statut_offre) IN ('PUBLIEE', 'PUBLIÉE') THEN 1 ELSE 0 END) as actives
+            FROM departement d
+            LEFT JOIN offre_emploi o ON d.id_departement = o.fk_departement_id
+            GROUP BY d.id_departement, d.libelle
+        ";
+        $stats = $conn->executeQuery($sql)->fetchAllAssociative();
+        
+        $statGlobal = ['total' => 0, 'actives' => 0];
+        $chartLabels = [];
+        $chartData = [];
+        
+        foreach($stats as $s) {
+            $statGlobal['total'] += (int) $s['total_offres'];
+            $statGlobal['actives'] += (int) $s['actives'];
+            if ((int) $s['total_offres'] > 0) {
+                $chartLabels[] = $s['libelle'];
+                $chartData[] = (int) $s['total_offres'];
+            }
+        }
+
         return $this->render('departement/index.html.twig', [
             'departements' => $departements,
+            'stats' => $stats,
+            'statGlobal' => $statGlobal,
+            'chartLabels' => json_encode($chartLabels),
+            'chartData' => json_encode($chartData),
         ]);
     }
 
