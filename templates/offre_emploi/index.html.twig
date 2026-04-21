@@ -52,6 +52,65 @@
     </div>
 </div>
 
+<!-- STATS DASHBOARD -->
+<div class="row" style="margin-bottom: 30px; display: flex; gap: 20px;">
+    <!-- Stat Cards -->
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+        <div style="background: rgba(13,25,42,0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5);">Total des Offres Enregistrées</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--cyan);">{{ statTotal }}</div>
+        </div>
+    </div>
+    
+    <!-- Chart -->
+    <div style="flex: 2; background: rgba(13,25,42,0.6); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); min-height: 250px; display: flex; justify-content: center; align-items: center;">
+        {% if statTotal > 0 %}
+            <canvas id="statusPieChart" style="max-height: 220px;"></canvas>
+        {% else %}
+            <div style="color: rgba(255,255,255,0.3);">Pas assez de données pour le graphique</div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('statusPieChart')) {
+        const ctx = document.getElementById('statusPieChart').getContext('2d');
+        const labels = {{ chartLabels|raw }};
+        const data = {{ chartData|raw }};
+        
+        const backgroundColors = labels.map(label => {
+            if (label.includes('PUBLIEE') || label.includes('PUBLIÉE')) return '#20b2aa'; 
+            if (label.includes('BROUILLON')) return '#757575';
+            if (label.includes('CLOTUREE') || label.includes('CLÔTURÉE')) return '#e53935'; 
+            return '#0288d1'; 
+        });
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: 'rgba(255,255,255,0.7)' } }
+                }
+            }
+        });
+    }
+});
+</script>
+<!-- END STATS DASHBOARD -->
+
     <form method="GET" action="{{ path('app_offre_emploi_index') }}" class="filters-bar">
         <div>
             <label for="q" class="filter-label">Recherche</label>

@@ -34,8 +34,25 @@ final class OffreEmploiController extends AbstractController
         
         $offreEmplois = $qb->getQuery()->getResult();
 
+        $conn = $entityManager->getConnection();
+        $sql = "SELECT UPPER(statut_offre) as statut, COUNT(id_offre) as total FROM offre_emploi GROUP BY UPPER(statut_offre)";
+        $chartStatsRow = $conn->executeQuery($sql)->fetchAllAssociative();
+        
+        $chartLabels = [];
+        $chartData = [];
+        $totalOffres = 0;
+        foreach($chartStatsRow as $row) {
+            $statut = $row['statut'] ?: 'NON_DEFINI';
+            $chartLabels[] = $statut;
+            $chartData[] = (int) $row['total'];
+            $totalOffres += (int) $row['total'];
+        }
+
         return $this->render('offre_emploi/index.html.twig', [
             'offre_emplois' => $offreEmplois,
+            'statTotal' => $totalOffres,
+            'chartLabels' => json_encode($chartLabels),
+            'chartData' => json_encode($chartData),
         ]);
     }
 
