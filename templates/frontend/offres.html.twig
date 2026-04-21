@@ -205,7 +205,7 @@
 {# ── Count bar ── #}
 <div class="count-bar" style="margin-top: 10px;">
     <div class="count-bar-title" id="jobsCountTitle">
-        <span>{{ offres.getTotalItemCount() }}</span> offre{{ offres.getTotalItemCount() != 1 ? 's' : '' }} disponible{{ offres.getTotalItemCount() != 1 ? 's' : '' }}
+        <span>{{ offres.getNbResults() }}</span> offre{{ offres.getNbResults() != 1 ? 's' : '' }} disponible{{ offres.getNbResults() != 1 ? 's' : '' }}
     </div>
     <div class="count-bar-line"></div>
 </div>
@@ -264,7 +264,7 @@
 </div>
 
 <div class="pagination-wrapper">
-        {{ knp_pagination_render(offres) }}
+        {{ pagerfanta(offres, 'twitter_bootstrap3', {'prev_message': '←', 'next_message': '→'}) }}
     </div>
 </div>
 

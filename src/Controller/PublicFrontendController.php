@@ -32,7 +32,7 @@ class PublicFrontendController extends AbstractController
     }
 
     #[Route('/jobs', name: 'app_public_offres', methods: ['GET'])]
-    public function offres(EntityManagerInterface $em, \Knp\Component\Pager\PaginatorInterface $paginator, Request $request): Response
+    public function offres(EntityManagerInterface $em, Request $request): Response
     {
         $q = $request->query->get('q');
 
@@ -47,14 +47,18 @@ class PublicFrontendController extends AbstractController
 
         $queryBuilder->orderBy('o.date_creation', 'DESC');
             
-        $offres = $paginator->paginate(
-            $queryBuilder,
-            $request->query->getInt('page', 1),
-            9 // limit per page
-        );
+        $adapter = new \Pagerfanta\Doctrine\ORM\QueryAdapter($queryBuilder);
+        $pagerfanta = new \Pagerfanta\Pagerfanta($adapter);
+        
+        $pagerfanta->setMaxPerPage(9);
+        try {
+            $pagerfanta->setCurrentPage($request->query->getInt('page', 1));
+        } catch (\Pagerfanta\Exception\OutOfRangeCurrentPageException $e) {
+            $pagerfanta->setCurrentPage(1);
+        }
         
         return $this->render('frontend/offres.html.twig', [
-            'offres' => $offres
+            'offres' => $pagerfanta
         ]);
     }
 

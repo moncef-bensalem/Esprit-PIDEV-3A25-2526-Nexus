@@ -32,7 +32,14 @@ final class OffreEmploiController extends AbstractController
         
         $qb->orderBy('o.date_creation', 'DESC');
         
-        $offreEmplois = $qb->getQuery()->getResult();
+        $adapter = new \Pagerfanta\Doctrine\ORM\QueryAdapter($qb);
+        $pagerfanta = new \Pagerfanta\Pagerfanta($adapter);
+        $pagerfanta->setMaxPerPage(10);
+        try {
+            $pagerfanta->setCurrentPage($request->query->getInt('page', 1));
+        } catch (\Pagerfanta\Exception\OutOfRangeCurrentPageException $e) {
+            $pagerfanta->setCurrentPage(1);
+        }
 
         $conn = $entityManager->getConnection();
         $sql = "SELECT UPPER(statut_offre) as statut, COUNT(id_offre) as total FROM offre_emploi GROUP BY UPPER(statut_offre)";
@@ -49,7 +56,7 @@ final class OffreEmploiController extends AbstractController
         }
 
         return $this->render('offre_emploi/index.html.twig', [
-            'offre_emplois' => $offreEmplois,
+            'offre_emplois' => $pagerfanta,
             'statTotal' => $totalOffres,
             'chartLabels' => json_encode($chartLabels),
             'chartData' => json_encode($chartData),
