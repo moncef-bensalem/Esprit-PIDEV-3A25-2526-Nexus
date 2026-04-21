@@ -34,10 +34,18 @@ class PublicFrontendController extends AbstractController
     #[Route('/jobs', name: 'app_public_offres', methods: ['GET'])]
     public function offres(EntityManagerInterface $em, \Knp\Component\Pager\PaginatorInterface $paginator, Request $request): Response
     {
+        $q = $request->query->get('q');
+
         $queryBuilder = $em->getRepository(OffreEmploi::class)->createQueryBuilder('o')
             ->where('o.statut_offre IN (:statuts)')
-            ->setParameter('statuts', ['Publiée', 'PUBLIEE'])
-            ->orderBy('o.date_creation', 'DESC');
+            ->setParameter('statuts', ['Publiée', 'PUBLIEE']);
+
+        if ($q) {
+            $queryBuilder->andWhere('o.titre_poste LIKE :q OR o.departement LIKE :q')
+                         ->setParameter('q', '%' . $q . '%');
+        }
+
+        $queryBuilder->orderBy('o.date_creation', 'DESC');
             
         $offres = $paginator->paginate(
             $queryBuilder,
