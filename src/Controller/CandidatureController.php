@@ -29,8 +29,24 @@ final class CandidatureController extends AbstractController
         
         $candidatures = $qb->getQuery()->getResult();
 
+        // Pipeline statistics
+        $conn = $entityManager->getConnection();
+        $statsSql = "
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN etat_avancement = 'RECU'         THEN 1 ELSE 0 END) as recu,
+                SUM(CASE WHEN etat_avancement = 'EN_ENTRETIEN' THEN 1 ELSE 0 END) as entretien,
+                SUM(CASE WHEN etat_avancement = 'OFFRE_FAITE'  THEN 1 ELSE 0 END) as offre,
+                SUM(CASE WHEN etat_avancement = 'REJETE'       THEN 1 ELSE 0 END) as rejete,
+                ROUND(AVG(CASE WHEN score_matching > 0 THEN score_matching END), 1) as avg_score,
+                SUM(CASE WHEN date_postulation >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as recent
+            FROM candidature
+        ";
+        $stats = $conn->executeQuery($statsSql)->fetchAssociative();
+
         return $this->render('candidature/index.html.twig', [
             'candidatures' => $candidatures,
+            'stats'        => $stats,
         ]);
     }
 
