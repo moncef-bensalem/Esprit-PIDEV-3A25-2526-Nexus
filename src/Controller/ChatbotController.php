@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Service\ChatbotService;
+use App\Service\GrokService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,21 +22,29 @@ class ChatbotController extends AbstractController
     }
 
     #[Route('/ask', name: 'ask', methods: ['POST'])]
-    public function ask(Request $request, ChatbotService $chatbotService): JsonResponse
+    public function ask(Request $request, ChatbotService $chatbotService, GrokService $grokService): JsonResponse
     {
-        $data    = json_decode($request->getContent(), true);
-        $message = trim($data['message'] ?? '');
+        $data = json_decode($request->getContent(), true);
 
-        if (empty($message)) {
+        // Le frontend envoie "question" ; "message" accepté pour compatibilité
+        $question = trim($data['question'] ?? $data['message'] ?? '');
+
+        if (empty($question)) {
             return $this->json(['error' => 'Message vide.'], 400);
         }
 
-        if (mb_strlen($message) > 500) {
+        if (mb_strlen($question) > 500) {
             return $this->json(['error' => 'Message trop long (max 500 caractères).'], 400);
         }
 
-        $response = $chatbotService->handleMessage($message);
+        // Si un contexte d'événement est fourni → GrokService (chatbot planification/review)
+        // Sinon → ChatbotService/GroqService (chatbot RH général)
+        $eventContext = $data['eventContext'] ?? [];
 
-        return $this->json(['response' => $response]);
+        $answer = !empty($eventContext)
+            ? $grokService->ask($eventContext, $question)
+            : $chatbotService->handleMessage($question);
+
+        return $this->json(['answer' => $answer]);
     }
 }

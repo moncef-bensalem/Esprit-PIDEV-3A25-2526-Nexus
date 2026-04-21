@@ -280,6 +280,11 @@
         {% block stylesheets %}
             {# child pages add their own styles here #}
         {% endblock %}
+
+        <script>
+            window.__ONESIGNAL_APP_ID__ = '{{ app_onesignal_id ?? '' }}';
+        </script>
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     </head>
     <body>
 
@@ -298,6 +303,25 @@
                         <div class="nx-live-badge">
                             <div class="nx-live-dot"></div> Live
                         </div>
+                        <button id="nx-notif-btn" style="display:inline-flex;align-items:center;gap:6px;background:rgba(32,178,170,.12);border:1px solid rgba(32,178,170,.25);color:var(--cyan);border-radius:20px;padding:4px 12px;font-size:.75rem;cursor:pointer;">
+                            🔔 Activer les notifications
+                        </button>
+                    </div>
+
+                    {# ── Translate widget ── #}
+                    <div id="nx-translate-widget" style="display:inline-flex;align-items:center;gap:6px;margin-right:8px;">
+                        <select id="nx-translate-lang" style="background:rgba(13,25,42,.9);border:1px solid rgba(32,178,170,.3);color:rgba(255,255,255,.7);border-radius:8px;padding:3px 6px;font-size:.72rem;cursor:pointer;outline:none;">
+                            <option value="en">🇬🇧 EN</option>
+                            <option value="ar">🇹🇳 AR</option>
+                            <option value="de">🇩🇪 DE</option>
+                            <option value="es">🇪🇸 ES</option>
+                            <option value="it">🇮🇹 IT</option>
+                            <option value="fr">🇫🇷 FR</option>
+                        </select>
+                        <button id="nx-translate-btn" title="Traduire la page"
+                            style="display:inline-flex;align-items:center;gap:5px;background:rgba(32,178,170,.12);border:1px solid rgba(32,178,170,.25);color:var(--cyan);border-radius:20px;padding:4px 11px;font-size:.73rem;cursor:pointer;transition:all .2s;">
+                            <i class="fas fa-language"></i> <span id="nx-translate-label">Traduire</span>
+                        </button>
                     </div>
 
                     <div class="nx-profile-wrap" id="profileWrap">
@@ -478,5 +502,104 @@
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
+
+        {# ── In-page translation widget ── #}
+        <script>
+        (function () {
+            const btn      = document.getElementById('nx-translate-btn');
+            const langSel  = document.getElementById('nx-translate-lang');
+            const label    = document.getElementById('nx-translate-label');
+            if (!btn || !langSel) return;
+
+            const BATCH_URL  = '{{ path('translation_batch') }}';
+            const SELECTORS  = 'h1,h2,h3,h4,h5,p,td,th,li,label,.card-title,.badge,.fw-bold,.fw-semibold';
+            const SKIP_IDS   = new Set(['nx-translate-btn','nx-translate-label','nx-translate-lang','nx-notif-btn']);
+
+            let translated = false;
+            let originals  = [];   // [{node, text}]
+
+            btn.addEventListener('click', async () => {
+                if (translated) {
+                    restore();
+                    return;
+                }
+                const targetLang = langSel.value;
+                if (targetLang === 'fr') return;  // already in French
+                await translatePage(targetLang);
+            });
+
+            async function translatePage(targetLang) {
+                btn.disabled = true;
+                label.textContent = '…';
+
+                const main = document.querySelector('.nx-main') || document.body;
+                const nodes = collectTextNodes(main);
+
+                if (!nodes.length) { btn.disabled = false; label.textContent = 'Traduire'; return; }
+
+                const texts = nodes.map(n => n.textContent.trim());
+
+                try {
+                    const res = await fetch(BATCH_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ texts, target_lang: targetLang, source_lang: 'fr' }),
+                    });
+                    const data = await res.json();
+                    const results = data.translated || [];
+
+                    originals = [];
+                    nodes.forEach((node, i) => {
+                        if (results[i] && results[i] !== texts[i]) {
+                            originals.push({ node, text: node.textContent });
+                            node.textContent = results[i];
+                        }
+                    });
+
+                    translated = true;
+                    label.textContent = '↩ Restaurer';
+                    btn.style.background = 'rgba(239,83,80,.15)';
+                    btn.style.borderColor = 'rgba(239,83,80,.4)';
+                    btn.style.color = '#ef9a9a';
+                } catch (e) {
+                    label.textContent = 'Erreur';
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+
+            function restore() {
+                originals.forEach(({ node, text }) => { node.textContent = text; });
+                originals = [];
+                translated = false;
+                label.textContent = 'Traduire';
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+
+            function collectTextNodes(root) {
+                const result = [];
+                const elements = root.querySelectorAll(SELECTORS);
+                elements.forEach(el => {
+                    if (SKIP_IDS.has(el.id)) return;
+                    if (el.closest('#nx-translate-widget')) return;
+                    if (el.closest('.nx-sidebar')) return;
+                    if (el.closest('.nx-navbar')) return;
+                    // Only leaf-level: skip elements that contain other block elements
+                    const hasBlockChild = [...el.children].some(c =>
+                        ['H1','H2','H3','H4','H5','P','UL','OL','TABLE','DIV'].includes(c.tagName)
+                    );
+                    if (hasBlockChild) return;
+                    const text = el.textContent.trim();
+                    if (text.length < 3) return;
+                    result.push(el);
+                });
+                return result;
+            }
+        })();
+        </script>
+
+        <script src="{{ asset('onesignal-init.js') }}"></script>
     </body>
 </html>

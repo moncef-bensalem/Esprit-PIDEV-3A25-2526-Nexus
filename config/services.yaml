@@ -64,6 +64,10 @@ services:
             $adzunaAppId:  '%env(ADZUNA_APP_ID)%'
             $adzunaAppKey: '%env(ADZUNA_APP_KEY)%'
 
+    App\Service\MyMemoryService:
+        arguments:
+            $email: '%env(MYMEMORY_EMAIL)%'
+
     App\Service\DeepLService:
         arguments:
             $apiKey: '%env(DEEPL_API_KEY)%'

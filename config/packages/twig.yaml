@@ -1,5 +1,7 @@
 twig:
     file_name_pattern: '*.twig'
+    globals:
+        app_onesignal_id: '%env(ONESIGNAL_APP_ID)%'
 
 when@test:
     twig:

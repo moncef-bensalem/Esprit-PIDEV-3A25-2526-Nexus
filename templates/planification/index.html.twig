@@ -552,6 +552,13 @@ body::before {
                 Imprimer
             </button>
 
+            <a href="{{ path('planification_export_pdf') }}" class="btn-hdr" style="background:rgba(220,38,38,.1);border-color:rgba(220,38,38,.3);color:#fb7185;">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                PDF
+            </a>
+
             <div class="search-wrap">
                 <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -583,6 +590,7 @@ body::before {
                 <th>Date</th>
                 <th>Plage Horaire</th>
                 <th>Département/Lieu</th>
+                <th>Export</th>
             </tr>
         </thead>
         <tbody>
@@ -595,6 +603,14 @@ body::before {
                 <td>{{ p.date ? p.date|date('d/m/Y') : '-' }}</td>
                 <td>{{ p.heureDebut ? p.heureDebut|date('H:i') : '-' }} - {{ p.heureFin ? p.heureFin|date('H:i') : '-' }}</td>
                 <td>{{ p.localisation ?: (p.lienMeeting ?: '-') }}</td>
+                <td>
+                    <a href="{{ path('planification_export_ical', {id: p.idEvent}) }}"
+                       title="Exporter en iCal"
+                       style="color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;opacity:.7;transition:opacity .15s;"
+                       onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </a>
+                </td>
             </tr>
         {% else %}
             <tr>
@@ -689,6 +705,19 @@ document.addEventListener('DOMContentLoaded', function () {
             if (info.event.extendedProps.statut === 'annulé') {
                 info.el.style.textDecoration = 'line-through';
                 info.el.style.opacity = '0.5';
+            }
+
+            // Ajouter l'icône iCal discrète sur l'événement
+            const icalUrl = info.event.extendedProps.icalUrl;
+            if (icalUrl) {
+                const icon = document.createElement('a');
+                icon.href = icalUrl;
+                icon.title = 'Exporter en iCal';
+                icon.style.cssText = 'position:absolute;top:2px;right:4px;color:rgba(255,255,255,.75);font-size:10px;line-height:1;text-decoration:none;z-index:10;';
+                icon.innerHTML = '📅';
+                icon.addEventListener('click', function(e) { e.stopPropagation(); });
+                info.el.style.position = 'relative';
+                info.el.appendChild(icon);
             }
         }
     });

@@ -1,0 +1,165 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Traduction — Nexus{% endblock %}
+
+{% block body %}
+<div class="container py-5" style="max-width: 800px;">
+    <div class="mb-4">
+        <h2 class="fw-bold text-white mb-1">
+            <i class="fas fa-language me-2" style="color: var(--cyan);"></i>
+            Traducteur MyMemory
+        </h2>
+        <p class="text-muted small">Powered by MyMemory Translation API — gratuit, sans clé requise</p>
+    </div>
+
+    <div class="card border-0 p-4" style="background: var(--bg-card); border: 1px solid var(--border) !important; border-radius: 12px;">
+
+        <div class="row g-3 align-items-center mb-3">
+            <div class="col">
+                <label class="form-label text-white-50 small">Langue source</label>
+                <select id="sourceLang" class="form-select bg-dark text-white border-secondary">
+                    {% for code, label in languages %}
+                        <option value="{{ code }}" {% if code == 'fr' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto d-flex align-items-end pb-1">
+                <button id="swapBtn" class="btn btn-outline-secondary btn-sm px-3" title="Inverser les langues">
+                    <i class="fas fa-arrows-left-right"></i>
+                </button>
+            </div>
+            <div class="col">
+                <label class="form-label text-white-50 small">Langue cible</label>
+                <select id="targetLang" class="form-select bg-dark text-white border-secondary">
+                    {% for code, label in languages %}
+                        <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label text-white-50 small">Texte original</label>
+                <textarea id="sourceText" class="form-control bg-dark text-white border-secondary"
+                    rows="7" maxlength="500"
+                    placeholder="Saisissez votre texte ici…"></textarea>
+                <div class="text-end mt-1">
+                    <span id="charCount" class="text-muted small">0 / 500</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label text-white-50 small">Traduction</label>
+                <textarea id="translatedText" class="form-control bg-dark border-secondary"
+                    rows="7" readonly placeholder="La traduction apparaîtra ici…"
+                    style="color: var(--cyan);"></textarea>
+                <div class="d-flex justify-content-end mt-1">
+                    <button id="copyBtn" class="btn btn-sm btn-outline-secondary" style="display:none;">
+                        <i class="fas fa-copy me-1"></i>Copier
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button id="translateBtn" class="btn px-4" style="background: var(--cyan); color: #000; font-weight: 600;">
+                <i class="fas fa-language me-2"></i>Traduire
+            </button>
+            <button id="clearBtn" class="btn btn-outline-secondary">
+                <i class="fas fa-trash me-1"></i>Effacer
+            </button>
+            <div id="spinner" class="d-none align-items-center ms-2">
+                <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+                <span class="ms-2 text-white-50 small">Traduction…</span>
+            </div>
+        </div>
+
+        <div id="errorAlert" class="alert alert-danger mt-3 d-none"></div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const sourceText     = document.getElementById('sourceText');
+    const translatedText = document.getElementById('translatedText');
+    const sourceLang     = document.getElementById('sourceLang');
+    const targetLang     = document.getElementById('targetLang');
+    const translateBtn   = document.getElementById('translateBtn');
+    const clearBtn       = document.getElementById('clearBtn');
+    const swapBtn        = document.getElementById('swapBtn');
+    const copyBtn        = document.getElementById('copyBtn');
+    const spinner        = document.getElementById('spinner');
+    const errorAlert     = document.getElementById('errorAlert');
+    const charCount      = document.getElementById('charCount');
+
+    sourceText.addEventListener('input', () => {
+        charCount.textContent = sourceText.value.length + ' / 500';
+    });
+
+    translateBtn.addEventListener('click', doTranslate);
+    sourceText.addEventListener('keydown', e => {
+        if (e.ctrlKey && e.key === 'Enter') doTranslate();
+    });
+
+    clearBtn.addEventListener('click', () => {
+        sourceText.value = '';
+        translatedText.value = '';
+        charCount.textContent = '0 / 500';
+        copyBtn.style.display = 'none';
+        errorAlert.classList.add('d-none');
+    });
+
+    swapBtn.addEventListener('click', () => {
+        const tmpLang = sourceLang.value;
+        sourceLang.value = targetLang.value;
+        targetLang.value = tmpLang;
+        const tmpText = sourceText.value;
+        sourceText.value = translatedText.value;
+        translatedText.value = tmpText;
+        charCount.textContent = sourceText.value.length + ' / 500';
+    });
+
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(translatedText.value).then(() => {
+            copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Copié !';
+            setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Copier'; }, 2000);
+        });
+    });
+
+    function doTranslate() {
+        const text = sourceText.value.trim();
+        if (!text) return;
+        errorAlert.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        spinner.classList.add('d-flex');
+        translateBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('source_lang', sourceLang.value);
+        formData.append('target_lang', targetLang.value);
+
+        fetch('{{ path('translation_translate') }}', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    errorAlert.textContent = data.error;
+                    errorAlert.classList.remove('d-none');
+                } else {
+                    translatedText.value = data.translated;
+                    copyBtn.style.display = 'inline-block';
+                }
+            })
+            .catch(() => {
+                errorAlert.textContent = 'Erreur réseau. Veuillez réessayer.';
+                errorAlert.classList.remove('d-none');
+            })
+            .finally(() => {
+                spinner.classList.add('d-none');
+                spinner.classList.remove('d-flex');
+                translateBtn.disabled = false;
+            });
+    }
+})();
+</script>
+{% endblock %}

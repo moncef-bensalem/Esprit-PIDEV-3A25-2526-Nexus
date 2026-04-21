@@ -7,7 +7,10 @@ use App\Entity\Planification;
 use App\Form\ReviewType;
 use App\Repository\ReviewRepository;
 use App\Repository\PlanificationRepository;
+use App\Service\PdfService;
+use App\Service\PushNotificationService;
 use Doctrine\ORM\EntityManagerInterface;
+use Twig\Environment;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -46,7 +49,7 @@ class ReviewController extends AbstractController
     }
 
     #[Route('/new/{id}', name: 'review_new', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function new(Request $request, Planification $planification, EntityManagerInterface $em): Response
+    public function new(Request $request, Planification $planification, EntityManagerInterface $em, PushNotificationService $push): Response
     {
         $review = new Review();
         $review->setPlanification($planification);
@@ -58,6 +61,19 @@ class ReviewController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($review);
             $em->flush();
+
+            $rating = $review->getRating();
+            if ($rating !== null && $rating <= 2) {
+                $push->sendToAll(
+                    '⚠️ Avis négatif reçu',
+                    sprintf('⚠️ Avis négatif reçu (note: %d/5)', $rating)
+                );
+            } elseif ($rating !== null && $rating >= 4) {
+                $push->sendToAll(
+                    '⭐ Excellent avis reçu',
+                    sprintf('⭐ Excellent avis reçu (note: %d/5)', $rating)
+                );
+            }
 
             $this->addFlash('success', 'Avis ajouté avec succès.');
             return $this->redirectToRoute('review_index');
@@ -98,6 +114,26 @@ class ReviewController extends AbstractController
         }
 
         return $this->redirectToRoute('review_index');
+    }
+
+    #[Route('/export-pdf', name: 'review_export_pdf', methods: ['GET'])]
+    public function exportPdf(ReviewRepository $reviewRepo, PdfService $pdf, Environment $twig): Response
+    {
+        $reviews = $reviewRepo->findAll();
+
+        $html = $twig->render('review/pdf.html.twig', [
+            'reviews' => $reviews,
+        ]);
+
+        $content = $pdf->generateFromHtml($html);
+
+        return new Response($content, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => sprintf(
+                'attachment; filename="reviews-%s.pdf"',
+                (new \DateTime())->format('Y-m-d')
+            ),
+        ]);
     }
 
     #[Route('/stats', name: 'review_stats', methods: ['GET'])]
