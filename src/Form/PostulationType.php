@@ -38,7 +38,7 @@ class PostulationType extends AbstractType
                 ]
             ])
             ->add('cv', FileType::class, [
-                'label' => 'Curriculum Vitae (PDF ou DOCX)',
+                'label' => 'Curriculum Vitae (PDF uniquement)',
                 'mapped' => false, 
                 'required' => true,
                 'constraints' => [
@@ -48,10 +48,8 @@ class PostulationType extends AbstractType
                         'mimeTypes' => [
                             'application/pdf',
                             'application/x-pdf',
-                            'application/msword',
-                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                         ],
-                        'mimeTypesMessage' => 'Veuillez uploader un document PDF ou Word valide.',
+                        'mimeTypesMessage' => 'Veuillez uploader un document PDF valide.',
                     ])
                 ],
             ])

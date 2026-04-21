@@ -7,14 +7,14 @@ use App\Entity\Candidature;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-
+use Smalot\PdfParser\Parser;
 class CvAnalysisService
 {
     public function __construct(
         private HttpClientInterface $httpClient,
         private LoggerInterface $logger,
         private SmsNotificationService $smsNotificationService,
-        #[Autowire(env: 'GEMINI_API_KEY')] private string $apiKey
+        #[Autowire(env: 'RECRUTEMENT_GROQ_API_KEY')] private string $apiKey
     ) {
     }
 
@@ -28,34 +28,31 @@ class CvAnalysisService
             return;
         }
 
-        $fileContent = file_get_contents($cvFilePath);
-        $base64Data = base64_encode($fileContent);
-        $mimeType = mime_content_type($cvFilePath);
-        
-        // Ensure proper mime type mappings
-        $extension = pathinfo($cvFilePath, PATHINFO_EXTENSION);
-        if ($extension === 'pdf') {
-            $mimeType = 'application/pdf';
-        } elseif (in_array($extension, ['doc', 'docx'])) {
-            // Gemini 1.5 handles docx via text/plain if conversion occurs locally, but it might just accept it or fail.
-            // If it fails, at least we wrapped it in a try-catch.
-            // Let's pass the mime type.
-            $mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        try {
+            $pdfParser = new Parser();
+            $pdf = $pdfParser->parseFile($cvFilePath);
+            $cvText = $pdf->getText();
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to parse PDF: " . $e->getMessage());
+            return;
         }
 
         $prompt = "
-Tu es un recruteur expert en ressources humaines de la plateforme Nexus. Voici le profil d'un candidat (dans le document joint) et la description de l'offre d'emploi à laquelle il a postulé.
+Tu es un recruteur expert en ressources humaines de la plateforme Nexus. Voici le profil d'un candidat (extrait de son CV) et la description de l'offre d'emploi à laquelle il a postulé.
 
 Titre de l'offre: {$offre->getTitrePoste()}
 Département: {$offre->getDepartement()}
 Description de l'offre: {$offre->getDescription()}
 
+CV du Candidat:
+" . substr($cvText, 0, 15000) . "
+
 Instructions:
-1. Analyse minutieusement le CV joint en rapport avec cette offre.
+1. Analyse minutieusement le CV en rapport avec cette offre.
 2. Évalue le candidat sur 5 critères, en attribuant une note de 0 à 100 pour chacun.
 3. Attribue une note globale (score_global_ia) de 0 à 100.
-4. Attribue le score_matching de l'adéquation exacte entre le profil et l'offre (0 à 100).
-5. Tu DOIS retourner le résultat UNIQUEMENT sous la forme d'un objet JSON strict. N'ajoute AUCUN texte, explication ou balise markdown (comme ```json ou ```).
+4. Attribue le score_matching de l'adéquation exacte (0 à 100).
+5. Tu DOIS retourner le résultat UNIQUEMENT sous la forme d'un objet JSON strict. N'ajoute AUCUN texte, explication ou balise markdown.
 
 Format JSON attendu :
 {
@@ -72,49 +69,45 @@ Format JSON attendu :
         try {
             $response = $this->httpClient->request(
                 'POST',
-                'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $this->apiKey,
+                'https://api.groq.com/openai/v1/chat/completions',
                 [
                     'headers' => [
-                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type' => 'application/json'
                     ],
                     'json' => [
-                        'contents' => [
+                        'model' => 'llama-3.1-8b-instant',
+                        'response_format' => ['type' => 'json_object'],
+                        'messages' => [
                             [
-                                'parts' => [
-                                    ['text' => $prompt],
-                                    [
-                                        'inlineData' => [
-                                            'mimeType' => $mimeType,
-                                            'data' => $base64Data
-                                        ]
-                                    ]
-                                ]
+                                'role' => 'user',
+                                'content' => $prompt
                             ]
-                        ],
-                        'generationConfig' => [
-                            'responseMimeType' => 'application/json'
                         ]
                     ]
                 ]
             );
 
             $data = $response->toArray(false); // Do not throw exception on HTTP errors
-            $this->logger->info("Gemini HTTP Status: " . $response->getStatusCode());
+            $this->logger->info("Groq HTTP Status: " . $response->getStatusCode());
             
             if ($response->getStatusCode() !== 200) {
-                $this->logger->error("Gemini API Error Response: " . json_encode($data));
+                $this->logger->error("Groq API Error Response: " . json_encode($data));
             }
             
-            if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-                $jsonStr = trim($data['candidates'][0]['content']['parts'][0]['text']);
+            if (isset($data['choices'][0]['message']['content'])) {
+                $jsonStr = trim($data['choices'][0]['message']['content']);
                 
-                // Fallback remove markdown if Gemini ignored instructions
+                // Fallback remove markdown if OpenRouter model ignored instructions
                 if (str_starts_with($jsonStr, '```json')) {
                     $jsonStr = substr($jsonStr, 7);
                     $jsonStr = substr($jsonStr, 0, -3);
+                } elseif (str_starts_with($jsonStr, '```')) {
+                    $jsonStr = substr($jsonStr, 3);
+                    $jsonStr = substr($jsonStr, 0, -3);
                 }
                 
-                $result = json_decode($jsonStr, true);
+                $result = json_decode(trim($jsonStr), true);
 
                 if ($result) {
                     $candidat->setScore_technique((int) ($result['score_technique'] ?? 0));
@@ -127,7 +120,6 @@ Format JSON attendu :
                     $candidature->setScoreMatching((float) ($result['score_matching'] ?? 0));
                     $this->logger->info("Scores successfully parsed and mapped for Candidat " . $candidat->getNomComplet());
 
-                    // Envoi d'une alerte SMS si le score de matching est exceptionnel (>= 95%)
                     if ($candidature->getScoreMatching() >= 95.0) {
                         $this->smsNotificationService->sendAdminHighToScoreAlert(
                             $candidat->getNomComplet(),
@@ -136,13 +128,13 @@ Format JSON attendu :
                         );
                     }
                 } else {
-                    $this->logger->error("Gemini API: Failed to parse JSON: " . $jsonStr);
+                    $this->logger->error("Groq API: Failed to parse JSON: " . $jsonStr);
                 }
             } else {
-                $this->logger->error("Gemini API error: text response not found.", ['response' => $data]);
+                $this->logger->error("Groq API error: content response not found.", ['response' => $data]);
             }
         } catch (\Exception $e) {
-            $this->logger->error("Gemini API Exception: " . $e->getMessage());
+            $this->logger->error("Groq API Exception: " . $e->getMessage());
         }
     }
 }
