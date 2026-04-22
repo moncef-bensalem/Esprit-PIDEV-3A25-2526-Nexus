@@ -223,6 +223,34 @@
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
     .welcome-msg h3 { color: rgba(255,255,255,.8); font-size: 1.1rem; margin-bottom: 8px; }
     .welcome-msg p  { font-size: .83rem; line-height: 1.7; }
+    .btn-mic {
+        width: 46px; height: 46px;
+        border: 1px solid rgba(32,178,170,.3); border-radius: 12px;
+        background: transparent;
+        color: var(--cyan);
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all .2s;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .btn-mic:hover { background: rgba(32,178,170,.1); }
+    .btn-mic.recording {
+        background: rgba(220, 38, 38, 0.15);
+        color: #ef4444; border-color: #ef4444;
+        animation: pulseRecord 1.5s infinite;
+    }
+    @keyframes pulseRecord { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+    .btn-speaker {
+        background: none; border: none;
+        color: rgba(255,255,255,0.4);
+        cursor: pointer; font-size: 1rem;
+        padding: 6px;
+        transition: all 0.2s;
+        align-self: flex-end;
+    }
+    .btn-speaker:hover { color: var(--cyan); transform: scale(1.1); }
 </style>
 {% endblock %}
 
@@ -274,6 +302,9 @@
 
     {# ── Saisie ── #}
     <div class="chat-input-area">
+        <button id="micBtn" aria-label="Microphone" class="btn-mic" title="Parler">
+            <i class="fa-solid fa-microphone"></i>
+        </button>
         <textarea
             id="chatInput"
             placeholder="Posez votre question (ex: Quels sont les postes disponibles ?)"
@@ -295,6 +326,7 @@
     const input    = document.getElementById('chatInput');
     const sendBtn  = document.getElementById('sendBtn');
     const messages = document.getElementById('chatMessages');
+    const micBtn   = document.getElementById('micBtn');
     const askUrl   = '{{ path("chatbot_ask") }}';
 
     // Auto-resize textarea
@@ -342,6 +374,7 @@
                 appendMessage('bot', '⚠️ ' + data.error);
             } else {
                 appendMessage('bot', data.response);
+                speakText(data.response); // Auto-read the response
             }
         })
         .catch(() => {
@@ -371,7 +404,27 @@
         bubbleDiv.appendChild(pre);
 
         msgDiv.appendChild(avatarDiv);
-        msgDiv.appendChild(bubbleDiv);
+
+        // Si c'est le bot, on ajoute le bouton Haut-Parleur à côté de la bulle
+        if (role === 'bot' && !text.startsWith('⚠️')) {
+            const contentWrapper = document.createElement('div');
+            contentWrapper.style.display = 'flex';
+            contentWrapper.style.gap = '8px';
+            contentWrapper.style.alignItems = 'flex-start';
+
+            const speakerBtn = document.createElement('button');
+            speakerBtn.className = 'btn-speaker';
+            speakerBtn.title = 'Lire le message à voix haute';
+            speakerBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+            speakerBtn.onclick = () => speakText(text);
+
+            contentWrapper.appendChild(bubbleDiv);
+            contentWrapper.appendChild(speakerBtn);
+            msgDiv.appendChild(contentWrapper);
+        } else {
+            msgDiv.appendChild(bubbleDiv);
+        }
+
         messages.appendChild(msgDiv);
         scrollToBottom();
     }
@@ -415,6 +468,84 @@
         input.value = text;
         sendMessage();
     };
+
+    // ==========================================
+    // 🎤 SPEECH TO TEXT (Microphone)
+    // ==========================================
+    let recognition = null;
+    let isRecording = false;
+
+    // Check compatibility
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'fr-FR';
+        recognition.interimResults = false; // We only want final results for simplicity
+        
+        recognition.onstart = () => {
+            isRecording = true;
+            micBtn.classList.add('recording');
+            input.placeholder = "Écoute en cours...";
+        };
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            
+            // Append with a space if there's already text
+            input.value += (input.value.length > 0 ? ' ' : '') + transcript;
+            input.dispatchEvent(new Event('input')); // trigger resize
+        };
+        
+        recognition.onerror = (event) => {
+            console.error('Erreur micro :', event.error);
+            stopRecording();
+        };
+        
+        recognition.onend = () => {
+            stopRecording();
+        };
+    } else {
+        micBtn.style.display = 'none'; // Unsupported browser
+    }
+
+    function stopRecording() {
+        if (recognition && isRecording) {
+            recognition.stop();
+            isRecording = false;
+            micBtn.classList.remove('recording');
+            input.placeholder = "Posez votre question (ex: Quels sont les postes disponibles ?)";
+        }
+    }
+
+    // Toggle button
+    micBtn.addEventListener('click', () => {
+        if (!recognition) return;
+        if (isRecording) {
+            stopRecording();
+        } else {
+            recognition.start();
+        }
+    });
+
+    // ==========================================
+    // 🔊 TEXT TO SPEECH (Speaker)
+    // ==========================================
+    function speakText(text) {
+        if (!('speechSynthesis' in window)) {
+            console.error("Text-to-Speech non supporté.");
+            return;
+        }
+        
+        // Stop any current reading to prevent overlap
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'fr-FR'; // Langue du chatbot
+        utterance.rate = 1.0;     // Vitesse de lecture (1 = normal)
+        utterance.pitch = 1.0;    // Tonalité
+        
+        window.speechSynthesis.speak(utterance);
+    }
 })();
 </script>
 {% endblock %}

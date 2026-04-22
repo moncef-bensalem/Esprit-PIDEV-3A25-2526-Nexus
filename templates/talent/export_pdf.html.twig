@@ -27,9 +27,7 @@
     .badge-dept  { background: #d0eeff; color: #0066aa; }
     .badge-poste { background: #e8d8ff; color: #6633cc; }
 
-    .qr-cell { text-align: center; }
-    .qr-cell img { width: 52px; height: 52px; border: 1px solid #cde; padding: 2px; background: #fff; border-radius: 6px; }
-    .qr-url { font-size: 7px; color: #8a9aaa; margin-top: 2px; word-break: break-all; }
+
 
     .footer { margin-top: 16px; text-align: center; color: #8a9aaa; font-size: 8px; border-top: 1px solid #e0eaf0; padding-top: 8px; margin-left:24px; margin-right:24px; }
 </style>
@@ -40,7 +38,7 @@
     <div class="header-inner">
         <div>
             <div class="logo-title">&#x2B21; NEXUS Platform</div>
-            <div class="logo-sub">Rapport des Talents avec QR Codes</div>
+            <div class="logo-sub">Rapport des Talents</div>
         </div>
         <div class="header-meta">
             <div>Généré le <strong>{{ date|date('d/m/Y à H:i') }}</strong></div>
@@ -49,7 +47,7 @@
     </div>
 </div>
 
-<div class="section-title">Liste des Talents — QR Code = Lien vers le profil en ligne</div>
+<div class="section-title">Liste des Talents</div>
 
 <table>
     <thead>
@@ -63,7 +61,6 @@
             <th>Expérience</th>
             <th>Niveau études</th>
             <th>Date embauche</th>
-            <th>QR Code Profil</th>
         </tr>
     </thead>
     <tbody>
@@ -78,21 +75,15 @@
             <td>{{ t.anneesExperience ?? 0 }} ans</td>
             <td>{{ t.niveauEtudes ?? '—' }}</td>
             <td>{{ t.dateEmbauche ? t.dateEmbauche|date('d/m/Y') : '—' }}</td>
-            <td class="qr-cell">
-                {% if qrUrls[t.id] is defined %}
-                    <img src="{{ qrUrls[t.id] }}" alt="QR">
-                    <div class="qr-url">Scanner pour accéder au profil</div>
-                {% endif %}
-            </td>
         </tr>
     {% else %}
-        <tr><td colspan="10" style="text-align:center;padding:20px;color:#8a9aaa;">Aucun talent.</td></tr>
+        <tr><td colspan="9" style="text-align:center;padding:20px;color:#8a9aaa;">Aucun talent.</td></tr>
     {% endfor %}
     </tbody>
 </table>
 
 <div class="footer">
-    Nexus Platform — Rapport confidentiel — Scannez le QR Code de chaque talent pour accéder à son profil en ligne — {{ date|date('Y') }}
+    Nexus Platform — Rapport confidentiel — {{ date|date('Y') }}
 </div>
 
 </body>
