@@ -16,7 +16,7 @@ class Planification
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: "idEvent", type: "integer")]
+    #[ORM\Column(name: "id_event", type: "integer")]
     private int $idEvent;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "planifications")]
@@ -27,7 +27,7 @@ class Planification
     #[ORM\JoinColumn(name: 'fk_candidature_id', referencedColumnName: 'id_candidature', nullable: true, onDelete: 'CASCADE')]
     private ?Candidature $candidature = null;
 
-    #[ORM\Column(name: "typeEvent", type: "string", length: 100)]
+    #[ORM\Column(name: "type_event", type: "string", length: 100)]
     #[Assert\NotBlank(message: 'Le type d\'événement est obligatoire.')]
     private ?string $typeEvent = null;
 
@@ -36,11 +36,11 @@ class Planification
     #[Assert\GreaterThanOrEqual('today', message: 'La date doit être aujourd\'hui ou dans le futur.')]
     private ?\DateTimeInterface $date = null;
 
-    #[ORM\Column(name: "heureDebut", type: "time")]
+    #[ORM\Column(name: "heure_debut", type: "time")]
     #[Assert\NotBlank(message: 'L\'heure de début est obligatoire.')]
     private ?\DateTimeInterface $heureDebut = null;
 
-    #[ORM\Column(name: "heureFin", type: "time")]
+    #[ORM\Column(name: "heure_fin", type: "time")]
     #[Assert\NotBlank(message: 'L\'heure de fin est obligatoire.')]
     private ?\DateTimeInterface $heureFin = null;
 
@@ -53,7 +53,7 @@ class Planification
     #[ORM\Column(type: "text", nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(name: "lienMeeting", type: "string", length: 255, nullable: true)]
+    #[ORM\Column(name: "lien_meeting", type: "string", length: 255, nullable: true)]
     private ?string $lienMeeting = null;
 
     #[ORM\Column(type: "string", length: 255, nullable: true)]

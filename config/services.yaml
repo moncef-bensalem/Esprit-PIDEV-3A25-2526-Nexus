@@ -43,7 +43,7 @@ services:
 
     App\Service\GroqService:
         arguments:
-            $groqApiKey: '%env(GROQ_API_KEY)%'
+            $groqApiKey: '%env(TALENT_CHATBOT_GROQ_API_KEY)%'
             $groqApiUrl: '%env(GROQ_API_URL)%'
             $groqModel:  'llama-3.1-8b-instant'
 
