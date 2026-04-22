@@ -3,16 +3,24 @@
 namespace App\EventSubscriber;
 
 use App\Entity\User;
+use App\Entity\UserEvent;
+use App\Entity\AdminNotification;
+use App\Service\AdminNotificationService;
 use App\Service\LoginAttemptService;
+use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 
 class LoginAttemptSubscriber implements EventSubscriberInterface
 {
-    public function __construct(private readonly LoginAttemptService $loginAttemptService)
-    {
-    }
+    public function __construct(
+        private readonly LoginAttemptService $loginAttemptService,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly LoggerInterface $logger,
+        private readonly AdminNotificationService $adminNotificationService
+    ) {}
 
     public static function getSubscribedEvents(): array
     {
@@ -34,6 +42,15 @@ class LoginAttemptSubscriber implements EventSubscriberInterface
             $attempts = $this->loginAttemptService->registerFailure((string) $userBadge->getUserIdentifier());
             if ($attempts >= 3) {
                 $event->getRequest()->getSession()?->getFlashBag()->add('warning', 'Security alert: too many failed login attempts.');
+
+                // Notification Admin (problème sécurité)
+                $email = (string) $userBadge->getUserIdentifier();
+                $this->adminNotificationService->notify(
+                    AdminNotification::TYPE_LOGIN_FAILED,
+                    'Tentatives de connexion échouées',
+                    "Email: {$email} — Tentatives: {$attempts}",
+                    'warning'
+                );
             }
         } catch (\Throwable $e) {
             // Gracefully ignore if login_attempt table does not exist
@@ -42,15 +59,42 @@ class LoginAttemptSubscriber implements EventSubscriberInterface
 
     public function onLoginSuccess(LoginSuccessEvent $event): void
     {
-        try {
-            $user = $event->getUser();
-            if (!$user instanceof User) {
-                return;
-            }
+        $user = $event->getUser();
+        if (!$user instanceof User) {
+            return;
+        }
 
+        // 1) Reset des échecs (peut échouer si table login_attempt absente)
+        try {
             $this->loginAttemptService->resetFailures($user->getEmail());
         } catch (\Throwable $e) {
-            // Gracefully ignore if login_attempt table does not exist
+            $this->logger->warning('LoginAttemptService resetFailures failed', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // 2) Stats métier: historiser le login réussi (ne doit pas être bloqué par login_attempt)
+        try {
+            $req = $event->getRequest();
+            $userEvent = new UserEvent($user, UserEvent::TYPE_LOGIN_SUCCESS);
+            $userEvent->setIp($req?->getClientIp());
+            $userEvent->setUserAgent($req?->headers->get('User-Agent'));
+            $this->entityManager->persist($userEvent);
+            $this->entityManager->flush();
+
+            // Notification Admin: login candidat
+            if (in_array('ROLE_CANDIDATE', $user->getRoles(), true)) {
+                $this->adminNotificationService->notify(
+                    AdminNotification::TYPE_CANDIDATE_LOGIN,
+                    'Connexion candidat',
+                    "Candidat: {$user->getEmail()}",
+                    'info'
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error('Failed to persist UserEvent login success', [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

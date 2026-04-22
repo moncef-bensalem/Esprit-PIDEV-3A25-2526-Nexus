@@ -3,6 +3,9 @@
 namespace App\Controller\Admin;
 
 use App\Entity\User;
+use App\Entity\UserEvent;
+use App\Entity\AdminNotification;
+use App\Service\AdminNotificationService;
 use App\Form\UserType;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,6 +34,27 @@ class UserController extends AbstractController
             'currentQuery' => $query,
             'currentRole' => $role,
         ]);
+    }
+
+    #[Route('/search', name: 'admin_user_search', methods: ['GET'])]
+    public function search(Request $request, UserRepository $repository): Response
+    {
+        if (!$request->isXmlHttpRequest()) {
+            return $this->redirectToRoute('admin_user_index', $request->query->all());
+        }
+
+        $query = $request->query->get('q');
+        $role = $request->query->get('role');
+        $users = $repository->searchUsers($query, $role);
+
+        $response = $this->render('admin/user/_rows.html.twig', [
+            'users' => $users,
+        ]);
+
+        // Evite de servir une réponse en cache pendant la frappe
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+
+        return $response;
     }
 
     #[Route('/new', name: 'admin_user_new', methods: ['GET', 'POST'])]
@@ -73,7 +97,8 @@ class UserController extends AbstractController
         Request $request,
         User $user,
         EntityManagerInterface $entityManager,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        AdminNotificationService $adminNotificationService
     ): Response {
         $form = $this->createForm(UserType::class, $user, ['is_edit' => true]);
         $form->handleRequest($request);
@@ -82,6 +107,16 @@ class UserController extends AbstractController
             $plainPassword = (string) $form->get('plainPassword')->getData();
             if ($plainPassword !== '') {
                 $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
+                $entityManager->persist((new UserEvent($user, UserEvent::TYPE_PASSWORD_CHANGED))
+                    ->setIp($request->getClientIp())
+                    ->setUserAgent($request->headers->get('User-Agent')));
+
+                $adminNotificationService->notify(
+                    AdminNotification::TYPE_PASSWORD_CHANGED,
+                    'Mot de passe modifié',
+                    "Utilisateur: {$user->getEmail()}",
+                    'warning'
+                );
             }
 
             $entityManager->flush();

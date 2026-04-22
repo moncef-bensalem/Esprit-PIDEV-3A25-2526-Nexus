@@ -324,6 +324,65 @@
                         </button>
                     </div>
 
+                    {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_RH') %}
+                    {# ── Admin notifications bell ── #}
+                    {% set _unread = admin_notif_unread_count() %}
+                    <div class="nx-profile-wrap" id="adminNotifWrap" style="margin-right:10px;">
+                        <button class="nx-profile-btn" id="adminNotifBtn" aria-expanded="false" title="Notifications Admin"
+                            style="padding:6px 10px; border-radius:14px;">
+                            <i class="fa fa-bell" style="font-size:1rem;"></i>
+                            {% if _unread > 0 %}
+                                <span style="min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#ef5350;color:#fff;font-size:.72rem;font-weight:800;padding:0 6px;">
+                                    {{ _unread > 99 ? '99+' : _unread }}
+                                </span>
+                            {% endif %}
+                        </button>
+                        <div class="nx-dropdown" id="adminNotifDropdown" style="min-width: 340px; right: 0;">
+                            <div class="nx-dropdown-header" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                                <div>
+                                    <div class="nx-dropdown-name">Notifications</div>
+                                    <div class="nx-dropdown-email">{{ _unread }} non lues</div>
+                                </div>
+                                <form method="post" action="{{ path('admin_notif_mark_all_read') }}" style="margin:0;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_notif_mark_all_read') }}">
+                                    <button type="submit"
+                                        style="background:rgba(32,178,170,.12);border:1px solid rgba(32,178,170,.25);color:var(--cyan);border-radius:10px;padding:6px 10px;font-size:.75rem;font-weight:800;cursor:pointer;">
+                                        Marquer lu
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div style="max-height: 320px; overflow:auto; padding: 0 6px 6px;">
+                                {% set _items = admin_notif_latest(8) %}
+                                {% if _items is empty %}
+                                    <div style="padding: 10px 12px; color: rgba(255,255,255,.45); font-size:.84rem;">
+                                        Aucune notification.
+                                    </div>
+                                {% else %}
+                                    {% for n in _items %}
+                                        <div style="padding:10px 12px;border-radius:12px;margin:6px 0;background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);">
+                                            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+                                                <div style="font-weight:800; color:#fff; font-size:.86rem;">
+                                                    {% if not n.isRead %}<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-right:6px;"></span>{% endif %}
+                                                    {{ n.title }}
+                                                </div>
+                                                <div style="color: rgba(255,255,255,.35); font-size:.74rem; white-space:nowrap;">
+                                                    {{ n.createdAt|date('H:i') }}
+                                                </div>
+                                            </div>
+                                            {% if n.message %}
+                                                <div style="color: rgba(255,255,255,.55); font-size:.82rem; margin-top:6px;">
+                                                    {{ n.message }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="nx-profile-wrap" id="profileWrap">
                         <button class="nx-profile-btn" id="profileBtn" aria-expanded="false">
                             <div class="nx-avatar" id="avatarCircle">
@@ -501,6 +560,17 @@
         (function(){
             const wrap = document.getElementById('profileWrap');
             const btn  = document.getElementById('profileBtn');
+            if(!wrap || !btn) return;
+            btn.addEventListener('click', function(e){
+                e.stopPropagation();
+                const open = wrap.classList.toggle('open');
+                btn.setAttribute('aria-expanded', open);
+            });
+            document.addEventListener('click', function(){ wrap.classList.remove('open'); });
+        })();
+        (function(){
+            const wrap = document.getElementById('adminNotifWrap');
+            const btn  = document.getElementById('adminNotifBtn');
             if(!wrap || !btn) return;
             btn.addEventListener('click', function(e){
                 e.stopPropagation();

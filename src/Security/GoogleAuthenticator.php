@@ -70,7 +70,12 @@ class GoogleAuthenticator extends OAuth2Authenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        $targetUrl = $this->router->generate('app_home'); 
+        // 2FA uniquement pour les candidats
+        $user = $token->getUser();
+        $roles = method_exists($user, 'getRoles') ? $user->getRoles() : [];
+        $isCandidate = in_array('ROLE_CANDIDATE', $roles, true);
+
+        $targetUrl = $this->router->generate($isCandidate ? 'app_2fa_start' : 'app_after_login');
         return new RedirectResponse($targetUrl);
     }
 

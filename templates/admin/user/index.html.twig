@@ -160,14 +160,14 @@
 
 {# ── Filters ── #}
 <div class="nx-panel" style="padding: 20px 24px;">
-    <form method="get" class="nx-filter-form">
+    <form method="get" class="nx-filter-form" id="user-filter-form" data-search-url="{{ path('admin_user_search') }}">
         <div class="nx-filter-group">
             <label class="nx-filter-label">Rechercher</label>
-            <input type="text" name="q" value="{{ currentQuery|default('') }}" class="nx-filter-input" placeholder="Nom, Email...">
+            <input type="text" name="q" value="{{ currentQuery|default('') }}" class="nx-filter-input" placeholder="Nom, Email..." id="user-search-input" autocomplete="off">
         </div>
         <div class="nx-filter-group" style="flex: 0 1 200px;">
             <label class="nx-filter-label">Rôle</label>
-            <select name="role" class="nx-filter-select">
+            <select name="role" class="nx-filter-select" id="user-role-select">
                 <option value="">Tous les rôles</option>
                 <option value="ROLE_ADMIN" {% if currentRole == 'ROLE_ADMIN' %}selected{% endif %}>Administrateur</option>
                 <option value="ROLE_CANDIDATE" {% if currentRole == 'ROLE_CANDIDATE' %}selected{% endif %}>Candidat</option>
@@ -199,64 +199,72 @@
                 <th style="text-align: right;">Actions</th>
             </tr>
         </thead>
-        <tbody>
-        {% for user in users %}
-            <tr>
-                <td style="color: rgba(255,255,255,.4);">#{{ user.id }}</td>
-                <td>
-                    <div style="font-weight: 600;">{{ user.firstName }} {{ user.lastName }}</div>
-                </td>
-                <td>
-                    <div style="font-size: .8rem; color: rgba(255,255,255,.6);">
-                        <i class="fa fa-envelope" style="margin-right:4px; opacity:.7;"></i>{{ user.email }}
-                    </div>
-                </td>
-                <td>
-                    {% for role in user.roles %}
-                        <span class="nx-badge {% if role == 'ROLE_ADMIN' %}admin{% endif %}">
-                            {{ role|replace({'ROLE_': ''}) }}
-                        </span>
-                    {% endfor %}
-                </td>
-                <td>
-                    {% if user.isActive %}
-                        <span class="nx-status active">Actif</span>
-                    {% else %}
-                        <span class="nx-status inactive">Inactif</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <div class="nx-row-actions">
-                        <form method="post" action="{{ path('admin_user_toggle', {id: user.id}) }}" style="margin:0;">
-                            <input type="hidden" name="_token" value="{{ csrf_token('toggle_user_' ~ user.id) }}">
-                            {% if user.isActive %}
-                                <button type="submit" class="nx-btn-icon toggle-off" title="Désactiver le compte">
-                                    <i class="fa fa-ban"></i>
-                                </button>
-                            {% else %}
-                                <button type="submit" class="nx-btn-icon toggle-on" title="Activer le compte">
-                                    <i class="fa fa-check"></i>
-                                </button>
-                            {% endif %}
-                        </form>
-                        <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="nx-btn-icon edit" title="Modifier">
-                            <i class="fa fa-pen"></i>
-                        </a>
-                    </div>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="6">
-                    <div class="nx-empty">
-                        <i class="fa fa-folder-open"></i>
-                        <div>Aucun utilisateur trouvé.</div>
-                    </div>
-                </td>
-            </tr>
-        {% endfor %}
+        <tbody id="users-tbody">
+            {% include 'admin/user/_rows.html.twig' with { users: users } %}
         </tbody>
     </table>
 </div>
 
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(() => {
+    const form = document.getElementById('user-filter-form');
+    if (!form) return;
+
+    const input = document.getElementById('user-search-input');
+    const roleSelect = document.getElementById('user-role-select');
+    const tbody = document.getElementById('users-tbody');
+    const searchUrl = form.dataset.searchUrl;
+
+    let debounceTimer = null;
+    let activeController = null;
+
+    function buildUrl() {
+        const url = new URL(searchUrl, window.location.origin);
+        url.searchParams.set('q', (input?.value ?? '').trim());
+        url.searchParams.set('role', roleSelect?.value ?? '');
+        return url.toString();
+    }
+
+    async function runSearch() {
+        if (activeController) activeController.abort();
+        activeController = new AbortController();
+
+        const res = await fetch(buildUrl(), {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            },
+            signal: activeController.signal
+        });
+
+        if (!res.ok) return;
+        const html = await res.text();
+        tbody.innerHTML = html;
+
+        // Met à jour l’URL sans recharger (utile pour le prof)
+        const current = new URL(window.location.href);
+        current.searchParams.set('q', (input?.value ?? '').trim());
+        current.searchParams.set('role', roleSelect?.value ?? '');
+        window.history.replaceState({}, '', current.toString());
+    }
+
+    function scheduleSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => runSearch().catch(() => {}), 350);
+    }
+
+    // Empêche le submit (page reload) → on veut AJAX
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        runSearch().catch(() => {});
+    });
+
+    input?.addEventListener('input', scheduleSearch);
+    roleSelect?.addEventListener('change', () => runSearch().catch(() => {}));
+})();
+</script>
 {% endblock %}

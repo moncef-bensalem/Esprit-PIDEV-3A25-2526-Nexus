@@ -57,7 +57,7 @@ class FaceLoginController extends AbstractController
             return new JsonResponse([
                 'success' => true, 
                 'message' => 'Identification réussie ! Bienvenue ' . $bestMatch->getFirstName(),
-                'target' => $this->generateUrl('app_home')
+                'target' => $this->generateUrl(in_array('ROLE_CANDIDATE', $bestMatch->getRoles(), true) ? 'app_2fa_start' : 'app_after_login')
             ]);
         }
 

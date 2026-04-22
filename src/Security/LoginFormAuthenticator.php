@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\AbstractLoginFormAuthenticator;
@@ -19,7 +20,10 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
 {
     use TargetPathTrait;
 
-    public function __construct(private RouterInterface $router) {}
+    public function __construct(
+        private RouterInterface $router,
+        private Security $security
+    ) {}
 
     protected function getLoginUrl(Request $request): string
     {
@@ -56,6 +60,11 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
     {
         if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
             return new RedirectResponse($targetPath);
+        }
+
+        // 2FA uniquement pour les candidats
+        if ($this->security->isGranted('ROLE_CANDIDATE')) {
+            return new RedirectResponse($this->router->generate('app_2fa_start'));
         }
 
         return new RedirectResponse($this->router->generate('app_after_login'));
