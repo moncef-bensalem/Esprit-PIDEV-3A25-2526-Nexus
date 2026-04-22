@@ -3,3 +3,4 @@ framework:
         transports:
             main: '%env(MAILER_DSN)%'
             sendgrid: '%env(SENDGRID_DSN)%'
+            gmail: '%env(GMAIL_DSN)%'

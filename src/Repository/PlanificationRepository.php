@@ -27,7 +27,7 @@ class PlanificationRepository extends ServiceEntityRepository
     public function countActifs(): int
     {
         return (int) $this->createQueryBuilder('p')
-            ->select('COUNT(p.idEvent)')
+            ->select('COUNT(p.id_event)')
             ->where("p.statut = 'confirmé' OR p.statut IS NULL")
             ->getQuery()
             ->getSingleScalarResult();
@@ -37,7 +37,7 @@ class PlanificationRepository extends ServiceEntityRepository
     {
         $since = new \DateTimeImmutable("-{$days} days");
         return (int) $this->createQueryBuilder('p')
-            ->select('COUNT(p.idEvent)')
+            ->select('COUNT(p.id_event)')
             ->where('p.date >= :since')
             ->setParameter('since', $since)
             ->getQuery()

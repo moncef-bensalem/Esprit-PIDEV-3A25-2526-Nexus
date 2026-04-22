@@ -17,7 +17,7 @@ class Planification
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: "id_event", type: "integer")]
-    private int $idEvent;
+    private int $id_event;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "planifications")]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
@@ -29,7 +29,7 @@ class Planification
 
     #[ORM\Column(name: "type_event", type: "string", length: 100)]
     #[Assert\NotBlank(message: 'Le type d\'événement est obligatoire.')]
-    private ?string $typeEvent = null;
+    private ?string $type_event = null;
 
     #[ORM\Column(type: "date")]
     #[Assert\NotBlank(message: 'La date est obligatoire.')]
@@ -38,11 +38,11 @@ class Planification
 
     #[ORM\Column(name: "heure_debut", type: "time")]
     #[Assert\NotBlank(message: 'L\'heure de début est obligatoire.')]
-    private ?\DateTimeInterface $heureDebut = null;
+    private ?\DateTimeInterface $heure_debut = null;
 
     #[ORM\Column(name: "heure_fin", type: "time")]
     #[Assert\NotBlank(message: 'L\'heure de fin est obligatoire.')]
-    private ?\DateTimeInterface $heureFin = null;
+    private ?\DateTimeInterface $heure_fin = null;
 
     #[ORM\Column(type: "string", length: 50, nullable: true)]
     private ?string $mode = null;
@@ -54,19 +54,19 @@ class Planification
     private ?string $description = null;
 
     #[ORM\Column(name: "lien_meeting", type: "string", length: 255, nullable: true)]
-    private ?string $lienMeeting = null;
+    private ?string $lien_meeting = null;
 
     #[ORM\Column(type: "string", length: 255, nullable: true)]
     private ?string $localisation = null;
 
     public function getIdEvent(): int
     {
-        return $this->idEvent;
+        return $this->id_event;
     }
 
     public function setIdEvent(int $value): static
     {
-        $this->idEvent = $value;
+        $this->id_event = $value;
         return $this;
     }
 
@@ -94,12 +94,12 @@ class Planification
 
     public function getTypeEvent(): ?string
     {
-        return $this->typeEvent;
+        return $this->type_event;
     }
 
     public function setTypeEvent(?string $value): static
     {
-        $this->typeEvent = $value;
+        $this->type_event = $value;
         return $this;
     }
 

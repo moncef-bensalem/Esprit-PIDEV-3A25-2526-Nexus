@@ -28,7 +28,7 @@ class ReviewController extends AbstractController
     ): Response {
         $filterLowRating = $request->query->getBoolean('low_rating', false);
 
-        $queryBuilder = $planifRepo->createQueryBuilder('p')->orderBy('p.idEvent', 'DESC');
+        $queryBuilder = $planifRepo->createQueryBuilder('p')->orderBy('p.id_event', 'DESC');
         $planifications = $paginator->paginate(
             $queryBuilder,
             $request->query->getInt('page', 1),

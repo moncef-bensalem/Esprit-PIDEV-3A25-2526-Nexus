@@ -11,6 +11,9 @@ parameters:
     gemini.model: '%env(default:gemini.model.default:string:GEMINI_MODEL)%'
     gemini.hate_threshold: '%env(default:gemini.hate_threshold.default:string:GEMINI_HATE_THRESHOLD)%'
     gemini.timeout: '%env(default:gemini.timeout.default:float:GEMINI_TIMEOUT)%'
+    nohate.model.default: 'gemini-1.5-flash'
+    nohate.hate_threshold.default: 'BLOCK_MEDIUM_AND_ABOVE'
+    nohate.timeout.default: 3.0
     mailer.from_email.default: 'contact@nexus-app.com'
     mailer.from_name.default: 'Nexus RH'
     mailer.from_email: '%env(default:mailer.from_email.default:string:MAILER_FROM_EMAIL)%'
@@ -73,15 +76,16 @@ services:
             $apiKey: '%env(DEEPL_API_KEY)%'
     App\Service\GeminiSafetyClient:
         arguments:
-            $apiKey: '%gemini.api_key%'
-            $model: '%gemini.model%'
-            $hateThreshold: '%gemini.hate_threshold%'
-            $timeout: '%gemini.timeout%'
+            $apiKey: '%env(string:NOHATE_API_KEY)%'
+            $model: '%env(default:nohate.model.default:string:NOHATE_MODEL)%'
+            $hateThreshold: '%env(default:nohate.hate_threshold.default:string:NOHATE_HATE_THRESHOLD)%'
+            $timeout: '%env(default:nohate.timeout.default:float:NOHATE_TIMEOUT)%'
 
     App\Service\EvaluationDecisionMailer:
         arguments:
-            $fromEmail: '%mailer.from_email%'
-            $fromName: '%mailer.from_name%'
+            $fromEmail: '%env(string:GMAIL_FROM_EMAIL)%'
+            $fromName: '%env(string:GMAIL_FROM_NAME)%'
+            $gmailDsn: '%env(GMAIL_DSN)%'
 
     App\Service\TwoFactorService:
         arguments:
