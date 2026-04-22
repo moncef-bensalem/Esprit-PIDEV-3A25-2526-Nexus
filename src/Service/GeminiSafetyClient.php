@@ -24,7 +24,6 @@ class GeminiSafetyClient
         if ($content == '') {
             return false;
         }
-
         $response = $this->httpClient->request(
             'POST',
             self::API_BASE_URI.$this->model.':generateContent',
@@ -71,7 +70,6 @@ class GeminiSafetyClient
                 }
             }
         }
-
         return false;
     }
 }

@@ -4,16 +4,17 @@ namespace App\Service;
 
 use App\Entity\Evaluation;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 
 class EvaluationDecisionMailer
 {
     public function __construct(
-        private readonly MailerInterface $mailer,
         private readonly string $fromEmail,
         private readonly string $fromName,
+        private readonly string $gmailDsn,
     ) {
     }
 
@@ -61,12 +62,15 @@ class EvaluationDecisionMailer
             default => throw new \InvalidArgumentException('Decision preliminaire non prise en charge.'),
         };
 
+        $transport = Transport::fromDsn($this->gmailDsn);
+        $mailer = new Mailer($transport);
+
         $email = (new Email())
             ->from(new Address($this->fromEmail, $this->fromName))
             ->to($candidateEmail)
             ->subject($subject)
             ->html($html);
 
-        $this->mailer->send($email);
+        $mailer->send($email);
     }
 }

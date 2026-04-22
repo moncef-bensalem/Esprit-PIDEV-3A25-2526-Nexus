@@ -228,6 +228,11 @@
     <div class="topbar-title">{% if is_candidate_only|default(false) %}Votre decision preliminaire{% else %}Liste des evaluations{% endif %}</div>
     {% if not is_candidate_only|default(false) %}
     <a href="{{ path('evaluation_new') }}" class="btn-create">+ Creer une evaluation</a>
+    <a href="{{ path('evaluation_export_pdf') }}"
+        class="btn-create"
+        style="background: linear-gradient(135deg, #7c3aed, #5b21b6);">
+        ⬇ Exporter PDF
+    </a>
     {% endif %}
 </div>
 

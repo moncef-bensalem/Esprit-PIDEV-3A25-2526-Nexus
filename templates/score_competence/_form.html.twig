@@ -1,33 +1,30 @@
 {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
     <div class="mb-3">
         {{ form_label(form.nomCritere, null, {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(form.nomCritere) }}
+        {{ form_widget(form.nomCritere, {'attr': {
+            'spellcheck': 'true',
+            'lang': 'fr',
+            'class': 'form-control sc-field',
+            'data-sc-id': 'nomCritere'
+        }}) }}
         <div class="text-danger small">{{ form_errors(form.nomCritere) }}</div>
+        <div class="sc-panel" id="sc-panel-nomCritere" hidden></div>
     </div>
 
     <div class="mb-3">
         {{ form_label(form.noteAttribuee, null, {'label_attr': {'class': 'form-label'}}) }}
 
-        {# Champ caché qui contient la valeur réelle (0, 5, 10, 15, 20) #}
+        {# Hidden field holding the real value (0, 5, 10, 15, 20) #}
         {{ form_widget(form.noteAttribuee, {'attr': {'class': 'd-none js-note-attribuee-input'}}) }}
 
-        {# Sélecteur d'emojis #}
+        {# Emoji score selector #}
         <div class="d-flex gap-2 emoji-score-group">
-            <button type="button" class="btn btn-outline-light emoji-score" data-value="0" title="0">
-                😡
-            </button>
-            <button type="button" class="btn btn-outline-light emoji-score" data-value="5" title="5">
-                😕
-            </button>
-            <button type="button" class="btn btn-outline-light emoji-score" data-value="10" title="10">
-                😐
-            </button>
-            <button type="button" class="btn btn-outline-light emoji-score" data-value="15" title="15">
-                🙂
-            </button>
-            <button type="button" class="btn btn-outline-light emoji-score" data-value="20" title="20">
-                😄
-            </button>
+            <button type="button" class="btn btn-outline-light emoji-score" data-value="0"  title="0">😡</button>
+            <button type="button" class="btn btn-outline-light emoji-score" data-value="5"  title="5">😕</button>
+            <button type="button" class="btn btn-outline-light emoji-score" data-value="10" title="10">😐</button>
+            <button type="button" class="btn btn-outline-light emoji-score" data-value="15" title="15">🙂</button>
+            <button type="button" class="btn btn-outline-light emoji-score" data-value="20" title="20">😄</button>
         </div>
 
         <div class="text-danger small">{{ form_errors(form.noteAttribuee) }}</div>
@@ -35,8 +32,14 @@
 
     <div class="mb-3">
         {{ form_label(form.appreciationSpecifique, null, {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(form.appreciationSpecifique) }}
+        {{ form_widget(form.appreciationSpecifique, {'attr': {
+            'spellcheck': 'true',
+            'lang': 'fr',
+            'class': 'form-control sc-field',
+            'data-sc-id': 'appreciationSpecifique'
+        }}) }}
         <div class="text-danger small">{{ form_errors(form.appreciationSpecifique) }}</div>
+        <div class="sc-panel" id="sc-panel-appreciationSpecifique" hidden></div>
     </div>
 
     <div class="d-flex gap-2">
@@ -44,49 +47,234 @@
         <a href="{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}" class="btn btn-outline-light">Annuler</a>
     </div>
 
-    {# Script pour gérer la sélection de l'emoji #}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const input = document.querySelector('.js-note-attribuee-input');
-            const buttons = document.querySelectorAll('.emoji-score');
+{# ── Spell-check styles ── #}
+<style>
+.sc-panel {
+    margin-top: 6px;
+    background: rgba(2, 8, 20, 0.92);
+    border: 1px solid rgba(239, 180, 60, 0.35);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: .82rem;
+    color: #e2c97e;
+    position: relative;
+}
+.sc-panel-title {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(239, 180, 60, .65);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sc-word-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.sc-word-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(239, 180, 60, .1);
+    border: 1px solid rgba(239, 180, 60, .3);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: .8rem;
+    color: #f5d78e;
+    cursor: default;
+    position: relative;
+}
+.sc-word-chip:hover .sc-suggestions-dropdown {
+    display: flex;
+}
+.sc-suggestions-dropdown {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 999;
+    background: #0d1b2a;
+    border: 1px solid rgba(239, 180, 60, .4);
+    border-radius: 8px;
+    min-width: 130px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+.sc-suggestion-item {
+    padding: 7px 13px;
+    font-size: .82rem;
+    color: #d6e6f5;
+    cursor: pointer;
+    transition: background .12s;
+}
+.sc-suggestion-item:hover {
+    background: rgba(239, 180, 60, .15);
+    color: #fff;
+}
+.sc-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(239,180,60,.2);
+    border-top-color: rgba(239,180,60,.8);
+    border-radius: 50%;
+    animation: sc-spin .7s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+@keyframes sc-spin { to { transform: rotate(360deg); } }
+.sc-clean {
+    color: rgba(76, 210, 130, .85);
+    font-size: .8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+</style>
 
-            if (!input || buttons.length === 0) {
-                return;
-            }
+<script>
+(function () {
+    const noteInput = document.querySelector('.js-note-attribuee-input');
+    const emojiButtons = document.querySelectorAll('.emoji-score');
 
-            // Initialisation : si une valeur est déjà présente, activer le bouton correspondant
-            const currentValue = input.value;
-            if (currentValue !== '') {
-                buttons.forEach(function (b) {
+    if (noteInput && emojiButtons.length) {
+        const cur = noteInput.value;
+        if (cur !== '') {
+            emojiButtons.forEach(b => {
+                b.classList.toggle('btn-primary',   b.dataset.value === cur);
+                b.classList.toggle('btn-outline-light', b.dataset.value !== cur);
+                b.classList.toggle('active',        b.dataset.value === cur);
+            });
+        }
+        emojiButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                noteInput.value = this.dataset.value;
+                emojiButtons.forEach(b => {
                     b.classList.remove('active', 'btn-primary');
                     b.classList.add('btn-outline-light');
                 });
-
-                buttons.forEach(function (btn) {
-                    if (btn.dataset.value === currentValue) {
-                        btn.classList.add('btn-primary', 'active');
-                        btn.classList.remove('btn-outline-light');
-                    }
-                });
-            }
-
-            buttons.forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    const value = this.dataset.value;
-
-                    // Met à jour le champ caché
-                    input.value = value;
-
-                    // Met à jour le style actif
-                    buttons.forEach(function (b) {
-                        b.classList.remove('active', 'btn-primary');
-                        b.classList.add('btn-outline-light');
-                    });
-
-                    this.classList.remove('btn-outline-light');
-                    this.classList.add('btn-primary', 'active');
-                });
+                this.classList.remove('btn-outline-light');
+                this.classList.add('btn-primary', 'active');
             });
         });
-    </script>
+    }
+
+    const DEBOUNCE_MS = 900;
+    const MIN_WORD_LEN = 3;
+    const SKIP_WORDS = new Set([
+        'le','la','les','de','du','des','un','une','et','en','à','au','aux',
+        'ce','se','sa','son','ses','mon','ma','mes','ton','ta','tes',
+        'que','qui','qu','ne','pas','plus','par','sur','sous','dans','avec',
+        'pour','est','sont','été','avoir','être','faire','très','bien','mais',
+        'ou','si','car','donc','or','ni','je','tu','il','elle','nous','vous',
+        'ils','elles','me','te','lui','leur','y','en',
+    ]);
+
+    function extractWords(text) {
+        const raw = text.match(/[a-zA-ZÀ-öø-ÿ'-]{3,}/g) || [];
+        const seen = new Set();
+        return raw.filter(w => {
+            const lc = w.toLowerCase().replace(/^['-]+|['-]+$/g, '');
+            if (lc.length < MIN_WORD_LEN) return false;
+            if (SKIP_WORDS.has(lc)) return false;
+            if (seen.has(lc)) return false;
+            seen.add(lc);
+            return true;
+        }).map(w => w.replace(/^['-]+|['-]+$/g, ''));
+    }
+
+    async function checkWord(word) {
+        try {
+            const res = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&max=6`);
+            if (!res.ok) return { ok: true, suggestions: [] };
+            const data = await res.json();
+            if (!data.length) return { ok: false, suggestions: [] };
+            const exact = data[0].word.toLowerCase() === word.toLowerCase();
+            if (exact) return { ok: true, suggestions: [] };
+            return { ok: false, suggestions: data.slice(0, 4).map(d => d.word) };
+        } catch {
+            return { ok: true, suggestions: [] };
+        }
+    }
+
+    function renderPanel(panelEl, results) {
+        const misspelled = results.filter(r => !r.ok);
+        if (!misspelled.length) {
+            panelEl.hidden = false;
+            panelEl.innerHTML = `
+                <div class="sc-panel-title">✏ Orthographe</div>
+                <div class="sc-clean">✓ Aucune erreur détectée</div>`;
+            return;
+        }
+        const chips = misspelled.map(r => {
+            const suggs = r.suggestions.length
+                ? r.suggestions.map(s =>
+                    `<div class="sc-suggestion-item" data-word="${r.word}" data-sug="${s}">${s}</div>`
+                  ).join('')
+                : '<div class="sc-suggestion-item" style="opacity:.5;cursor:default">Aucune suggestion</div>';
+            return `
+                <span class="sc-word-chip" title="Survoler pour suggestions">
+                    ⚠ ${r.word}
+                    <div class="sc-suggestions-dropdown">${suggs}</div>
+                </span>`;
+        }).join('');
+
+        panelEl.hidden = false;
+        panelEl.innerHTML = `
+            <div class="sc-panel-title">✏ Orthographe — ${misspelled.length} mot(s) suspect(s)</div>
+            <div class="sc-word-list">${chips}</div>`;
+
+        panelEl.querySelectorAll('.sc-suggestion-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const scId    = panelEl.id.replace('sc-panel-', '');
+                const textarea = document.querySelector(`[data-sc-id="${scId}"]`);
+                if (textarea) {
+                    textarea.value = textarea.value.replace(
+                        new RegExp(`\\b${item.dataset.word}\\b`, 'i'),
+                        item.dataset.sug
+                    );
+                    triggerCheck(textarea, panelEl);
+                }
+            });
+        });
+    }
+
+    async function runSpellCheck(textarea, panelEl) {
+        const words = extractWords(textarea.value);
+        if (!words.length) { panelEl.hidden = true; return; }
+
+        panelEl.hidden = false;
+        panelEl.innerHTML = `
+            <div class="sc-panel-title">
+                <span class="sc-spinner"></span> Vérification en cours…
+            </div>`;
+
+        const checks = await Promise.all(
+            words.map(async w => ({ word: w, ...(await checkWord(w)) }))
+        );
+        renderPanel(panelEl, checks);
+    }
+
+    const timers = new WeakMap();
+
+    function triggerCheck(textarea, panelEl) {
+        if (timers.has(textarea)) clearTimeout(timers.get(textarea));
+        const t = setTimeout(() => runSpellCheck(textarea, panelEl), DEBOUNCE_MS);
+        timers.set(textarea, t);
+    }
+
+    document.querySelectorAll('.sc-field').forEach(textarea => {
+        const scId  = textarea.dataset.scId;
+        const panel = document.getElementById(`sc-panel-${scId}`);
+        if (!panel) return;
+        textarea.addEventListener('input', () => triggerCheck(textarea, panel));
+        textarea.addEventListener('blur',  () => runSpellCheck(textarea, panel));
+        if (textarea.value.trim().length > 2) triggerCheck(textarea, panel);
+    });
+})();
+</script>
+
 {{ form_end(form) }}

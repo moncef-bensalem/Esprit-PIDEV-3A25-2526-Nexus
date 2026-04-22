@@ -17,6 +17,9 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Twig\Environment;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 #[Route('/evaluations')]
 #[IsGranted('ROLE_RH')]
@@ -233,6 +236,82 @@ class EvaluationController extends AbstractController
 
         return $this->redirectToRoute('evaluation_index');
     }
+    #[Route('/evaluations/export-pdf', name: 'evaluation_export_pdf', methods: ['GET'])]
+public function exportPdf(
+    EntityManagerInterface $em,
+    Environment $twig,
+): Response {
+    $evaluations = $em->createQueryBuilder()
+    ->select('e', 'sc')
+    ->from(Evaluation::class, 'e')
+    ->leftJoin('e.scoreCompetences', 'sc')
+    ->orderBy('e.dateCreation', 'DESC')
+    ->getQuery()
+    ->getResult();
+    $byCandidat = [];
+    foreach ($evaluations as $evaluation) {
+        $candidat = $evaluation->getCandidat();
+        $candidatId = $candidat ? $candidat->getId() : 0;
+        $candidatLabel = $candidat
+            ? trim($candidat->getFirstName() . ' ' . $candidat->getLastName())
+            : 'Sans candidat';
+ 
+        $scores = $evaluation->getScoreCompetences();
+        $total = 0;
+        $count = 0;
+        foreach ($scores as $sc) {
+            $normalized = str_replace(',', '.', $sc->getNoteAttribuee());
+            if (is_numeric($normalized)) {
+                $total += (float) $normalized;
+                ++$count;
+            }
+        }
+        $avg = $count > 0 ? round($total / $count, 2) : null;
+ 
+        $byCandidat[$candidatId]['label'] = $candidatLabel;
+        $byCandidat[$candidatId]['evaluations'][] = [
+            'entity' => $evaluation,
+            'avg'    => $avg,
+        ];
+    }
+ 
+    // 3. Sort each candidat's evaluations by avg score descending (null last)
+    foreach ($byCandidat as &$data) {
+        usort($data['evaluations'], static function (array $a, array $b): int {
+            if ($a['avg'] === null && $b['avg'] === null) return 0;
+            if ($a['avg'] === null) return 1;
+            if ($b['avg'] === null) return -1;
+            return $b['avg'] <=> $a['avg'];
+        });
+    }
+    unset($data);
+ 
+    // 4. Sort candidats alphabetically
+    uasort($byCandidat, static fn ($a, $b) => strcmp($a['label'], $b['label']));
+ 
+    // 5. Render HTML template for dompdf
+    $html = $twig->render('evaluation/pdf_export.html.twig', [
+        'byCandidat' => $byCandidat,
+        'generatedAt' => new \DateTimeImmutable(),
+    ]);
+ 
+    // 6. Generate PDF with dompdf
+    $options = new Options();
+    $options->set('defaultFont', 'DejaVu Sans');
+    $options->set('isHtml5ParserEnabled', true);
+ 
+    $dompdf = new Dompdf($options);
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'landscape');
+    $dompdf->render();
+ 
+    $pdf = $dompdf->output();
+ 
+    return new Response($pdf, 200, [
+        'Content-Type'        => 'application/pdf',
+        'Content-Disposition' => 'attachment; filename="evaluations-' . date('Y-m-d') . '.pdf"',
+    ]);
+}
 
     /**
      * @return list<User>
