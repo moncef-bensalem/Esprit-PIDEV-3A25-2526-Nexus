@@ -45,6 +45,9 @@ class ChatbotController extends AbstractController
             ? $grokService->ask($eventContext, $question)
             : $chatbotService->handleMessage($question);
 
-        return $this->json(['response' => $answer]);
+        return $this->json([
+            'answer' => $answer,   // Used by standard review chatbot
+            'response' => $answer  // Used by full talent HR chatbot
+        ]);
     }
 }

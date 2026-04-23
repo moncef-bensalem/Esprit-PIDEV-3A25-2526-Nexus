@@ -116,23 +116,23 @@ class Planification
 
     public function getHeureDebut(): ?\DateTimeInterface
     {
-        return $this->heureDebut;
+        return $this->heure_debut;
     }
 
     public function setHeureDebut(?\DateTimeInterface $value): static
     {
-        $this->heureDebut = $value;
+        $this->heure_debut = $value;
         return $this;
     }
 
     public function getHeureFin(): ?\DateTimeInterface
     {
-        return $this->heureFin;
+        return $this->heure_fin;
     }
 
     public function setHeureFin(?\DateTimeInterface $value): static
     {
-        $this->heureFin = $value;
+        $this->heure_fin = $value;
         return $this;
     }
 
@@ -171,12 +171,12 @@ class Planification
 
     public function getLienMeeting(): ?string
     {
-        return $this->lienMeeting;
+        return $this->lien_meeting;
     }
 
     public function setLienMeeting(?string $value): static
     {
-        $this->lienMeeting = $value;
+        $this->lien_meeting = $value;
         return $this;
     }
 
