@@ -50,7 +50,7 @@ class ScoreCompetenceResolverServiceTest extends TestCase
         $score = $this->makeScore(1, $evaluation);
 
         $this->service->ensureSameEvaluation($evaluation, $score);
-        $this->assertTrue(true); // assertion explicite pour confirmer le passage
+        $this->addToAssertionCount(1); 
     }
 
     public function testEnsureSameEvaluationRejeteScoreAutreEvaluation(): void
