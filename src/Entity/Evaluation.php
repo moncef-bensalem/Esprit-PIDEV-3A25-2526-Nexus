@@ -55,6 +55,7 @@ class Evaluation
     #[ORM\JoinColumn(name: "fk_recruteur_id", referencedColumnName: "id", nullable: true, onDelete: "SET NULL")]
     private ?User $recruteur = null;
 
+    /** @var Collection<int, ScoreCompetence> */
     #[ORM\OneToMany(mappedBy: "evaluation", targetEntity: ScoreCompetence::class, cascade: ["persist", "remove"])]
     #[Assert\Valid]
     private Collection $scoreCompetences;
@@ -182,6 +183,7 @@ class Evaluation
         return $this;
     }
 
+    /** @return Collection<int, ScoreCompetence> */
     public function getScoreCompetences(): Collection
     {
         return $this->scoreCompetences;
