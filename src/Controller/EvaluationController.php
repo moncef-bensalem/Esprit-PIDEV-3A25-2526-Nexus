@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Form\EvaluationType;
 use App\Security\EvaluationVoter;
 use App\Service\EvaluationDecisionMailer;
+use App\Service\EvaluationStatsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,12 +26,16 @@ use Dompdf\Options;
 #[IsGranted('ROLE_RH')]
 class EvaluationController extends AbstractController
 {
+    public function __construct(private readonly EvaluationStatsService $statsService)
+    {
+    }
+
     #[Route('', name: 'evaluation_index', methods: ['GET'])]
     public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
         $user = $this->requireUser();
         $data = $this->buildIndexData($request, $entityManager, $user, $this->isGranted('ROLE_ADMIN'));
-        $evaluationsJson = $this->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
+        $evaluationsJson = $this->statsService->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
 
         return $this->render('evaluation/index.html.twig', [
             'evaluations' => $data['evaluations'],
@@ -53,7 +58,7 @@ class EvaluationController extends AbstractController
         $user = $this->requireUser();
         $data = $this->buildIndexData($request, $entityManager, $user, $this->isGranted('ROLE_ADMIN'));
 
-        $evaluationsJson = $this->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
+        $evaluationsJson = $this->statsService->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
 
         $counts = ['FAVORABLE' => 0, 'DEFAVORABLE' => 0, 'A_REVOIR' => 0];
         foreach ($evaluationsJson as $e) {
@@ -274,8 +279,7 @@ public function exportPdf(
             'avg'    => $avg,
         ];
     }
- 
-    // 3. Sort each candidat's evaluations by avg score descending (null last)
+
     foreach ($byCandidat as &$data) {
         usort($data['evaluations'], static function (array $a, array $b): int {
             if ($a['avg'] === null && $b['avg'] === null) return 0;
@@ -285,17 +289,14 @@ public function exportPdf(
         });
     }
     unset($data);
- 
-    // 4. Sort candidats alphabetically
+
     uasort($byCandidat, static fn ($a, $b) => strcmp($a['label'], $b['label']));
- 
-    // 5. Render HTML template for dompdf
+
     $html = $twig->render('evaluation/pdf_export.html.twig', [
         'byCandidat' => $byCandidat,
         'generatedAt' => new \DateTimeImmutable(),
     ]);
- 
-    // 6. Generate PDF with dompdf
+
     $options = new Options();
     $options->set('defaultFont', 'DejaVu Sans');
     $options->set('isHtml5ParserEnabled', true);
@@ -313,9 +314,6 @@ public function exportPdf(
     ]);
 }
 
-    /**
-     * @return list<User>
-     */
     private function getCandidateUsers(EntityManagerInterface $entityManager): array
     {
         $users = $entityManager->getRepository(User::class)->findAll();
@@ -348,46 +346,9 @@ public function exportPdf(
 
     private function computeAverageScore(Evaluation $evaluation): ?float
     {
-        $sum = 0.0;
-        $count = 0;
-
-        foreach ($evaluation->getScoreCompetences() as $scoreCompetence) {
-            $raw = trim($scoreCompetence->getNoteAttribuee());
-            if ($raw === '') {
-                continue;
-            }
-
-            // Le champ est un string: on normalise "," => "."
-            $normalized = str_replace(',', '.', $raw);
-            if (!is_numeric($normalized)) {
-                continue;
-            }
-
-            $sum += (float) $normalized;
-            $count++;
-        }
-
-        if ($count === 0) {
-            return null;
-        }
-
-        return $sum / $count;
+        return $this->statsService->computeAverageScore($evaluation);
     }
 
-    /**
-     * @return array{
-     *   evaluations: list<Evaluation>,
-     *   averageScoresById: array<int, ?float>,
-     *   q: string,
-     *   sort: string,
-     *   decision: string,
-     *   recruteur: string,
-     *   candidat: string,
-     *   decisionOptions: list<string>,
-     *   recruteurOptions: array<string, string>,
-     *   candidatOptions: array<string, string>
-     * }
-     */
     private function buildIndexData(Request $request, EntityManagerInterface $entityManager, User $currentUser, bool $isAdmin): array
     {
         $q = trim((string) $request->query->get('q', ''));
@@ -410,12 +371,11 @@ public function exportPdf(
 
         $averageScoresById = [];
         foreach ($evaluationsAll as $evaluation) {
-            $averageScoresById[$evaluation->getIdEvaluation()] = $this->computeAverageScore($evaluation);
+            $averageScoresById[$evaluation->getIdEvaluation()] = $this->statsService->computeAverageScore($evaluation);
         }
 
-        // Options distinctes (pour remplir les selects)
         $decisionOptions = [];
-        $recruteurOptions = []; // id => label (inclut "none" via key 'none')
+        $recruteurOptions = [];
         $candidatOptions = [];
         foreach ($evaluationsAll as $evaluation) {
             $decisionOptions[$evaluation->getDecisionPreliminaire()] = true;
@@ -481,7 +441,6 @@ public function exportPdf(
             return true;
         }));
 
-        // Tri
         if ($sort === 'score') {
             usort($evaluations, function (Evaluation $a, Evaluation $b) use ($averageScoresById): int {
                 $avgA = $averageScoresById[$a->getIdEvaluation()] ?? null;
@@ -517,33 +476,8 @@ public function exportPdf(
         ];
     }
 
-    /**
-     * @param list<Evaluation> $evaluations
-     * @param array<int, ?float> $averageScoresById
-     * @return list<array{
-     *   id:int,
-     *   decision:string,
-     *   reviewDeadline:?string,
-     *   url:string,
-     *   avgScore:?float,
-     *   dateCreation:string
-     * }>
-     */
     private function serializeEvaluationsForDashboard(array $evaluations, array $averageScoresById): array
     {
-        $out = [];
-        foreach ($evaluations as $e) {
-            $id = $e->getIdEvaluation();
-            $out[] = [
-                'id' => $id,
-                'decision' => (string) $e->getDecisionPreliminaire(),
-                'reviewDeadline' => $e->getReviewDeadline() ? $e->getReviewDeadline()->format('Y-m-d') : null,
-                'url' => $this->generateUrl('evaluation_show', ['idEvaluation' => $id]),
-                'avgScore' => $averageScoresById[$id] ?? null,
-                'dateCreation' => $e->getDateCreation()->format('Y-m-d H:i'),
-            ];
-        }
-
-        return $out;
+        return $this->statsService->serializeEvaluationsForDashboard($evaluations, $averageScoresById);
     }
 }
