@@ -89,7 +89,7 @@ class Evaluation
         return $this->dateCreation;
     }
 
-    protected function setDateCreation(\DateTimeInterface $value): static
+    public function setDateCreation(\DateTimeInterface $value): static
     {
         if ($value instanceof \DateTimeImmutable) {
             $value = \DateTime::createFromImmutable($value);
