@@ -85,18 +85,11 @@ class ScoreCompetenceController extends AbstractController
 
         $scoreCompetence = $this->resolverService->resolveScoreCompetence($evaluation, $idDetail);
 
-        if ($scoreCompetence->getAppreciationSpecifique() === null) {
-            $scoreCompetence->setAppreciationSpecifique('');
-        }
-
         $form = $this->createForm(ScoreCompetenceType::class, $scoreCompetence);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $scoreCompetence->setEvaluation($evaluation);
-            if ($scoreCompetence->getAppreciationSpecifique() === null) {
-                $scoreCompetence->setAppreciationSpecifique('');
-            }
 
             $entityManager->flush();
 
@@ -136,18 +129,4 @@ class ScoreCompetenceController extends AbstractController
         ]);
     }
 
-    private function ensureSameEvaluation(Evaluation $evaluation, ScoreCompetence $scoreCompetence): void
-    {
-        $this->resolverService->ensureSameEvaluation($evaluation, $scoreCompetence);
-    }
-
-    private function resolveScoreCompetence(Evaluation $evaluation, int $idDetail, EntityManagerInterface $entityManager): ScoreCompetence
-    {
-        return $this->resolverService->resolveScoreCompetence($evaluation, $idDetail);
-    }
-
-    private function nextScoreDetailId(EntityManagerInterface $entityManager): int
-    {
-        return $this->resolverService->nextScoreDetailId();
-    }
 }
