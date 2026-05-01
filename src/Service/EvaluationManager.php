@@ -9,7 +9,7 @@ class EvaluationManager
 
     public function validate(Evaluation $evaluation): bool
     {
-        $commentaire = $evaluation->getCommentaireGlobal() ?? '';
+        $commentaire = $evaluation->getCommentaireGlobal();
         if (empty(trim($commentaire))) {
             throw new \InvalidArgumentException('Le commentaire global est obligatoire.');
         }
