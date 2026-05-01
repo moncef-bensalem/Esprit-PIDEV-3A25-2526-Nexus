@@ -326,6 +326,7 @@ public function exportPdf(
     ]);
 }
 
+    /** @return User[] */
     private function getCandidateUsers(EntityManagerInterface $entityManager): array
     {
         return $entityManager->createQueryBuilder()
@@ -360,11 +361,9 @@ public function exportPdf(
         return ((int) $max) + 1;
     }
 
-    private function computeAverageScore(Evaluation $evaluation): ?float
-    {
-        return $this->statsService->computeAverageScore($evaluation);
-    }
-
+    /**
+     * @return array<string, mixed>
+     */
     private function buildIndexData(Request $request, EntityManagerInterface $entityManager, EvaluationRepository $evaluationRepository, PaginatorInterface $paginator, User $currentUser, bool $isAdmin): array
     {
         $q = trim((string) $request->query->get('q', ''));
@@ -388,7 +387,6 @@ public function exportPdf(
             'candidatId' => $candidatFilter,
         ];
 
-        // Non-admin users are scoped to their own evaluations via the recruteur entity
         if (!$isAdmin) {
             $filters['recruteur'] = $currentUser;
         } elseif ($recruteurFilter !== '') {
@@ -397,7 +395,6 @@ public function exportPdf(
 
         $qb = $evaluationRepository->createFilteredQueryBuilder($filters);
 
-        // Use KnpPaginator to apply LIMIT/OFFSET at the DB level
         $pagination = $paginator->paginate($qb, $page, $pageSize);
 
         /** @var Evaluation[] $evaluations */
@@ -408,10 +405,6 @@ public function exportPdf(
             $averageScoresById[$evaluation->getIdEvaluation()] = $this->statsService->computeAverageScore($evaluation);
         }
 
-        // Score sort is handled at the DB level in createFilteredQueryBuilder,
-        // so KnpPaginator paginates the already-sorted full result set.
-
-        // Fetch dropdown options from DB (no full table scan)
         $scopedRecruteur = $isAdmin ? null : $currentUser;
         $filterOptions = $evaluationRepository->findFilterOptions($scopedRecruteur);
 
@@ -430,8 +423,4 @@ public function exportPdf(
         ];
     }
 
-    private function serializeEvaluationsForDashboard(array $evaluations, array $averageScoresById): array
-    {
-        return $this->statsService->serializeEvaluationsForDashboard($evaluations, $averageScoresById);
-    }
 }

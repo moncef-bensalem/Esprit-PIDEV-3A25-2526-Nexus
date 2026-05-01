@@ -46,7 +46,7 @@ class GenerateEntitiesCommand extends Command
         $manyToOneRelationsName = [];
         $oneToManyRelationsName = [];
 
-        // Sort tables by FK count ascending so referenced tables are generated first
+      
         $tableRelationsCount = [];
         foreach ($tables as $table) {
             $foreignKeys = $this->getForeignKeys([$table->getName()]);
@@ -56,7 +56,7 @@ class GenerateEntitiesCommand extends Command
             return $tableRelationsCount[$a->getName()] <=> $tableRelationsCount[$b->getName()];
         });
 
-        // FIX: Only generate once, not twice
+    
         foreach ($tables as $table) {
             $this->generateEntity(
                 $table,
@@ -79,16 +79,12 @@ class GenerateEntitiesCommand extends Command
         return $this->schemaManager;
     }
 
-    // FIX: Convert snake_case table names to PascalCase class names
-    // e.g. type_entretien -> TypeEntretien
     private function toClassName(string $tableName): string
     {
         return str_replace('', '', ucwords($tableName, ''));
         return str_replace('_', '', ucwords($tableName, '_'));
     }
 
-    // FIX: Convert snake_case to camelCase for property/method names
-    // e.g. date_heure_debut -> dateHeureDebut
     private function toCamelCase(string $name): string
     {
         return lcfirst(str_replace('', '', ucwords($name, '')));
@@ -107,7 +103,6 @@ class GenerateEntitiesCommand extends Command
         $primaryKeys = $table->getPrimaryKey()?->getColumns() ?? [];
         $foreignKeys = $this->getForeignKeys([$tableName]);
 
-        // Detect auto-increment columns
         $autoIncrementCols = [];
         foreach ($table->getColumns() as $col) {
             if ($col->getAutoincrement()) {
@@ -115,10 +110,9 @@ class GenerateEntitiesCommand extends Command
             }
         }
 
-        // --- Build property + relation blocks ---
-        $propertyLines = '';
-        $fkColumnNames = []; // track which columns are FKs so we skip their getters/setters
 
+        $propertyLines = '';
+        $fkColumnNames = []; 
         foreach ($table->getColumns() as $column) {
             $colName      = $column->getName();
             $isPrimaryKey = in_array($colName, $primaryKeys);
@@ -131,10 +125,8 @@ class GenerateEntitiesCommand extends Command
                 $relatedClassName = $this->toClassName($relatedTable);
                 $refColumn        = $foreignKeys[$colName]['referencedColumn'];
 
-                // Property name = camelCase of the related class (not the FK column name)
                 $propName = $this->toCamelCase($relatedClassName);
 
-                // FIX: nullable ManyToOne (FK column may be nullable)
                 $isNullable = !$column->getNotnull();
                 $nullableStr = $isNullable ? ', nullable: true' : '';
                 $phpType     = $isNullable ? "?$relatedClassName" : $relatedClassName;
@@ -145,7 +137,6 @@ class GenerateEntitiesCommand extends Command
                 $propertyLines .= "    #[ORM\\JoinColumn(name: '$colName', referencedColumnName: '$refColumn'{$nullableStr}, onDelete: 'CASCADE')]\n";
                 $propertyLines .= "    private {$phpType} \${$propName}{$defaultVal};\n";
 
-                // Track for imports and OneToMany injection
                 $manyToOneRelationsName[$className]    = $relatedClassName;
                 $oneToManyRelationsName[$relatedClassName] = $className;
 
@@ -157,7 +148,6 @@ class GenerateEntitiesCommand extends Command
                 ];
 
             } else {
-                // Regular column
                 $doctrineType      = $this->getDoctrineType($column);
                 $phpType           = $this->getPHPTypeFromDoctrine($doctrineType);
                 $isNullable        = !$column->getNotnull();
@@ -166,7 +156,6 @@ class GenerateEntitiesCommand extends Command
                     : '';
                 $nullableAnnotation = $isNullable ? ', nullable: true' : '';
 
-                // FIX: nullable PHP types and default null
                 $phpTypeHinted = $isNullable ? "?$phpType" : $phpType;
                 $defaultVal    = $isNullable ? ' = null' : '';
 
@@ -174,7 +163,7 @@ class GenerateEntitiesCommand extends Command
                 if ($isPrimaryKey) {
                     $propertyLines .= "    #[ORM\\Id]\n";
                     if ($isAutoInc) {
-                        // FIX: add GeneratedValue for AUTO_INCREMENT PKs
+                
                         $propertyLines .= "    #[ORM\\GeneratedValue]\n";
                     }
                 }
@@ -183,17 +172,15 @@ class GenerateEntitiesCommand extends Command
             }
         }
 
-        // --- Build getters/setters (skip FK raw columns) ---
         $methodLines = '';
         foreach ($table->getColumns() as $column) {
             $colName = $column->getName();
             if (in_array($colName, $fkColumnNames)) {
-                continue; // FK columns are exposed via their relation property
+                continue;
             }
             $methodLines .= $this->generateGettersAndSetters($column);
         }
 
-        // --- Build OneToMany blocks for this entity ---
         $oneToManyLines = '';
         if (isset($oneToManyRelations[$className])) {
             $seen = [];
@@ -209,16 +196,13 @@ class GenerateEntitiesCommand extends Command
                 $oneToManyLines .= "    #[ORM\\OneToMany(mappedBy: \"{$rel['mappedBy']}\", targetEntity: {$targetClass}::class, cascade: [\"persist\", \"remove\"])]\n";
                 $oneToManyLines .= "    private Collection \${$collPropName};\n";
 
-                // add/remove/get methods
+           
                 $oneToManyLines .= $this->generateRelationMethods($className, $rel['mappedBy'], $targetClass);
             }
         }
 
-        // --- Build imports ---
         $importLines = $this->generateImports($manyToOneRelationsName, $oneToManyRelationsName, $className);
 
-        // --- Assemble final file ---
-        // FIX: Add #[ORM\Table] so Doctrine maps to the correct table name
         $entityCode  = "<?php\n\nnamespace App\\Entity;\n\n";
         $entityCode .= "use Doctrine\\ORM\\Mapping as ORM;\n";
         if (!empty($importLines)) {
@@ -272,7 +256,7 @@ class GenerateEntitiesCommand extends Command
                   AND TABLE_SCHEMA = DATABASE()
                   AND REFERENCED_TABLE_NAME IS NOT NULL
             ";
-            // FIX: Added AND TABLE_SCHEMA = DATABASE() to avoid cross-database false positives
+            
 
             $stmt = $this->connection->prepare($sql);
             $stmt->bindValue(':tableName', $tableName);
@@ -289,7 +273,7 @@ class GenerateEntitiesCommand extends Command
         return $foreignKeys;
     }
 
-    // FIX: Extracted type mapping to a proper method using column object (not just class name)
+   
     private function getDoctrineType(Column $column): string
     {
         $typeClass = get_class($column->getType());
