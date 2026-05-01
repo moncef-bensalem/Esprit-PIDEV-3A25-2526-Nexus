@@ -16,6 +16,9 @@ class EvaluationRepository extends ServiceEntityRepository
         parent::__construct($registry, Evaluation::class);
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     */
     public function createFilteredQueryBuilder(array $filters = []): QueryBuilder
     {
         $qb = $this->createQueryBuilder('e')
@@ -67,8 +70,6 @@ class EvaluationRepository extends ServiceEntityRepository
         }
 
         if (($filters['sort'] ?? 'dateCreation') === 'score') {
-            // Join scoreCompetences to compute AVG per evaluation at DB level,
-            // so KnpPaginator applies LIMIT/OFFSET after the global sort.
             $qb->leftJoin('e.scoreCompetences', 'sc_sort')
                ->addSelect('AVG(CAST(sc_sort.noteAttribuee AS DECIMAL(10,2))) AS HIDDEN avgScore')
                ->groupBy('e.idEvaluation, candidat.id, recruteur.id')
@@ -81,6 +82,9 @@ class EvaluationRepository extends ServiceEntityRepository
         return $qb;
     }
 
+    /**
+     * @return array{decisions: list<string|null>, recruteurs: array<string, string>, candidats: array<string, string>}
+     */
     public function findFilterOptions(?User $scopedRecruteur = null): array
     {
   
