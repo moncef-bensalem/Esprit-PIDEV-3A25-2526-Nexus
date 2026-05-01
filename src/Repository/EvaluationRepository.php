@@ -117,11 +117,14 @@ class EvaluationRepository extends ServiceEntityRepository
             $recruteurs[(string) $dto->id] = trim($dto->firstName . ' ' . $dto->lastName);
         }
 
-        $hasNullRecruteur = (clone $recruteurQb)
+        $nullRecruteurQb = $this->createQueryBuilder('e')
             ->select('COUNT(e.idEvaluation)')
-            ->andWhere('e.recruteur IS NULL')
-            ->getQuery()
-            ->getSingleScalarResult() > 0;
+            ->andWhere('e.recruteur IS NULL');
+        if ($scopedRecruteur !== null) {
+            $nullRecruteurQb->andWhere('e.recruteur = :scopedRecruteur')
+                            ->setParameter('scopedRecruteur', $scopedRecruteur);
+        }
+        $hasNullRecruteur = $nullRecruteurQb->getQuery()->getSingleScalarResult() > 0;
         if ($hasNullRecruteur) {
             $recruteurs['none'] = 'Non assigne';
         }
@@ -145,11 +148,14 @@ class EvaluationRepository extends ServiceEntityRepository
             $candidats[(string) $dto->id] = trim($dto->firstName . ' ' . $dto->lastName);
         }
 
-        $hasNullCandidat = (clone $candidatQb)
+        $nullCandidatQb = $this->createQueryBuilder('e')
             ->select('COUNT(e.idEvaluation)')
-            ->andWhere('e.candidat IS NULL')
-            ->getQuery()
-            ->getSingleScalarResult() > 0;
+            ->andWhere('e.candidat IS NULL');
+        if ($scopedRecruteur !== null) {
+            $nullCandidatQb->andWhere('e.recruteur = :scopedRecruteur')
+                           ->setParameter('scopedRecruteur', $scopedRecruteur);
+        }
+        $hasNullCandidat = $nullCandidatQb->getQuery()->getSingleScalarResult() > 0;
         if ($hasNullCandidat) {
             $candidats['none'] = 'Non assigne';
         }
