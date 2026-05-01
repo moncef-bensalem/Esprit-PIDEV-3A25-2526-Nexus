@@ -38,6 +38,11 @@ class EvaluationStatsService
         return $sum / $count;
     }
 
+    /**
+     * @param Evaluation[]          $evaluations
+     * @param array<int, float|null> $averageScoresById
+     * @return list<array{id: int, decision: string, reviewDeadline: string|null, url: string, avgScore: float|null, dateCreation: string|null}>
+     */
     public function serializeEvaluationsForDashboard(array $evaluations, array $averageScoresById): array
     {
         $out = [];
