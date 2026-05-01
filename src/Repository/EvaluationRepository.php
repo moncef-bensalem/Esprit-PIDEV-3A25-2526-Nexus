@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Dto\UserNameDto;
 use App\Entity\Evaluation;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -91,16 +92,17 @@ class EvaluationRepository extends ServiceEntityRepository
             ->getArrayResult();
         $decisions = array_column($rows, 'decision');
 
+        /** @var UserNameDto[] $recruteurRows */
         $recruteurRows = (clone $base)
-            ->select('recruteur.id AS rid, recruteur.firstName AS rfn, recruteur.lastName AS rln')
+            ->select('NEW ' . UserNameDto::class . '(recruteur.id, recruteur.firstName, recruteur.lastName)')
             ->andWhere('recruteur.id IS NOT NULL')
             ->groupBy('recruteur.id, recruteur.firstName, recruteur.lastName')
             ->getQuery()
-            ->getArrayResult();
+            ->getResult();
 
         $recruteurs = [];
-        foreach ($recruteurRows as $row) {
-            $recruteurs[(string) $row['rid']] = trim($row['rfn'] . ' ' . $row['rln']);
+        foreach ($recruteurRows as $dto) {
+            $recruteurs[(string) $dto->id] = trim($dto->firstName . ' ' . $dto->lastName);
         }
 
         $hasNullRecruteur = (clone $base)
@@ -112,16 +114,17 @@ class EvaluationRepository extends ServiceEntityRepository
             $recruteurs['none'] = 'Non assigne';
         }
 
+        /** @var UserNameDto[] $candidatRows */
         $candidatRows = (clone $base)
-            ->select('candidat.id AS cid, candidat.firstName AS cfn, candidat.lastName AS cln')
+            ->select('NEW ' . UserNameDto::class . '(candidat.id, candidat.firstName, candidat.lastName)')
             ->andWhere('candidat.id IS NOT NULL')
             ->groupBy('candidat.id, candidat.firstName, candidat.lastName')
             ->getQuery()
-            ->getArrayResult();
+            ->getResult();
 
         $candidats = [];
-        foreach ($candidatRows as $row) {
-            $candidats[(string) $row['cid']] = trim($row['cfn'] . ' ' . $row['cln']);
+        foreach ($candidatRows as $dto) {
+            $candidats[(string) $dto->id] = trim($dto->firstName . ' ' . $dto->lastName);
         }
 
         $hasNullCandidat = (clone $base)

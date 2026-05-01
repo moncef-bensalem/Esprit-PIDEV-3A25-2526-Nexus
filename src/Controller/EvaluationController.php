@@ -97,7 +97,6 @@ class EvaluationController extends AbstractController
     {
         $recruteur = $this->requireUser();
         $evaluation = new Evaluation();
-        $evaluation->setDateCreation(new \DateTimeImmutable());
 
         $candidates = $this->getCandidateUsers($entityManager);
 

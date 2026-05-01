@@ -11,8 +11,9 @@ use App\Validator\NoHateSpeech;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
-#[ORM\Entity(repositoryClass: \App\Repository\EvaluationRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: "evaluation")]
+#[ORM\HasLifecycleCallbacks]
 class Evaluation
 {
     #[ORM\Id]
@@ -22,7 +23,7 @@ class Evaluation
 
     #[ORM\Column(type: "datetime")]
     #[Assert\NotNull(message: "La date de creation est obligatoire.")]
-    private ?\DateTimeInterface $dateCreation = null;
+    private \DateTimeInterface $dateCreation;
 
     #[ORM\Column(type: "text")]
     #[Assert\NotBlank(message: "Le commentaire global est obligatoire.")]
@@ -33,7 +34,7 @@ class Evaluation
         minMessage: "Le commentaire global doit contenir au moins {{ limit }} caracteres.",
         maxMessage: "Le commentaire global ne doit pas depasser {{ limit }} caracteres."
     )]
-    private ?string $commentaireGlobal = null;
+    private string $commentaireGlobal;
 
     #[ORM\Column(type: "string", length: 255)]
     #[Assert\NotBlank(message: "La decision preliminaire est obligatoire.")]
@@ -41,18 +42,17 @@ class Evaluation
         choices: ["FAVORABLE", "DEFAVORABLE", "A_REVOIR"],
         message: "La decision preliminaire est invalide."
     )]
-    private ?string $decisionPreliminaire = null;
+    private string $decisionPreliminaire;
 
     #[ORM\Column(type: "date", nullable: true)]
     private ?\DateTimeInterface $reviewDeadline = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsCandidat")]
-    #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: false, onDelete: "CASCADE")]
-    #[Assert\NotNull(message: "Le candidat est obligatoire.")]
+    #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: true, onDelete: "SET NULL")]
     private ?User $candidat = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsRecruteur")]
-    #[ORM\JoinColumn(name: "fk_recruteur_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
+    #[ORM\JoinColumn(name: "fk_recruteur_id", referencedColumnName: "id", nullable: true, onDelete: "SET NULL")]
     private ?User $recruteur = null;
 
     #[ORM\OneToMany(mappedBy: "evaluation", targetEntity: ScoreCompetence::class, cascade: ["persist", "remove"])]
@@ -75,12 +75,20 @@ class Evaluation
         return $this;
     }
 
-    public function getDateCreation(): ?\DateTimeInterface
+    #[ORM\PrePersist]
+    public function initDateCreation(): void
+    {
+        if (!isset($this->dateCreation)) {
+            $this->dateCreation = new \DateTime();
+        }
+    }
+
+    public function getDateCreation(): \DateTimeInterface
     {
         return $this->dateCreation;
     }
 
-    public function setDateCreation(\DateTimeInterface $value): static
+    protected function setDateCreation(\DateTimeInterface $value): static
     {
         if ($value instanceof \DateTimeImmutable) {
             $value = \DateTime::createFromImmutable($value);
@@ -90,7 +98,7 @@ class Evaluation
         return $this;
     }
 
-    public function getCommentaireGlobal(): ?string
+    public function getCommentaireGlobal(): string
     {
         return $this->commentaireGlobal;
     }
@@ -101,7 +109,7 @@ class Evaluation
         return $this;
     }
 
-    public function getDecisionPreliminaire(): ?string
+    public function getDecisionPreliminaire(): string
     {
         return $this->decisionPreliminaire;
     }

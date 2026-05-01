@@ -2,7 +2,10 @@
 
 namespace App\Entity;
 
+use App\Entity\Evaluation;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -68,6 +71,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $faceDescriptor = null;
+
+    #[ORM\OneToMany(mappedBy: "candidat", targetEntity: Evaluation::class)]
+    private Collection $evaluationsAsCandidat;
+
+    #[ORM\OneToMany(mappedBy: "recruteur", targetEntity: Evaluation::class)]
+    private Collection $evaluationsAsRecruteur;
+
+    public function __construct()
+    {
+        $this->evaluationsAsCandidat = new ArrayCollection();
+        $this->evaluationsAsRecruteur = new ArrayCollection();
+    }
 
     public function getId(): int
     {
@@ -216,6 +231,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->faceDescriptor = $faceDescriptor;
 
         return $this;
+    }
+
+    public function getEvaluationsAsCandidat(): Collection
+    {
+        return $this->evaluationsAsCandidat;
+    }
+
+    public function getEvaluationsAsRecruteur(): Collection
+    {
+        return $this->evaluationsAsRecruteur;
     }
 
     #[ORM\PrePersist]
