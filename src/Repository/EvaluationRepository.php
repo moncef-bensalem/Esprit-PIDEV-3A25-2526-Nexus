@@ -9,6 +9,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
+/**
+ * @extends ServiceEntityRepository<Evaluation>
+ */
 class EvaluationRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -116,6 +119,7 @@ class EvaluationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
 
+        /** @var array<string, string> $recruteurs */
         $recruteurs = [];
         foreach ($recruteurRows as $dto) {
             $recruteurs[(string) $dto->id] = trim($dto->firstName . ' ' . $dto->lastName);
@@ -163,6 +167,9 @@ class EvaluationRepository extends ServiceEntityRepository
         if ($hasNullCandidat) {
             $candidats['none'] = 'Non assigne';
         }
+
+        /** @var array<string, string> $recruteurs */
+        $recruteurs = $recruteurs;
 
         return [
             'decisions' => $decisions,

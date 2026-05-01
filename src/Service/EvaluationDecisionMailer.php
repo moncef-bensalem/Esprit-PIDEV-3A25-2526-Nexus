@@ -28,7 +28,7 @@ class EvaluationDecisionMailer
             throw new \InvalidArgumentException('Aucun candidat n est associe a cette evaluation.');
         }
 
-        $candidateEmail = trim($candidat->getEmail());
+        $candidateEmail = trim($candidat->getEmail() ?? '');
         if ($candidateEmail === '') {
             throw new \InvalidArgumentException('Le candidat n a pas d adresse email.');
         }

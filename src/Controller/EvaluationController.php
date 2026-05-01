@@ -65,7 +65,7 @@ class EvaluationController extends AbstractController
 
         $counts = ['FAVORABLE' => 0, 'DEFAVORABLE' => 0, 'A_REVOIR' => 0];
         foreach ($evaluationsJson as $e) {
-            $decision = (string) ($e['decision'] ?? '');
+            $decision = (string) $e['decision'];
             if (array_key_exists($decision, $counts)) {
                 $counts[$decision]++;
             }
