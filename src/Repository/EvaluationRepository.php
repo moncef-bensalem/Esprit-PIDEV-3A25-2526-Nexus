@@ -77,23 +77,29 @@ class EvaluationRepository extends ServiceEntityRepository
 
     public function findFilterOptions(?User $scopedRecruteur = null): array
     {
-        $base = $this->createQueryBuilder('e')
-            ->leftJoin('e.candidat', 'candidat')
-            ->leftJoin('e.recruteur', 'recruteur');
-
+  
+        $decisionQb = $this->createQueryBuilder('e');
         if ($scopedRecruteur !== null) {
-            $base->andWhere('e.recruteur = :scopedRecruteur')
-                 ->setParameter('scopedRecruteur', $scopedRecruteur);
+            $decisionQb->andWhere('e.recruteur = :scopedRecruteur')
+                       ->setParameter('scopedRecruteur', $scopedRecruteur);
         }
 
-        $rows = (clone $base)
+        $rows = (clone $decisionQb)
             ->select('DISTINCT e.decisionPreliminaire AS decision')
             ->getQuery()
             ->getArrayResult();
         $decisions = array_column($rows, 'decision');
 
+        // Dedicated builder for recruteur — only joins recruteur, never candidat
+        $recruteurQb = $this->createQueryBuilder('e')
+            ->leftJoin('e.recruteur', 'recruteur');
+        if ($scopedRecruteur !== null) {
+            $recruteurQb->andWhere('e.recruteur = :scopedRecruteur')
+                        ->setParameter('scopedRecruteur', $scopedRecruteur);
+        }
+
         /** @var UserNameDto[] $recruteurRows */
-        $recruteurRows = (clone $base)
+        $recruteurRows = (clone $recruteurQb)
             ->select('NEW ' . UserNameDto::class . '(recruteur.id, recruteur.firstName, recruteur.lastName)')
             ->andWhere('recruteur.id IS NOT NULL')
             ->groupBy('recruteur.id, recruteur.firstName, recruteur.lastName')
@@ -105,7 +111,7 @@ class EvaluationRepository extends ServiceEntityRepository
             $recruteurs[(string) $dto->id] = trim($dto->firstName . ' ' . $dto->lastName);
         }
 
-        $hasNullRecruteur = (clone $base)
+        $hasNullRecruteur = (clone $recruteurQb)
             ->select('COUNT(e.idEvaluation)')
             ->andWhere('e.recruteur IS NULL')
             ->getQuery()
@@ -114,8 +120,14 @@ class EvaluationRepository extends ServiceEntityRepository
             $recruteurs['none'] = 'Non assigne';
         }
 
-        /** @var UserNameDto[] $candidatRows */
-        $candidatRows = (clone $base)
+        $candidatQb = $this->createQueryBuilder('e')
+            ->leftJoin('e.candidat', 'candidat');
+        if ($scopedRecruteur !== null) {
+            $candidatQb->andWhere('e.recruteur = :scopedRecruteur')
+                       ->setParameter('scopedRecruteur', $scopedRecruteur);
+        }
+
+        $candidatRows = (clone $candidatQb)
             ->select('NEW ' . UserNameDto::class . '(candidat.id, candidat.firstName, candidat.lastName)')
             ->andWhere('candidat.id IS NOT NULL')
             ->groupBy('candidat.id, candidat.firstName, candidat.lastName')
@@ -127,7 +139,7 @@ class EvaluationRepository extends ServiceEntityRepository
             $candidats[(string) $dto->id] = trim($dto->firstName . ' ' . $dto->lastName);
         }
 
-        $hasNullCandidat = (clone $base)
+        $hasNullCandidat = (clone $candidatQb)
             ->select('COUNT(e.idEvaluation)')
             ->andWhere('e.candidat IS NULL')
             ->getQuery()
