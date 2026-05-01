@@ -66,8 +66,14 @@ class EvaluationRepository extends ServiceEntityRepository
             )->setParameter('needle', $needle);
         }
 
-        if (($filters['sort'] ?? 'dateCreation') !== 'score') {
-            $qb->orderBy('e.dateCreation', 'DESC');
+        if (($filters['sort'] ?? 'dateCreation') === 'score') {
+            // Join scoreCompetences to compute AVG per evaluation at DB level,
+            // so KnpPaginator applies LIMIT/OFFSET after the global sort.
+            $qb->leftJoin('e.scoreCompetences', 'sc_sort')
+               ->addSelect('AVG(CAST(sc_sort.noteAttribuee AS DECIMAL(10,2))) AS HIDDEN avgScore')
+               ->groupBy('e.idEvaluation, candidat.id, recruteur.id')
+               ->orderBy('avgScore', 'DESC')
+               ->addOrderBy('e.dateCreation', 'DESC');
         } else {
             $qb->orderBy('e.dateCreation', 'DESC');
         }
@@ -86,11 +92,11 @@ class EvaluationRepository extends ServiceEntityRepository
 
         $rows = (clone $decisionQb)
             ->select('DISTINCT e.decisionPreliminaire AS decision')
+            ->setMaxResults(50)
             ->getQuery()
             ->getArrayResult();
         $decisions = array_column($rows, 'decision');
 
-        // Dedicated builder for recruteur — only joins recruteur, never candidat
         $recruteurQb = $this->createQueryBuilder('e')
             ->leftJoin('e.recruteur', 'recruteur');
         if ($scopedRecruteur !== null) {

@@ -262,6 +262,7 @@ public function exportPdf(
     ->from(Evaluation::class, 'e')
     ->leftJoin('e.scoreCompetences', 'sc')
     ->orderBy('e.dateCreation', 'DESC')
+    ->setMaxResults(500)
     ->getQuery()
     ->getResult();
     $byCandidat = [];
@@ -407,23 +408,8 @@ public function exportPdf(
             $averageScoresById[$evaluation->getIdEvaluation()] = $this->statsService->computeAverageScore($evaluation);
         }
 
-        // Score sort: re-sort the current page in PHP (DB already filtered and paginated)
-        if ($sort === 'score') {
-            usort($evaluations, function (Evaluation $a, Evaluation $b) use ($averageScoresById): int {
-                $avgA = $averageScoresById[$a->getIdEvaluation()] ?? null;
-                $avgB = $averageScoresById[$b->getIdEvaluation()] ?? null;
-
-                $valA = $avgA === null ? -1 : $avgA;
-                $valB = $avgB === null ? -1 : $avgB;
-
-                $cmp = $valB <=> $valA; // DESC
-                if ($cmp !== 0) {
-                    return $cmp;
-                }
-
-                return $b->getDateCreation() <=> $a->getDateCreation();
-            });
-        }
+        // Score sort is handled at the DB level in createFilteredQueryBuilder,
+        // so KnpPaginator paginates the already-sorted full result set.
 
         // Fetch dropdown options from DB (no full table scan)
         $scopedRecruteur = $isAdmin ? null : $currentUser;
