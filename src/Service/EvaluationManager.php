@@ -9,15 +9,16 @@ class EvaluationManager
 
     public function validate(Evaluation $evaluation): bool
     {
-        if (empty(trim($evaluation->getCommentaireGlobal()))) {
+        $commentaire = $evaluation->getCommentaireGlobal() ?? '';
+        if (empty(trim($commentaire))) {
             throw new \InvalidArgumentException('Le commentaire global est obligatoire.');
         }
 
-        if (strlen(trim($evaluation->getCommentaireGlobal())) < 5) {
+        if (strlen(trim($commentaire)) < 5) {
             throw new \InvalidArgumentException('Le commentaire global doit contenir au moins 5 caracteres.');
         }
 
-        if (strlen($evaluation->getCommentaireGlobal()) > 5000) {
+        if (strlen($commentaire) > 5000) {
             throw new \InvalidArgumentException('Le commentaire global ne doit pas depasser 5000 caracteres.');
         }
 

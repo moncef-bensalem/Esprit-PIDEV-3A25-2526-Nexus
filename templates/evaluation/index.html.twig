@@ -350,6 +350,9 @@
     <div id="evaluationsCards">
         {% include 'evaluation/_cards.html.twig' with { evaluations: evaluations, averageScoresById: averageScoresById } %}
     </div>
+    <div id="paginationBar">
+        {% include 'evaluation/_pagination.html.twig' with { pagination: pagination } %}
+    </div>
     {% endif %}
 {% endif %}
 
@@ -388,6 +391,7 @@
 window.addEventListener('DOMContentLoaded', () => {
     const dataUrl = {{ path('evaluation_index_data')|json_encode|raw }};
     const cardsEl = document.getElementById('evaluationsCards');
+    const paginationBarEl = document.getElementById('paginationBar');
     const formEl = document.querySelector('form[action="{{ path('evaluation_index') }}"]');
     const resetBtn = document.getElementById('resetFiltersBtn');
 
@@ -395,6 +399,9 @@ window.addEventListener('DOMContentLoaded', () => {
     let deadlinesByDate = new Map();
     let pieChart = null;
     let hasShownDeadlineReminder = false;
+
+
+    let currentPage = {{ pagination is defined ? pagination.currentPageNumber : 1 }};
 
     function rebuildDeadlinesMap() {
         const map = new Map();
@@ -427,7 +434,6 @@ window.addEventListener('DOMContentLoaded', () => {
         return `${y}-${m}-${day}`;
     }
 
-    // JS getDay(): 0=Sun..6=Sat ; on veut 0=Lun..6=Dim
     function mondayIndex(d) {
         const js = d.getDay();
         return (js + 6) % 7;
@@ -452,7 +458,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const last = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
         const startOffset = mondayIndex(first);
 
-        // On affiche 6 semaines (42 cases) pour une grille stable
         const start = new Date(first);
         start.setDate(first.getDate() - startOffset);
 
@@ -500,7 +505,6 @@ window.addEventListener('DOMContentLoaded', () => {
             calEl.appendChild(dayEl);
         }
 
-        // Evite lint "unused" en gardant last variable utile si besoin plus tard
         void last;
     }
 
@@ -515,7 +519,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     renderMonth();
 
-    // Pie chart decisions preliminaires
     const ctx = document.getElementById('decisionPie');
     function getCountsFromEvaluations(list) {
         const c = { FAVORABLE: 0, DEFAVORABLE: 0, A_REVOIR: 0 };
@@ -585,7 +588,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setDashboardData(evaluations, getCountsFromEvaluations(evaluations));
 
     function formatFrDate(iso) {
-        // iso attendu: YYYY-MM-DD
         const parts = String(iso ?? '').split('-');
         if (parts.length !== 3) return String(iso ?? '');
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -636,15 +638,35 @@ window.addEventListener('DOMContentLoaded', () => {
     let abortController = null;
     let debounceTimer = null;
 
+    // Bind pagination button clicks inside a container (works after innerHTML replacement)
+    function bindPaginationButtons(container) {
+        if (!container) return;
+        container.querySelectorAll('.js-page-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const page = parseInt(btn.dataset.page, 10);
+                if (!Number.isNaN(page)) {
+                    currentPage = page;
+                    refreshWithAjax();
+                    // Scroll cards into view smoothly
+                    cardsEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    }
+
     async function refreshWithAjax() {
         if (!formEl || !cardsEl) return;
 
         const params = new URLSearchParams(new FormData(formEl));
+        params.set('page', String(currentPage));
+
         if (abortController) abortController.abort();
         abortController = new AbortController();
 
         try {
             cardsEl.style.opacity = '0.6';
+            if (paginationBarEl) paginationBarEl.style.opacity = '0.6';
+
             const res = await fetch(`${dataUrl}?${params.toString()}`, {
                 headers: { 'Accept': 'application/json' },
                 signal: abortController.signal
@@ -655,13 +677,30 @@ window.addEventListener('DOMContentLoaded', () => {
             if (typeof payload.cardsHtml === 'string') {
                 cardsEl.innerHTML = payload.cardsHtml;
             }
+            if (paginationBarEl && typeof payload.paginationHtml === 'string') {
+                paginationBarEl.innerHTML = payload.paginationHtml;
+                bindPaginationButtons(paginationBarEl);
+            }
+
+            // Keep currentPage in sync with what the server actually returned
+            if (typeof payload.currentPage === 'number') {
+                currentPage = payload.currentPage;
+            }
+
             setDashboardData(payload.evaluations, payload.counts);
+
+            // Update the browser URL without a reload so back/refresh works
+            try {
+                const urlParams = new URLSearchParams(params);
+                window.history.replaceState({}, '', `${formEl.action}?${urlParams.toString()}`);
+            } catch (_) { /* ignore */ }
+
         } catch (e) {
             if (e && e.name === 'AbortError') return;
-            // En cas d'erreur, on garde l'UI actuelle sans bloquer l'utilisateur
             console.error(e);
         } finally {
             cardsEl.style.opacity = '1';
+            if (paginationBarEl) paginationBarEl.style.opacity = '1';
         }
     }
 
@@ -684,12 +723,11 @@ window.addEventListener('DOMContentLoaded', () => {
         if (recruteur) recruteur.value = '';
         if (candidat) candidat.value = '';
 
-        // On remet aussi l'URL "propre" (sans querystring) même si on reste en AJAX.
+        currentPage = 1;
+
         try {
             window.history.replaceState({}, '', formEl.action);
-        } catch (e) {
-            // ignore
-        }
+        } catch (_) { /* ignore */ }
 
         scheduleRefresh();
     }
@@ -697,13 +735,17 @@ window.addEventListener('DOMContentLoaded', () => {
     if (formEl) {
         formEl.addEventListener('submit', (ev) => {
             ev.preventDefault();
+            currentPage = 1; // filter change always goes back to page 1
             scheduleRefresh();
         });
-        formEl.addEventListener('input', scheduleRefresh);
-        formEl.addEventListener('change', scheduleRefresh);
+        formEl.addEventListener('input', () => { currentPage = 1; scheduleRefresh(); });
+        formEl.addEventListener('change', () => { currentPage = 1; scheduleRefresh(); });
     }
 
     resetBtn?.addEventListener('click', resetFiltersToDefault);
+
+    // Wire up the server-rendered pagination buttons on initial load
+    bindPaginationButtons(paginationBarEl);
 });
 </script>
 {% endblock %}

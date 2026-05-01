@@ -70,7 +70,7 @@
             "endroid/installer": true
         },
         "platform": {
-            "php": "8.1.10"
+            "php": "8.2.12"
         },
         "sort-packages": true
     },
@@ -116,6 +116,7 @@
         }
     },
     "require-dev": {
+        "ahmed-bhs/doctrine-doctor": "1.1",
         "phpunit/phpunit": "^10.5",
         "symfony/browser-kit": "6.4.*",
         "symfony/css-selector": "6.4.*",

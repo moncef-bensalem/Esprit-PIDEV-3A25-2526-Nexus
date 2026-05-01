@@ -1,0 +1,18 @@
+{% if pagination is defined and pagination.pageCount > 1 %}
+<div class="d-flex justify-content-center align-items-center gap-2 py-3 px-4" style="flex-wrap:wrap;">
+    {% if pagination.currentPageNumber > 1 %}
+        <button type="button" class="btn-nav js-page-btn" data-page="{{ pagination.currentPageNumber - 1 }}" aria-label="Page precedente">
+            &laquo; Precedent
+        </button>
+    {% endif %}
+    <span style="color:#e2e8f0; font-size:.9rem;">
+        Page {{ pagination.currentPageNumber }} / {{ pagination.pageCount }}
+        &nbsp;({{ pagination.totalItemCount }} evaluations)
+    </span>
+    {% if pagination.currentPageNumber < pagination.pageCount %}
+        <button type="button" class="btn-nav js-page-btn" data-page="{{ pagination.currentPageNumber + 1 }}" aria-label="Page suivante">
+            Suivant &raquo;
+        </button>
+    {% endif %}
+</div>
+{% endif %}

@@ -49,7 +49,7 @@ class EvaluationStatsService
                 'reviewDeadline' => $e->getReviewDeadline()?->format('Y-m-d'),
                 'url'            => $this->urlGenerator->generate('evaluation_show', ['idEvaluation' => $id]),
                 'avgScore'       => $averageScoresById[$id] ?? null,
-                'dateCreation'   => $e->getDateCreation()->format('Y-m-d H:i'),
+                'dateCreation'   => $e->getDateCreation()?->format('Y-m-d H:i'),
             ];
         }
 

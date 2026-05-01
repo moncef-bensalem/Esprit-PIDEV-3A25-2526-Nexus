@@ -6,10 +6,12 @@ use App\Entity\Evaluation;
 use App\Entity\ScoreCompetence;
 use App\Entity\User;
 use App\Form\EvaluationType;
+use App\Repository\EvaluationRepository;
 use App\Security\EvaluationVoter;
 use App\Service\EvaluationDecisionMailer;
 use App\Service\EvaluationStatsService;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,10 +33,10 @@ class EvaluationController extends AbstractController
     }
 
     #[Route('', name: 'evaluation_index', methods: ['GET'])]
-    public function index(Request $request, EntityManagerInterface $entityManager): Response
+    public function index(Request $request, EntityManagerInterface $entityManager, EvaluationRepository $evaluationRepository, PaginatorInterface $paginator): Response
     {
         $user = $this->requireUser();
-        $data = $this->buildIndexData($request, $entityManager, $user, $this->isGranted('ROLE_ADMIN'));
+        $data = $this->buildIndexData($request, $entityManager, $evaluationRepository, $paginator, $user, $this->isGranted('ROLE_ADMIN'));
         $evaluationsJson = $this->statsService->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
 
         return $this->render('evaluation/index.html.twig', [
@@ -49,14 +51,15 @@ class EvaluationController extends AbstractController
             'recruteurOptions' => $data['recruteurOptions'],
             'candidatOptions' => $data['candidatOptions'],
             'evaluationsJson' => json_encode($evaluationsJson, JSON_THROW_ON_ERROR),
+            'pagination' => $data['pagination'],
         ]);
     }
 
     #[Route('/data', name: 'evaluation_index_data', methods: ['GET'])]
-    public function indexData(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function indexData(Request $request, EntityManagerInterface $entityManager, EvaluationRepository $evaluationRepository, PaginatorInterface $paginator): JsonResponse
     {
         $user = $this->requireUser();
-        $data = $this->buildIndexData($request, $entityManager, $user, $this->isGranted('ROLE_ADMIN'));
+        $data = $this->buildIndexData($request, $entityManager, $evaluationRepository, $paginator, $user, $this->isGranted('ROLE_ADMIN'));
 
         $evaluationsJson = $this->statsService->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
 
@@ -73,10 +76,19 @@ class EvaluationController extends AbstractController
             'averageScoresById' => $data['averageScoresById'],
         ]);
 
+        $pagination = $data['pagination'];
+        $paginationHtml = $this->renderView('evaluation/_pagination.html.twig', [
+            'pagination' => $pagination,
+        ]);
+
         return $this->json([
-            'evaluations' => $evaluationsJson,
-            'counts' => $counts,
-            'cardsHtml' => $cardsHtml,
+            'evaluations'   => $evaluationsJson,
+            'counts'        => $counts,
+            'cardsHtml'     => $cardsHtml,
+            'paginationHtml' => $paginationHtml,
+            'currentPage'   => $pagination->getCurrentPageNumber(),
+            'pageCount'     => $pagination->getPageCount(),
+            'totalItems'    => $pagination->getTotalItemCount(),
         ]);
     }
 
@@ -316,11 +328,15 @@ public function exportPdf(
 
     private function getCandidateUsers(EntityManagerInterface $entityManager): array
     {
-        $users = $entityManager->getRepository(User::class)->findAll();
-
-        return array_values(array_filter($users, static function (User $user): bool {
-            return in_array('ROLE_CANDIDAT', $user->getRoles(), true);
-        }));
+        return $entityManager->createQueryBuilder()
+            ->select('u')
+            ->from(User::class, 'u')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_CANDIDAT%')
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     private function requireUser(): User
@@ -349,10 +365,13 @@ public function exportPdf(
         return $this->statsService->computeAverageScore($evaluation);
     }
 
-    private function buildIndexData(Request $request, EntityManagerInterface $entityManager, User $currentUser, bool $isAdmin): array
+    private function buildIndexData(Request $request, EntityManagerInterface $entityManager, EvaluationRepository $evaluationRepository, PaginatorInterface $paginator, User $currentUser, bool $isAdmin): array
     {
         $q = trim((string) $request->query->get('q', ''));
         $sort = (string) $request->query->get('sort', 'dateCreation'); // 'score' | 'dateCreation'
+        $page = max(1, (int) $request->query->get('page', 1));
+        /** @var int $pageSize */
+        $pageSize = 50;
 
         $decisionFilter = (string) $request->query->get('decision', '');
         $recruteurFilter = (string) $request->query->get('recruteur', '');
@@ -362,85 +381,34 @@ public function exportPdf(
             $recruteurFilter = (string) $currentUser->getId();
         }
 
-        $criteria = [];
+        $filters = [
+            'q'          => $q,
+            'sort'       => $sort,
+            'decision'   => $decisionFilter,
+            'candidatId' => $candidatFilter,
+        ];
+
+        // Non-admin users are scoped to their own evaluations via the recruteur entity
         if (!$isAdmin) {
-            $criteria['recruteur'] = $currentUser;
+            $filters['recruteur'] = $currentUser;
+        } elseif ($recruteurFilter !== '') {
+            $filters['recruteurId'] = $recruteurFilter;
         }
 
-        $evaluationsAll = $entityManager->getRepository(Evaluation::class)->findBy($criteria, ['dateCreation' => 'DESC']);
+        $qb = $evaluationRepository->createFilteredQueryBuilder($filters);
+
+        // Use KnpPaginator to apply LIMIT/OFFSET at the DB level
+        $pagination = $paginator->paginate($qb, $page, $pageSize);
+
+        /** @var Evaluation[] $evaluations */
+        $evaluations = iterator_to_array($pagination);
 
         $averageScoresById = [];
-        foreach ($evaluationsAll as $evaluation) {
+        foreach ($evaluations as $evaluation) {
             $averageScoresById[$evaluation->getIdEvaluation()] = $this->statsService->computeAverageScore($evaluation);
         }
 
-        $decisionOptions = [];
-        $recruteurOptions = [];
-        $candidatOptions = [];
-        foreach ($evaluationsAll as $evaluation) {
-            $decisionOptions[$evaluation->getDecisionPreliminaire()] = true;
-
-            if ($evaluation->getRecruteur() === null) {
-                $recruteurOptions['none'] = 'Non assigne';
-            } else {
-                $recruteurOptions[(string) $evaluation->getRecruteur()->getId()] = $evaluation->getRecruteur()->getFirstName().' '.$evaluation->getRecruteur()->getLastName();
-            }
-
-            if ($evaluation->getCandidat() === null) {
-                $candidatOptions['none'] = 'Non assigne';
-            } else {
-                $candidatOptions[(string) $evaluation->getCandidat()->getId()] = $evaluation->getCandidat()->getFirstName().' '.$evaluation->getCandidat()->getLastName();
-            }
-        }
-
-        $needle = $q !== '' ? mb_strtolower($q) : '';
-
-        $evaluations = array_values(array_filter($evaluationsAll, function (Evaluation $evaluation) use ($needle, $decisionFilter, $recruteurFilter, $candidatFilter): bool {
-            if ($decisionFilter !== '' && $evaluation->getDecisionPreliminaire() !== $decisionFilter) {
-                return false;
-            }
-
-            if ($recruteurFilter !== '') {
-                if ($recruteurFilter === 'none' && $evaluation->getRecruteur() !== null) {
-                    return false;
-                }
-                if ($recruteurFilter !== 'none') {
-                    $recruteur = $evaluation->getRecruteur();
-                    if ($recruteur === null || (string) $recruteur->getId() !== $recruteurFilter) {
-                        return false;
-                    }
-                }
-            }
-
-            if ($candidatFilter !== '') {
-                if ($candidatFilter === 'none' && $evaluation->getCandidat() !== null) {
-                    return false;
-                }
-                if ($candidatFilter !== 'none') {
-                    $candidat = $evaluation->getCandidat();
-                    if ($candidat === null || (string) $candidat->getId() !== $candidatFilter) {
-                        return false;
-                    }
-                }
-            }
-
-            if ($needle !== '') {
-                $candidateLabel = $evaluation->getCandidat() ? ($evaluation->getCandidat()->getFirstName().' '.$evaluation->getCandidat()->getLastName()) : 'Non assigne';
-                $recruteurLabel = $evaluation->getRecruteur() ? ($evaluation->getRecruteur()->getFirstName().' '.$evaluation->getRecruteur()->getLastName()) : 'Non assigne';
-                $haystack = $evaluation->getIdEvaluation()
-                    .' '.$candidateLabel
-                    .' '.$recruteurLabel
-                    .' '.$evaluation->getDecisionPreliminaire()
-                    .' '.$evaluation->getCommentaireGlobal();
-
-                if (mb_stripos($haystack, $needle) === false) {
-                    return false;
-                }
-            }
-
-            return true;
-        }));
-
+        // Score sort: re-sort the current page in PHP (DB already filtered and paginated)
         if ($sort === 'score') {
             usort($evaluations, function (Evaluation $a, Evaluation $b) use ($averageScoresById): int {
                 $avgA = $averageScoresById[$a->getIdEvaluation()] ?? null;
@@ -454,25 +422,26 @@ public function exportPdf(
                     return $cmp;
                 }
 
-                return $b->getDateCreation() <=> $a->getDateCreation(); // tie-break
-            });
-        } else {
-            usort($evaluations, static function (Evaluation $a, Evaluation $b): int {
-                return $b->getDateCreation() <=> $a->getDateCreation(); // DESC
+                return $b->getDateCreation() <=> $a->getDateCreation();
             });
         }
 
+        // Fetch dropdown options from DB (no full table scan)
+        $scopedRecruteur = $isAdmin ? null : $currentUser;
+        $filterOptions = $evaluationRepository->findFilterOptions($scopedRecruteur);
+
         return [
-            'evaluations' => $evaluations,
+            'evaluations'     => $evaluations,
             'averageScoresById' => $averageScoresById,
-            'q' => $q,
-            'sort' => $sort,
-            'decision' => $decisionFilter,
-            'recruteur' => $recruteurFilter,
-            'candidat' => $candidatFilter,
-            'decisionOptions' => array_keys($decisionOptions),
-            'recruteurOptions' => $recruteurOptions,
-            'candidatOptions' => $candidatOptions,
+            'q'               => $q,
+            'sort'            => $sort,
+            'decision'        => $decisionFilter,
+            'recruteur'       => $recruteurFilter,
+            'candidat'        => $candidatFilter,
+            'decisionOptions' => $filterOptions['decisions'],
+            'recruteurOptions' => $filterOptions['recruteurs'],
+            'candidatOptions' => $filterOptions['candidats'],
+            'pagination'      => $pagination,
         ];
     }
 

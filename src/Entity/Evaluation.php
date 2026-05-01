@@ -11,7 +11,7 @@ use App\Validator\NoHateSpeech;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: \App\Repository\EvaluationRepository::class)]
 #[ORM\Table(name: "evaluation")]
 class Evaluation
 {
@@ -22,7 +22,7 @@ class Evaluation
 
     #[ORM\Column(type: "datetime")]
     #[Assert\NotNull(message: "La date de creation est obligatoire.")]
-    private \DateTimeInterface $dateCreation;
+    private ?\DateTimeInterface $dateCreation = null;
 
     #[ORM\Column(type: "text")]
     #[Assert\NotBlank(message: "Le commentaire global est obligatoire.")]
@@ -33,7 +33,7 @@ class Evaluation
         minMessage: "Le commentaire global doit contenir au moins {{ limit }} caracteres.",
         maxMessage: "Le commentaire global ne doit pas depasser {{ limit }} caracteres."
     )]
-    private string $commentaireGlobal;
+    private ?string $commentaireGlobal = null;
 
     #[ORM\Column(type: "string", length: 255)]
     #[Assert\NotBlank(message: "La decision preliminaire est obligatoire.")]
@@ -41,13 +41,14 @@ class Evaluation
         choices: ["FAVORABLE", "DEFAVORABLE", "A_REVOIR"],
         message: "La decision preliminaire est invalide."
     )]
-    private string $decisionPreliminaire;
+    private ?string $decisionPreliminaire = null;
 
     #[ORM\Column(type: "date", nullable: true)]
     private ?\DateTimeInterface $reviewDeadline = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsCandidat")]
-    #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
+    #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: false, onDelete: "CASCADE")]
+    #[Assert\NotNull(message: "Le candidat est obligatoire.")]
     private ?User $candidat = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsRecruteur")]
@@ -74,7 +75,7 @@ class Evaluation
         return $this;
     }
 
-    public function getDateCreation(): \DateTimeInterface
+    public function getDateCreation(): ?\DateTimeInterface
     {
         return $this->dateCreation;
     }
@@ -89,7 +90,7 @@ class Evaluation
         return $this;
     }
 
-    public function getCommentaireGlobal(): string
+    public function getCommentaireGlobal(): ?string
     {
         return $this->commentaireGlobal;
     }
@@ -100,7 +101,7 @@ class Evaluation
         return $this;
     }
 
-    public function getDecisionPreliminaire(): string
+    public function getDecisionPreliminaire(): ?string
     {
         return $this->decisionPreliminaire;
     }
