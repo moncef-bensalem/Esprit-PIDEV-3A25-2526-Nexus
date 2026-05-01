@@ -7,11 +7,6 @@ use App\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
-/**
- * VIEW : ROLE_ADMIN ou recruteur proprietaire.
- * EDIT : uniquement le recruteur proprietaire (RH et admin).
- * DELETE : ROLE_ADMIN ou recruteur proprietaire.
- */
 class EvaluationVoter extends Voter
 {
     public const VIEW = 'EVALUATION_VIEW';
