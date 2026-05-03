@@ -22,7 +22,6 @@ class Evaluation
     private ?int $idEvaluation = null;
 
     #[ORM\Column(type: "datetime")]
-    #[Assert\NotNull(message: "La date de creation est obligatoire.")]
     private \DateTimeInterface $dateCreation;
 
     #[ORM\Column(type: "text")]
@@ -87,16 +86,6 @@ class Evaluation
     public function getDateCreation(): \DateTimeInterface
     {
         return $this->dateCreation;
-    }
-
-    public function setDateCreation(\DateTimeInterface $value): static
-    {
-        if ($value instanceof \DateTimeImmutable) {
-            $value = \DateTime::createFromImmutable($value);
-        }
-
-        $this->dateCreation = $value;
-        return $this;
     }
 
     public function getCommentaireGlobal(): string

@@ -27,7 +27,10 @@ class ScoreCompetenceResolverServiceTest extends TestCase
         $evaluation->setIdEvaluation($id);
         $evaluation->setCommentaireGlobal('Commentaire valide pour le test.');
         $evaluation->setDecisionPreliminaire('FAVORABLE');
-        $evaluation->setDateCreation(new \DateTime('2026-04-01 10:00:00'));
+
+        $ref = new \ReflectionProperty(Evaluation::class, 'dateCreation');
+        $ref->setAccessible(true);
+        $ref->setValue($evaluation, new \DateTime('2026-04-01 10:00:00'));
 
         return $evaluation;
     }
