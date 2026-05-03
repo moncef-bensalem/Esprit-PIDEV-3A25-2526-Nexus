@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UserEventRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\UuidV7;
 use App\Entity\Traits\BlameableTrait;
 use App\Entity\Traits\TimestampableTrait;
 
@@ -20,9 +21,8 @@ class UserEvent
     public const TYPE_PASSWORD_CHANGED = 'PASSWORD_CHANGED';
 
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    private int $id;
+    #[ORM\Column(type: 'uuid')]
+    private UuidV7 $id;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -41,13 +41,14 @@ class UserEvent
 
     public function __construct(User $user, string $type)
     {
+        $this->id = new UuidV7();
         $this->user = $user;
         $this->type = $type;
         $this->createdAt = new \DateTime();
         $this->createdBy = $user;
     }
 
-    public function getId(): int
+    public function getId(): UuidV7
     {
         return $this->id;
     }
