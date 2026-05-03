@@ -74,7 +74,7 @@ class ScoreCompetenceResolverServiceTest extends TestCase
         $this->expectExceptionMessage('Ce score competence n appartient pas a cette evaluation.');
 
         $evaluation = $this->makeEvaluation(5);
-        $score      = $this->makeScore(1, null); // pas d'évaluation
+        $score      = $this->makeScore(1, null);
 
         $this->service->ensureSameEvaluation($evaluation, $score);
     }

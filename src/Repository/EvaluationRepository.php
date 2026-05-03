@@ -74,7 +74,7 @@ class EvaluationRepository extends ServiceEntityRepository
                 'LOWER(e.decisionPreliminaire) LIKE :needle',
                 'LOWER(e.commentaireGlobal) LIKE :needle'
             );
-            // Also match by numeric ID when the query is a pure integer
+            
             $trimmedQ = trim($filters['q']);
             if (ctype_digit($trimmedQ)) {
                 $orX->add('e.idEvaluation = :exactId');
@@ -84,8 +84,6 @@ class EvaluationRepository extends ServiceEntityRepository
         }
 
         if ($sortByScore) {
-            // Use a correlated subquery so we never need GROUP BY on the main query.
-            // This avoids ONLY_FULL_GROUP_BY errors while still ordering by average score.
             $qb->addSelect(
                     '(SELECT AVG(sc2.noteAttribuee + 0) FROM App\Entity\ScoreCompetence sc2 WHERE sc2.evaluation = e) AS HIDDEN avgScore'
                 )

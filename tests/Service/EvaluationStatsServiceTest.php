@@ -107,7 +107,6 @@ class EvaluationStatsServiceTest extends TestCase
 
         $result = $this->service->computeAverageScore($evaluation);
 
-        // 'abc' ignoré → moyenne de 10 et 20 = 15
         $this->assertEqualsWithDelta(15.0, $result, 0.001);
     }
 
