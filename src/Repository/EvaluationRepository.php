@@ -24,10 +24,17 @@ class EvaluationRepository extends ServiceEntityRepository
      */
     public function createFilteredQueryBuilder(array $filters = []): QueryBuilder
     {
+        $sortByScore = ($filters['sort'] ?? 'dateCreation') === 'score';
+
         $qb = $this->createQueryBuilder('e')
             ->leftJoin('e.candidat', 'candidat')
             ->leftJoin('e.recruteur', 'recruteur')
             ->addSelect('candidat', 'recruteur');
+
+        if (!$sortByScore) {
+            $qb->leftJoin('e.scoreCompetences', 'sc')
+               ->addSelect('sc');
+        }
 
         if (!empty($filters['recruteur']) && $filters['recruteur'] instanceof User) {
             $qb->andWhere('e.recruteur = :scopedRecruteur')
@@ -59,23 +66,29 @@ class EvaluationRepository extends ServiceEntityRepository
 
         if (!empty($filters['q'])) {
             $needle = '%' . mb_strtolower($filters['q']) . '%';
-            $qb->andWhere(
-                $qb->expr()->orX(
-                    'LOWER(candidat.firstName) LIKE :needle',
-                    'LOWER(candidat.lastName) LIKE :needle',
-                    'LOWER(recruteur.firstName) LIKE :needle',
-                    'LOWER(recruteur.lastName) LIKE :needle',
-                    'LOWER(e.decisionPreliminaire) LIKE :needle',
-                    'LOWER(e.commentaireGlobal) LIKE :needle',
-                    'CAST(e.idEvaluation AS TEXT) LIKE :needle'
-                )
-            )->setParameter('needle', $needle);
+            $orX = $qb->expr()->orX(
+                'LOWER(candidat.firstName) LIKE :needle',
+                'LOWER(candidat.lastName) LIKE :needle',
+                'LOWER(recruteur.firstName) LIKE :needle',
+                'LOWER(recruteur.lastName) LIKE :needle',
+                'LOWER(e.decisionPreliminaire) LIKE :needle',
+                'LOWER(e.commentaireGlobal) LIKE :needle'
+            );
+            // Also match by numeric ID when the query is a pure integer
+            $trimmedQ = trim($filters['q']);
+            if (ctype_digit($trimmedQ)) {
+                $orX->add('e.idEvaluation = :exactId');
+                $qb->setParameter('exactId', (int) $trimmedQ);
+            }
+            $qb->andWhere($orX)->setParameter('needle', $needle);
         }
 
-        if (($filters['sort'] ?? 'dateCreation') === 'score') {
-            $qb->leftJoin('e.scoreCompetences', 'sc_sort')
-               ->addSelect('AVG(CAST(sc_sort.noteAttribuee AS DECIMAL(10,2))) AS HIDDEN avgScore')
-               ->groupBy('e.idEvaluation, candidat.id, recruteur.id')
+        if ($sortByScore) {
+            // Use a correlated subquery so we never need GROUP BY on the main query.
+            // This avoids ONLY_FULL_GROUP_BY errors while still ordering by average score.
+            $qb->addSelect(
+                    '(SELECT AVG(sc2.noteAttribuee + 0) FROM App\Entity\ScoreCompetence sc2 WHERE sc2.evaluation = e) AS HIDDEN avgScore'
+                )
                ->orderBy('avgScore', 'DESC')
                ->addOrderBy('e.dateCreation', 'DESC');
         } else {

@@ -367,7 +367,7 @@ public function exportPdf(
     private function buildIndexData(Request $request, EntityManagerInterface $entityManager, EvaluationRepository $evaluationRepository, PaginatorInterface $paginator, User $currentUser, bool $isAdmin): array
     {
         $q = trim((string) $request->query->get('q', ''));
-        $sort = (string) $request->query->get('sort', 'dateCreation'); // 'score' | 'dateCreation'
+        $sort = (string) $request->query->get('orderBy', 'dateCreation'); // 'score' | 'dateCreation'
         $page = max(1, (int) $request->query->get('page', 1));
         /** @var int $pageSize */
         $pageSize = 50;

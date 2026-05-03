@@ -265,7 +265,7 @@
 
 {% if not is_candidate_only|default(false) %}
 <div class="flash-wrap">
-    <form method="get" action="{{ path('evaluation_index') }}" class="row g-2 align-items-end">
+    <form id="evaluationFiltersForm" method="get" action="{{ path('evaluation_index') }}" class="row g-2 align-items-end">
         <div class="col-md-4">
             <label class="form-label text-white-50 mb-1">Recherche</label>
             <input type="text" name="q" class="form-control" placeholder="Candidat, recruteur, decision, commentaire..." value="{{ q }}">
@@ -273,7 +273,7 @@
 
         <div class="col-md-2">
             <label class="form-label text-white-50 mb-1">Tri</label>
-            <select name="sort" class="form-select">
+            <select name="orderBy" class="form-select">
                 <option value="score" {{ sort == 'score' ? 'selected' : '' }}>Trier par score</option>
                 <option value="dateCreation" {{ sort == 'dateCreation' ? 'selected' : '' }}>Trier par date</option>
             </select>
@@ -331,10 +331,10 @@
     {% endfor %}
 </div>
 
-{% if evaluations is empty %}
-    <div class="empty-state">{% if is_candidate_only|default(false) %}Aucune decision preliminaire enregistree pour votre compte.{% else %}Aucune evaluation trouvee.{% endif %}</div>
-{% else %}
-    {% if is_candidate_only|default(false) %}
+{% if is_candidate_only|default(false) %}
+    {% if evaluations is empty %}
+        <div class="empty-state">Aucune decision preliminaire enregistree pour votre compte.</div>
+    {% else %}
     <div class="cards-grid">
         {% for evaluation in evaluations %}
             {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
@@ -346,14 +346,14 @@
             </div>
         {% endfor %}
     </div>
-    {% else %}
+    {% endif %}
+{% else %}
     <div id="evaluationsCards">
         {% include 'evaluation/_cards.html.twig' with { evaluations: evaluations, averageScoresById: averageScoresById } %}
     </div>
     <div id="paginationBar">
         {% include 'evaluation/_pagination.html.twig' with { pagination: pagination } %}
     </div>
-    {% endif %}
 {% endif %}
 
 {# Reminder modal (closest reviewDeadline) #}
@@ -392,7 +392,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const dataUrl = {{ path('evaluation_index_data')|json_encode|raw }};
     const cardsEl = document.getElementById('evaluationsCards');
     const paginationBarEl = document.getElementById('paginationBar');
-    const formEl = document.querySelector('form[action="{{ path('evaluation_index') }}"]');
+    const formEl = document.getElementById('evaluationFiltersForm');
     const resetBtn = document.getElementById('resetFiltersBtn');
 
     let evaluations = {{ evaluationsJson|raw }};
@@ -655,7 +655,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     async function refreshWithAjax() {
-        if (!formEl || !cardsEl) return;
+        if (!formEl) return;
 
         const params = new URLSearchParams(new FormData(formEl));
         params.set('page', String(currentPage));
@@ -664,7 +664,7 @@ window.addEventListener('DOMContentLoaded', () => {
         abortController = new AbortController();
 
         try {
-            cardsEl.style.opacity = '0.6';
+            if (cardsEl) cardsEl.style.opacity = '0.6';
             if (paginationBarEl) paginationBarEl.style.opacity = '0.6';
 
             const res = await fetch(`${dataUrl}?${params.toString()}`, {
@@ -674,7 +674,7 @@ window.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const payload = await res.json();
 
-            if (typeof payload.cardsHtml === 'string') {
+            if (cardsEl && typeof payload.cardsHtml === 'string') {
                 cardsEl.innerHTML = payload.cardsHtml;
             }
             if (paginationBarEl && typeof payload.paginationHtml === 'string') {
@@ -697,9 +697,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
         } catch (e) {
             if (e && e.name === 'AbortError') return;
-            console.error(e);
+            console.error('AJAX refresh error:', e);
         } finally {
-            cardsEl.style.opacity = '1';
+            if (cardsEl) cardsEl.style.opacity = '1';
             if (paginationBarEl) paginationBarEl.style.opacity = '1';
         }
     }
@@ -712,7 +712,7 @@ window.addEventListener('DOMContentLoaded', () => {
     function resetFiltersToDefault() {
         if (!formEl) return;
         const q = formEl.querySelector('input[name="q"]');
-        const sort = formEl.querySelector('select[name="sort"]');
+        const sort = formEl.querySelector('select[name="orderBy"]');
         const decision = formEl.querySelector('select[name="decision"]');
         const recruteur = formEl.querySelector('select[name="recruteur"]');
         const candidat = formEl.querySelector('select[name="candidat"]');
