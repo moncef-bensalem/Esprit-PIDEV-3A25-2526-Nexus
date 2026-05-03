@@ -88,6 +88,16 @@ class Evaluation
         return $this->dateCreation;
     }
 
+    protected function setDateCreation(\DateTimeInterface $value): static
+    {
+        if ($value instanceof \DateTimeImmutable) {
+            $value = \DateTime::createFromImmutable($value);
+        }
+
+        $this->dateCreation = $value;
+        return $this;
+    }
+
     public function getCommentaireGlobal(): string
     {
         return $this->commentaireGlobal;
