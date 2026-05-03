@@ -51,9 +51,14 @@ class ReviewController extends AbstractController
     #[Route('/new/{id}', name: 'review_new', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
     public function new(Request $request, Planification $planification, EntityManagerInterface $em, PushNotificationService $push): Response
     {
-        $review = new Review();
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            throw $this->createAccessDeniedException('Vous devez être connecté pour laisser un avis.');
+        }
+
+        $review = new Review($user);
         $review->setPlanification($planification);
-        $review->setCreatedAt(new \DateTime());
 
         $form = $this->createForm(ReviewType::class, $review);
         $form->handleRequest($request);
@@ -107,7 +112,7 @@ class ReviewController extends AbstractController
     #[Route('/{id}/delete', name: 'review_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function delete(Request $request, Review $review, EntityManagerInterface $em): Response
     {
-        if ($this->isCsrfTokenValid('delete_review' . $review->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete_review' . $review->getId(), $request->request->getString('_token'))) {
             $em->remove($review);
             $em->flush();
             $this->addFlash('success', 'Avis supprimé.');

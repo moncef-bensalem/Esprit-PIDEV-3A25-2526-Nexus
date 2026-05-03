@@ -7,6 +7,7 @@ use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
+/** @extends ServiceEntityRepository<Planification> */
 class PlanificationRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +15,7 @@ class PlanificationRepository extends ServiceEntityRepository
         parent::__construct($registry, Planification::class);
     }
 
+    /** @return Planification[] */
     public function findByUser(User $user): array
     {
         return $this->createQueryBuilder('p')

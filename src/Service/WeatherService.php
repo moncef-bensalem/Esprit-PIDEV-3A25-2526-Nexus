@@ -30,7 +30,7 @@ class WeatherService
      *   is_forecast: bool,
      *   unavailable: bool,
      *   message: string|null
-     * }|null  null when no location and no fallback
+     * }|array{unavailable: true, message: string, city: string}|null
      */
     public function getWeatherForEvent(
         \DateTimeInterface $eventDate,
@@ -71,6 +71,9 @@ class WeatherService
 
     // ── Private helpers ──────────────────────────────────────────────────────
 
+    /**
+     * @return array{city: string, temp: float, feels_like: float, condition: string, icon: string, icon_url: string, humidity: int, wind_speed: float, is_forecast: bool, unavailable: false, message: null}
+     */
     private function fetchCurrent(string $city): array
     {
         $data = $this->get('/weather', ['q' => $city]);
@@ -78,6 +81,9 @@ class WeatherService
         return $this->normalize($data['main'], $data['weather'][0], $data['wind'], $city, false);
     }
 
+    /**
+     * @return array{city: string, temp: float, feels_like: float, condition: string, icon: string, icon_url: string, humidity: int, wind_speed: float, is_forecast: bool, unavailable: false, message: null}|array{unavailable: true, message: string, city: string}
+     */
     private function fetchForecast(string $city, \DateTimeInterface $day, ?\DateTimeInterface $time): array
     {
         $data = $this->get('/forecast', ['q' => $city, 'cnt' => 40]);
@@ -108,6 +114,10 @@ class WeatherService
         return $this->normalize($best['main'], $best['weather'][0], $best['wind'], $city, true);
     }
 
+    /**
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
     private function get(string $path, array $params = []): array
     {
         $params += [
@@ -137,6 +147,12 @@ class WeatherService
         return $response->toArray();
     }
 
+    /**
+     * @param array<string, mixed> $main
+     * @param array<string, mixed> $weather
+     * @param array<string, mixed> $wind
+     * @return array{city: string, temp: float, feels_like: float, condition: string, icon: string, icon_url: string, humidity: int, wind_speed: float, is_forecast: bool, unavailable: false, message: null}
+     */
     private function normalize(array $main, array $weather, array $wind, string $city, bool $isForecast): array
     {
         return [
@@ -176,7 +192,7 @@ class WeatherService
         }
 
         // 2. Split on common separators and skip street-number-like tokens
-        $parts = preg_split('/[,\-\/]/', $location);
+        $parts = preg_split('/[,\-\/]/', $location) ?: [];
         foreach ($parts as $part) {
             $part = trim($part);
             // Skip if it's empty, purely numeric, a postal code, or starts with a number

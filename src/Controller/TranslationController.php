@@ -27,9 +27,9 @@ class TranslationController extends AbstractController
     #[Route('/translate', name: 'translate', methods: ['POST'])]
     public function translate(Request $request): JsonResponse
     {
-        $text       = trim($request->request->get('text', ''));
-        $targetLang = $request->request->get('target_lang', 'en');
-        $sourceLang = $request->request->get('source_lang', 'fr');
+        $text       = trim($request->request->getString('text'));
+        $targetLang = $request->request->getString('target_lang', 'en');
+        $sourceLang = $request->request->getString('source_lang', 'fr');
 
         if (empty($text)) {
             return $this->json(['error' => 'Le texte est vide.'], Response::HTTP_BAD_REQUEST);

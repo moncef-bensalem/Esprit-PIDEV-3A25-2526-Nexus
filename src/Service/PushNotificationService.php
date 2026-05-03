@@ -54,6 +54,7 @@ class PushNotificationService
         $this->send($payload);
     }
 
+    /** @param array<string, mixed> $payload */
     private function send(array $payload): void
     {
         try {

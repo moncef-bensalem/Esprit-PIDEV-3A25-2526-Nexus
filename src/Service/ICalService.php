@@ -61,8 +61,8 @@ class ICalService
 
             $event->setOccurrence(
                 new TimeSpan(
-                    new DateTime($dtStart, false),
-                    new DateTime($dtEnd, false)
+                    new DateTime($dtStart ?: new \DateTime('now'), false),
+                    new DateTime($dtEnd   ?: new \DateTime('now'), false)
                 )
             );
         }

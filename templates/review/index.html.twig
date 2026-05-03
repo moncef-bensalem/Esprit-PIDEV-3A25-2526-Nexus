@@ -896,6 +896,7 @@
         <button class="suggestion-chip">Quels sont les statuts ?</button>
         <button class="suggestion-chip">Y a-t-il des avis négatifs ?</button>
         <button class="suggestion-chip">Résume les planifications</button>
+        <button class="suggestion-chip prediction-chip">🔮 Prédiction de succès</button>
     </div>
     <div class="chat-input-row">
         <textarea id="chatbot-input" rows="1"
@@ -930,6 +931,7 @@ const EVENT_CONTEXT = {
             description: {{ p.description|default('')|json_encode|raw }},
             reviewRating: {{ review ? review.rating : 0 }},
             reviewStatut: {{ review ? review.statut|json_encode|raw : 'null' }},
+            reviewCount: {{ p.reviews|length }},
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     ]
@@ -1054,7 +1056,13 @@ applyFilter();
             });
             const data = await res.json();
             typing.remove();
-            addBotMessage(data.error ? '⚠️ ' + data.error : data.answer, !!data.error);
+            if (data.error) {
+                addBotMessage('⚠️ ' + data.error, true);
+            } else if (data.predictions && data.predictions.length > 0) {
+                addPredictionMessage(data.predictions);
+            } else {
+                addBotMessage(data.answer);
+            }
         } catch {
             typing.remove();
             addBotMessage('⚠️ Erreur réseau. Veuillez réessayer.', true);
@@ -1080,6 +1088,73 @@ applyFilter();
         messagesEl.scrollTop = messagesEl.scrollHeight;
         return el;
     }
+
+    function escapeHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function addPredictionMessage(predictions) {
+        const el = document.createElement('div');
+        el.className = 'chat-bubble bot';
+        el.style.cssText = 'padding:14px 16px;max-width:96%';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'font-size:.82rem;font-weight:700;color:#ecf4ff;margin-bottom:12px;display:flex;align-items:center;gap:6px';
+        header.innerHTML = '<span style="font-size:1rem">🔮</span> Prédiction de satisfaction';
+        el.appendChild(header);
+
+        // Probability bar per event (top 5)
+        predictions.slice(0, 5).forEach(p => {
+            const pct   = p.probability;
+            const color = pct >= 70 ? '#10b981' : pct >= 50 ? '#fbbf24' : '#f87171';
+            const glow  = pct >= 70 ? 'rgba(16,185,129,.35)' : pct >= 50 ? 'rgba(251,191,36,.35)' : 'rgba(248,113,113,.35)';
+
+            const row = document.createElement('div');
+            row.style.cssText = 'margin-bottom:12px';
+
+            const labelRow = document.createElement('div');
+            labelRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:5px';
+            labelRow.innerHTML =
+                '<span style="font-size:.74rem;color:#a0c4de;font-weight:600;max-width:72%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+                + escapeHtml(p.type || 'Événement #' + p.id) + '</span>'
+                + '<span style="font-size:.78rem;font-weight:800;color:' + color + '">' + pct + '%</span>';
+
+            const track = document.createElement('div');
+            track.style.cssText = 'background:rgba(255,255,255,.07);border-radius:99px;height:7px;overflow:hidden';
+            const fill = document.createElement('div');
+            fill.style.cssText = 'width:0;height:100%;background:' + color + ';border-radius:99px;box-shadow:0 0 8px ' + glow + ';transition:width .9s cubic-bezier(.22,1,.36,1)';
+            track.appendChild(fill);
+
+            const meta = document.createElement('div');
+            meta.style.cssText = 'font-size:.68rem;color:#5e7d99;margin-top:4px';
+            const revTxt = p.reviewCount > 0
+                ? p.reviewCount + ' avis · note moy. ' + (p.avgRating ?? '—') + '/5'
+                : 'Aucun avis';
+            meta.textContent = 'Confiance : ' + p.confidence + ' · ' + revTxt;
+
+            row.appendChild(labelRow);
+            row.appendChild(track);
+            row.appendChild(meta);
+            el.appendChild(row);
+
+            // Animate fill after first paint
+            requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = pct + '%'; }));
+        });
+
+        // Best event callout
+        if (predictions.length > 0) {
+            const best = predictions[0];
+            const callout = document.createElement('div');
+            callout.style.cssText = 'margin-top:8px;padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);border-radius:10px;font-size:.73rem;color:#6ee7b7;line-height:1.5';
+            callout.innerHTML = '🏆 <strong>' + escapeHtml(best.type) + '</strong> — ' + escapeHtml(best.recommendation);
+            el.appendChild(callout);
+        }
+
+        messagesEl.appendChild(el);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
     function addTypingIndicator() {
         const el = document.createElement('div');
         el.className = 'chat-bubble typing';

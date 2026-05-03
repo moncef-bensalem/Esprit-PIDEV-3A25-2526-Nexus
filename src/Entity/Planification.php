@@ -27,20 +27,20 @@ class Planification
     #[ORM\JoinColumn(name: 'fk_candidature_id', referencedColumnName: 'id_candidature', nullable: true, onDelete: 'CASCADE')]
     private ?Candidature $candidature = null;
 
-    #[ORM\Column(name: "type_event", type: "string", length: 100)]
+    #[ORM\Column(name: "type_event", type: "string", length: 100, nullable: true)]
     #[Assert\NotBlank(message: 'Le type d\'événement est obligatoire.')]
     private ?string $type_event = null;
 
-    #[ORM\Column(type: "date")]
+    #[ORM\Column(type: "date", nullable: true)]
     #[Assert\NotBlank(message: 'La date est obligatoire.')]
     #[Assert\GreaterThanOrEqual('today', message: 'La date doit être aujourd\'hui ou dans le futur.')]
     private ?\DateTimeInterface $date = null;
 
-    #[ORM\Column(name: "heure_debut", type: "time")]
+    #[ORM\Column(name: "heure_debut", type: "time", nullable: true)]
     #[Assert\NotBlank(message: 'L\'heure de début est obligatoire.')]
     private ?\DateTimeInterface $heure_debut = null;
 
-    #[ORM\Column(name: "heure_fin", type: "time")]
+    #[ORM\Column(name: "heure_fin", type: "time", nullable: true)]
     #[Assert\NotBlank(message: 'L\'heure de fin est obligatoire.')]
     private ?\DateTimeInterface $heure_fin = null;
 
@@ -192,8 +192,15 @@ class Planification
     }
 
     #[ORM\OneToMany(mappedBy: "planification", targetEntity: Review::class, cascade: ["persist", "remove"])]
+    /** @var Collection<int, Review> */
     private Collection $reviews;
 
+    public function __construct()
+    {
+        $this->reviews = new ArrayCollection();
+    }
+
+    /** @return Collection<int, Review> */
     public function getReviews(): Collection
     {
         return $this->reviews;
