@@ -51,9 +51,14 @@ class ReviewController extends AbstractController
     #[Route('/new/{id}', name: 'review_new', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
     public function new(Request $request, Planification $planification, EntityManagerInterface $em, PushNotificationService $push): Response
     {
-        $review = new Review();
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            throw $this->createAccessDeniedException('Vous devez être connecté pour laisser un avis.');
+        }
+
+        $review = new Review($user);
         $review->setPlanification($planification);
-        $review->setCreatedAt(new \DateTime());
 
         $form = $this->createForm(ReviewType::class, $review);
         $form->handleRequest($request);
