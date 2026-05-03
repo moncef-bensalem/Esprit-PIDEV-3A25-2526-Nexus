@@ -642,107 +642,119 @@ body::before {
 
 {% block javascripts %}
 {{ parent() }}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/fr.global.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+(function () {
+    const init = () => {
+        const calendarEl = document.getElementById('calendar');
+        if (!calendarEl || calendarEl.dataset.initialized) return;
+        calendarEl.dataset.initialized = 'true';
 
-    /* ── Animated counters ─────────────────────────────────────────── */
-    document.querySelectorAll('.stat-value[data-target]').forEach(function (el) {
-        const target = parseInt(el.dataset.target, 10);
-        if (!target) { el.textContent = '0'; return; }
-        let start = null;
-        const duration = 900;
-        function step(ts) {
-            if (!start) start = ts;
-            const progress = Math.min((ts - start) / duration, 1);
-            const ease = 1 - Math.pow(1 - progress, 4);
-            el.textContent = Math.round(ease * target);
-            if (progress < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-    });
-
-    /* ── FullCalendar ──────────────────────────────────────────────── */
-    const calendarEl = document.getElementById('calendar');
-    const addModal   = new bootstrap.Modal(document.getElementById('addModal'));
-    const iframe     = document.getElementById('modalIframe');
-
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        locale: 'fr',
-        initialView: 'dayGridMonth',
-        headerToolbar: {
-            left:   'prev,today,next',
-            center: 'title',
-            right:  'timeGridDay,timeGridWeek,dayGridMonth,multiMonthYear'
-        },
-        buttonText: {
-            today: "Aujourd'hui",
-            day:   'Jour',
-            week:  'Semaine',
-            month: 'Mois',
-            year:  'Année'
-        },
-        weekNumbers: true,
-        navLinks: true,
-        editable: false,
-        dayMaxEvents: 3,
-        events: '{{ path('planification_events') }}',
-
-        dateClick: function (info) {
-            iframe.src = '{{ path('planification_new') }}?date=' + info.dateStr + '&modal=1';
-            addModal.show();
-        },
-
-        eventClick: function (info) {
-            info.jsEvent.preventDefault();
-            const url = info.event.extendedProps.url;
-            if (url) window.location.href = url;
-        },
-
-        eventDidMount: function (info) {
-            if (info.event.extendedProps.statut === 'annulé') {
-                info.el.style.textDecoration = 'line-through';
-                info.el.style.opacity = '0.5';
+        /* ── Animated counters ─────────────────────────────────────────── */
+        document.querySelectorAll('.stat-value[data-target]').forEach(function (el) {
+            const target = parseInt(el.dataset.target, 10);
+            if (!target) { el.textContent = '0'; return; }
+            let start = null;
+            const duration = 900;
+            function step(ts) {
+                if (!start) start = ts;
+                const progress = Math.min((ts - start) / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 4);
+                el.textContent = Math.round(ease * target);
+                if (progress < 1) requestAnimationFrame(step);
             }
-
-            // Ajouter l'icône iCal discrète sur l'événement
-            const icalUrl = info.event.extendedProps.icalUrl;
-            if (icalUrl) {
-                const icon = document.createElement('a');
-                icon.href = icalUrl;
-                icon.title = 'Exporter en iCal';
-                icon.style.cssText = 'position:absolute;top:2px;right:4px;color:rgba(255,255,255,.75);font-size:10px;line-height:1;text-decoration:none;z-index:10;';
-                icon.innerHTML = '📅';
-                icon.addEventListener('click', function(e) { e.stopPropagation(); });
-                info.el.style.position = 'relative';
-                info.el.appendChild(icon);
-            }
-        }
-    });
-
-    calendar.render();
-
-    /* ── Search ────────────────────────────────────────────────────── */
-    document.getElementById('searchInput').addEventListener('input', function () {
-        const q = this.value.toLowerCase();
-        calendar.getEvents().forEach(function (ev) {
-            ev.setProp('display', !q || ev.title.toLowerCase().includes(q) ? 'auto' : 'none');
+            requestAnimationFrame(step);
         });
-    });
 
-    /* ── Modal ─────────────────────────────────────────────────────── */
-    window.addEventListener('message', function (e) {
-        if (e.data === 'planification_saved') {
-            addModal.hide();
-            iframe.src = '';
-            calendar.refetchEvents();
+        /* ── FullCalendar ──────────────────────────────────────────────── */
+        const addModalEl = document.getElementById('addModal');
+        if (!addModalEl) return;
+        const addModal   = new bootstrap.Modal(addModalEl);
+        const iframe     = document.getElementById('modalIframe');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'fr',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left:   'prev,today,next',
+                center: 'title',
+                right:  'timeGridDay,timeGridWeek,dayGridMonth,multiMonthYear'
+            },
+            buttonText: {
+                today: "Aujourd'hui",
+                day:   'Jour',
+                week:  'Semaine',
+                month: 'Mois',
+                year:  'Année'
+            },
+            weekNumbers: true,
+            navLinks: true,
+            editable: false,
+            dayMaxEvents: 3,
+            events: '{{ path('planification_events') }}',
+
+            dateClick: function (info) {
+                iframe.src = '{{ path('planification_new') }}?date=' + info.dateStr + '&modal=1';
+                addModal.show();
+            },
+
+            eventClick: function (info) {
+                info.jsEvent.preventDefault();
+                const url = info.event.extendedProps.url;
+                if (url) window.location.href = url;
+            },
+
+            eventDidMount: function (info) {
+                if (info.event.extendedProps.statut === 'annulé') {
+                    info.el.style.textDecoration = 'line-through';
+                    info.el.style.opacity = '0.5';
+                }
+
+                // Ajouter l'icône iCal discrète sur l'événement
+                const icalUrl = info.event.extendedProps.icalUrl;
+                if (icalUrl) {
+                    const icon = document.createElement('a');
+                    icon.href = icalUrl;
+                    icon.title = 'Exporter en iCal';
+                    icon.style.cssText = 'position:absolute;top:2px;right:4px;color:rgba(255,255,255,.75);font-size:10px;line-height:1;text-decoration:none;z-index:10;';
+                    icon.innerHTML = '📅';
+                    icon.addEventListener('click', function(e) { e.stopPropagation(); });
+                    info.el.style.position = 'relative';
+                    info.el.appendChild(icon);
+                }
+            }
+        });
+
+        calendar.render();
+
+        /* ── Search ────────────────────────────────────────────────────── */
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const q = this.value.toLowerCase();
+                calendar.getEvents().forEach(function (ev) {
+                    ev.setProp('display', !q || ev.title.toLowerCase().includes(q) ? 'auto' : 'none');
+                });
+            });
         }
-    });
-    document.getElementById('addModal').addEventListener('hidden.bs.modal', function () {
-        iframe.src = '';
-    });
-});
+
+        /* ── Modal ─────────────────────────────────────────────────────── */
+        window.addEventListener('message', function (e) {
+            if (e.data === 'planification_saved') {
+                addModal.hide();
+                iframe.src = '';
+                calendar.refetchEvents();
+            }
+        });
+        addModalEl.addEventListener('hidden.bs.modal', function () {
+            iframe.src = '';
+        });
+    };
+
+    document.addEventListener('turbo:load', init);
+    if (document.readyState !== 'loading') init();
+    else document.addEventListener('DOMContentLoaded', init);
+})();
 </script>
 {% endblock %}
