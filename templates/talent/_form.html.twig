@@ -1,0 +1,77 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+    <div class="form-grid">
+        <div class="neon-form-group">
+            {{ form_label(form.prenom, 'Prénom', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.prenom, {'attr': {'class': 'neon-input', 'placeholder': 'Ex: Marwa'}}) }}
+            {{ form_errors(form.prenom) }}
+        </div>
+        
+        <div class="neon-form-group">
+            {{ form_label(form.nom, 'Nom', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.nom, {'attr': {'class': 'neon-input', 'placeholder': 'Ex: Matteli'}}) }}
+            {{ form_errors(form.nom) }}
+        </div>
+
+        <div class="neon-form-group">
+            {{ form_label(form.email, 'Adresse Email', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.email, {'attr': {'class': 'neon-input', 'placeholder': 'exemple@societe.com'}}) }}
+            {{ form_errors(form.email) }}
+        </div>
+
+        <div class="neon-form-group">
+            {{ form_label(form.telephone, 'Téléphone', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.telephone, {'attr': {'class': 'neon-input', 'placeholder': '+216 ...'}}) }}
+            {{ form_errors(form.telephone) }}
+        </div>
+
+        <div class="neon-form-group full-width" style="margin-top: 10px;">
+            <h3 style="color: rgba(255,255,255,0.9); font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                <i class="fa-solid fa-briefcase" style="color: #20b2aa; margin-right: 8px;"></i> Informations Professionnelles
+            </h3>
+        </div>
+
+        <div class="neon-form-group">
+            {{ form_label(form.poste, 'Poste', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.poste, {'attr': {'class': 'neon-input'}}) }}
+            {{ form_errors(form.poste) }}
+        </div>
+
+        <div class="neon-form-group">
+            {{ form_label(form.departement, 'Département', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.departement, {'attr': {'class': 'neon-input'}}) }}
+            {{ form_errors(form.departement) }}
+        </div>
+
+        <div class="neon-form-group">
+            {{ form_label(form.annees_experience, 'Années d\'expérience', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.annees_experience, {'attr': {'class': 'neon-input', 'min': 0}}) }}
+            {{ form_errors(form.annees_experience) }}
+        </div>
+
+        <div class="neon-form-group">
+            {{ form_label(form.niveau_etudes, 'Niveau d\'études', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.niveau_etudes, {'attr': {'class': 'neon-input'}}) }}
+            {{ form_errors(form.niveau_etudes) }}
+        </div>
+
+        <div class="neon-form-group full-width">
+            {{ form_label(form.date_embauche, 'Date d\'embauche', {'label_attr': {'class': 'neon-label'}}) }}
+            {{ form_widget(form.date_embauche, {'attr': {'class': 'neon-input'}}) }}
+            {{ form_errors(form.date_embauche) }}
+        </div>
+    </div>
+
+    {# Pour les champs additionnels invisibles (ex: _token CSRF si auto activé) #}
+    {{ form_rest(form) }}
+
+    <div class="neon-actions">
+        <div style="display:flex; gap:15px; align-items:center;">
+            <a href="{{ path('app_talent_index') }}" class="btn-neon-back"><i class="fa-solid fa-arrow-left"></i> Retour à la liste</a>
+            
+            {% if app.request.attributes.get('_route') == 'app_talent_edit' %}
+                {{ include('talent/_delete_form.html.twig') }}
+            {% endif %}
+        </div>
+        <button class="btn-neon-save"><i class="fa-solid fa-check"></i> {{ button_label|default('Enregistrer') }}</button>
+    </div>
+{{ form_end(form) }}

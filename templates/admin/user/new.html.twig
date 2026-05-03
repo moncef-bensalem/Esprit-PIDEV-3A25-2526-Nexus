@@ -1,0 +1,173 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un Utilisateur{% endblock %}
+{% block page_title %}Nouveau Utilisateur{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
+<style>
+    /* Global Page Structure */
+    .page-header-modern {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+    .page-title-modern { font-size: 1.8rem; font-weight: 800; color: #fff; margin: 0 0 5px 0; letter-spacing: -0.5px; }
+    .page-subtitle-modern { font-size: 0.9rem; color: rgba(255,255,255,0.4); margin: 0; }
+    
+    .btn-return {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+        padding: 10px 18px; border-radius: 12px; color: rgba(255,255,255,0.7);
+        font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-return:hover { background: rgba(32,178,170,0.1); border-color: rgba(32,178,170,0.3); color: #fff; transform: translateX(-3px); }
+
+    /* The Premium Panel */
+    .form-panel-premium {
+        background: linear-gradient(145deg, rgba(13,25,42,0.6) 0%, rgba(7,14,23,0.8) 100%);
+        border: 1px solid rgba(32,178,170,0.15);
+        border-radius: 24px;
+        padding: 40px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+        max-width: 800px;
+        position: relative; overflow: hidden;
+    }
+    .form-panel-premium::before {
+        content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(32,178,170,0.03) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    /* Modern Floating Fields */
+    .field-wrapper { position: relative; margin-bottom: 28px; }
+    
+    .modern-input {
+        width: 100%;
+        background: rgba(0,0,0,0.2) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 14px;
+        padding: 18px 20px 18px 54px;
+        color: #fff !important;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        outline: none;
+    }
+    .modern-input:focus {
+        background: rgba(32,178,170,0.05) !important;
+        border-color: #20b2aa !important;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 0 0 4px rgba(32,178,170,0.1);
+    }
+    
+    .modern-label {
+        position: absolute;
+        left: 54px; top: 18px;
+        font-size: 1rem; color: rgba(255,255,255,0.4);
+        transition: all 0.2s ease;
+        pointer-events: none;
+    }
+    
+    /* Floating action */
+    .modern-input:focus ~ .modern-label,
+    .modern-input:not(:placeholder-shown) ~ .modern-label {
+        transform: translateY(-28px) translateX(-5px) scale(0.85);
+        color: #20b2aa; font-weight: 600;
+        background: #09131d; padding: 0 8px; border-radius: 4px;
+    }
+
+    .field-icon-left {
+        position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+        color: rgba(32,178,170,0.5); font-size: 1.1rem; transition: color 0.3s;
+    }
+    .modern-input:focus ~ .field-icon-left { color: #20b2aa; }
+
+    /* Custom Dropdown Choices.js Styles */
+    .choices { margin-bottom: 0; }
+    .choices__inner {
+        background: rgba(0,0,0,0.2) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 14px !important;
+        padding: 10px 20px 5px 20px !important;
+        min-height: 58px;
+        transition: all 0.3s ease;
+    }
+    .choices.is-focused .choices__inner {
+        background: rgba(32,178,170,0.05) !important;
+        border-color: #20b2aa !important;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 0 0 4px rgba(32,178,170,0.1);
+    }
+    .choices__list--multiple .choices__item {
+        background: linear-gradient(135deg, #20b2aa, #0288d1) !important;
+        border: none !important; border-radius: 8px !important;
+        font-family: 'Inter', sans-serif; font-weight: 500; font-size: 0.85rem;
+    }
+    .choices__list--dropdown {
+        background: #0d1b2a !important; border: 1px solid rgba(32,178,170,0.3) !important;
+        border-radius: 14px !important; margin-top: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .choices__list--dropdown .choices__item { color: #fff; font-size: 0.9rem; transition: all 0.2s; }
+    .choices__list--dropdown .choices__item--selectable.is-highlighted {
+        background: rgba(32,178,170,0.15) !important; color: #20b2aa;
+    }
+    
+    /* Submit Button */
+    .btn-glow {
+        position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+        padding: 16px 36px;
+        background: linear-gradient(135deg, #20b2aa 0%, #0288d1 100%);
+        border: none; border-radius: 16px;
+        color: #fff; font-size: 1rem; font-weight: 700; letter-spacing: 0.5px;
+        cursor: pointer; overflow: hidden; transition: all 0.3s;
+        box-shadow: 0 10px 20px rgba(2,136,209,0.3);
+    }
+    .btn-glow::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%);
+        opacity: 0; transition: opacity 0.3s;
+    }
+    .btn-glow:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(2,136,209,0.5); }
+    .btn-glow:hover::after { opacity: 1; }
+    
+    /* Validation Errors */
+    .error-msg { display: block; color: #ff5252; font-size: 0.8rem; margin-top: 8px; padding-left: 10px; font-weight: 500; }
+    
+    @media (max-width: 768px) { .form-panel-premium { padding: 24px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="page-header-modern">
+        <div>
+            <h1 class="page-title-modern">Nouveau Collaborateur</h1>
+            <p class="page-subtitle-modern">Configuration d'un nouveau compte d'accès à la plateforme Nexus.</p>
+        </div>
+        <a href="{{ path('admin_user_index') }}" class="btn-return">
+            <i class="fa fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <div class="form-panel-premium">
+        {% include 'admin/user/_form.html.twig' with {form: form, button_label: 'Créer le compte'} %}
+    </div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.js-choice');
+            elements.forEach(function(el) {
+                new Choices(el, {
+                    removeItemButton: true,
+                    searchEnabled: false,
+                    placeholderValue: 'Sélectionnez un ou plusieurs rôles',
+                    itemSelectText: 'Cliquer pour sélectionner'
+                });
+            });
+        });
+    </script>
+{% endblock %}

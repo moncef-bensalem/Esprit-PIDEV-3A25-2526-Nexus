@@ -1,0 +1,184 @@
+<nav class="nx-sidebar" id="nxSidebar">
+
+    {# Brand #}
+    <div class="nx-sidebar-brand-inner" style="padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
+        <a href="{{ is_granted('ROLE_ADMIN') ? path('admin_dashboard') : (is_granted('ROLE_RH') ? path('evaluation_index') : path('candidate_dashboard')) }}" class="nx-sidebar-brand" style="border-bottom: none; padding: 0;">
+            <img src="{{ asset('nexus.jpg') }}" alt="Nexus">
+            <div class="nx-sidebar-brand-text">
+                <div class="nx-sidebar-brand-name">Nexus</div>
+                <div class="nx-sidebar-brand-sub">Platform</div>
+            </div>
+        </a>
+        <button class="nx-sidebar-close" id="mobileMenuClose"><i class="fa fa-times"></i></button>
+    </div>
+
+    {% if is_granted('ROLE_ADMIN') %}
+
+    {# ── ADMINISTRATION ── #}
+    <div class="nx-nav-section">Administration</div>
+
+    <a href="{{ path('admin_dashboard') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') == 'admin_dashboard' ? 'active' : '' }}">
+        <i class="fa fa-chart-pie"></i>
+        <span>Dashboard</span>
+    </a>
+
+    <a href="{{ path('admin_user_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'admin_user_' ? 'active' : '' }}">
+        <i class="fa fa-users"></i>
+        <span>Utilisateurs</span>
+    </a>
+
+    <div class="nx-nav-divider"></div>
+
+    {# ── RECRUTEMENT ── #}
+    <div class="nx-nav-section">Recrutement</div>
+
+    <a href="{{ path('app_offre_emploi_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'app_offre_emploi_' ? 'active' : '' }}">
+        <i class="fa fa-briefcase"></i>
+        <span>Offres d'emploi</span>
+    </a>
+
+    <a href="{{ path('app_candidature_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'app_candidature_' ? 'active' : '' }}">
+        <i class="fa fa-file-alt"></i>
+        <span>Candidatures</span>
+    </a>
+
+    <a href="{{ path('app_departement_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'app_departement_' ? 'active' : '' }}">
+        <i class="fa fa-building"></i>
+        <span>Départements</span>
+    </a>
+
+    <div class="nx-nav-divider"></div>
+
+    {# ── TALENT ── #}
+    <div class="nx-nav-section">Talent</div>
+
+    <a href="{{ path('app_talent_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'app_talent_' and not ('competence' in app.request.attributes.get('_route')) ? 'active' : '' }}">
+        <i class="fa fa-star"></i>
+        <span>Talents</span>
+    </a>
+
+    <a href="{{ path('app_talent_competence_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'app_talent_competence' ? 'active' : '' }}">
+        <i class="fa fa-trophy"></i>
+        <span>Compétences</span>
+    </a>
+
+    <a href="{{ path('app_talent_classements') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') == 'app_talent_classements' ? 'active' : '' }}">
+        <i class="fa fa-chart-bar"></i>
+        <span>Classements</span>
+    </a>
+
+    <a href="{{ path('app_talent_statistiques') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') == 'app_talent_statistiques' ? 'active' : '' }}">
+        <i class="fa fa-chart-line"></i>
+        <span>Statistiques</span>
+    </a>
+
+    <div class="nx-nav-divider"></div>
+
+    {# ── PLANNING ── #}
+    <div class="nx-nav-section">Planning</div>
+
+    <a href="{{ path('planification_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'planification' ? 'active' : '' }}">
+        <i class="fa fa-calendar-alt"></i>
+        <span>Agenda</span>
+    </a>
+
+    <a href="{{ path('evaluation_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'evaluation' ? 'active' : '' }}">
+        <i class="fa fa-clipboard-list"></i>
+        <span>Évaluations</span>
+    </a>
+
+    {% endif %}{# end ROLE_ADMIN #}
+
+    {% if is_granted('ROLE_RH') and not is_granted('ROLE_ADMIN') %}
+
+    <div class="nx-nav-section">Recrutement</div>
+
+    <a href="{{ path('evaluation_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'evaluation' ? 'active' : '' }}">
+        <i class="fa fa-clipboard-list"></i>
+        <span>Évaluations</span>
+    </a>
+
+    {% endif %}
+
+    {% if is_granted('ROLE_CANDIDATE') and not is_granted('ROLE_ADMIN') %}
+
+    {# ── CANDIDAT ── #}
+    <div class="nx-nav-section">Mon Espace</div>
+
+    <a href="{{ path('candidate_dashboard') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') == 'candidate_dashboard' ? 'active' : '' }}">
+        <i class="fa fa-home"></i>
+        <span>Accueil</span>
+    </a>
+
+    <a href="{{ path('candidate_profile') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') == 'candidate_profile' ? 'active' : '' }}">
+        <i class="fa fa-user-circle"></i>
+        <span>Mon Profil</span>
+    </a>
+
+    <div class="nx-nav-divider"></div>
+
+    <div class="nx-nav-section">Opportunités</div>
+
+    <a href="{{ path('app_public_offres') }}"
+       class="nx-nav-item">
+        <i class="fa fa-briefcase"></i>
+        <span>Offres d'emploi</span>
+    </a>
+
+    <div class="nx-nav-divider"></div>
+
+    <div class="nx-nav-section">Suivi</div>
+
+    <a href="{{ path('candidate_mes_candidatures') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') == 'candidate_mes_candidatures' ? 'active' : '' }}">
+        <i class="fa fa-file-alt"></i>
+        <span>Mes Candidatures</span>
+    </a>
+
+    <a href="{{ path('planification_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'planification' ? 'active' : '' }}">
+        <i class="fa fa-calendar-alt"></i>
+        <span>Mon Planning</span>
+    </a>
+
+    <a href="{{ path('review_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'review' ? 'active' : '' }}">
+        <i class="fa fa-comment-dots"></i>
+        <span>Mes Avis</span>
+    </a>
+
+    <div class="nx-nav-divider"></div>
+
+    <div class="nx-nav-section">Assistant IA</div>
+
+    <a href="{{ path('chatbot_index') }}"
+       class="nx-nav-item {{ app.request.attributes.get('_route') starts with 'chatbot_' ? 'active' : '' }}">
+        <i class="fa fa-robot"></i>
+        <span>Talent Chatbot</span>
+    </a>
+
+    {% endif %}{# end ROLE_CANDIDATE #}
+
+    {# ── Footer logout ── #}
+    <div class="nx-sidebar-footer">
+        <a href="{{ path('app_logout') }}" class="nx-nav-item" style="color:rgba(239,83,80,.7);">
+            <i class="fa fa-sign-out-alt" style="color:rgba(239,83,80,.7);"></i>
+            <span>Déconnexion</span>
+        </a>
+    </div>
+
+</nav>

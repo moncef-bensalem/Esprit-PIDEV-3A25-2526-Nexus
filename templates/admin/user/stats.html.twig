@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Stats Utilisateur{% endblock %}
+{% block page_title %}Stats Utilisateur{% endblock %}
+
+{% block stylesheets %}
+<style>
+  .nx-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:16px; margin-bottom:18px; }
+  @media (max-width: 900px){ .nx-grid { grid-template-columns: 1fr; } }
+  .nx-card {
+    background: rgba(13,25,42,.7);
+    border: 1px solid rgba(32,178,170,.15);
+    border-radius: 18px; padding: 18px;
+  }
+  .kpi-label { color: rgba(255,255,255,.45); font-size:.78rem; text-transform:uppercase; letter-spacing:.6px; font-weight:600; }
+  .kpi-value { color:#fff; font-size:1.8rem; font-weight:800; margin-top:6px; }
+  .kpi-sub { color: rgba(255,255,255,.35); font-size:.85rem; margin-top:6px; }
+  .nx-table { width:100%; border-collapse: collapse; }
+  .nx-table th, .nx-table td { padding:10px 12px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .nx-table th { color: rgba(255,255,255,.45); font-size:.78rem; text-transform:uppercase; letter-spacing:.6px; }
+  .nx-table td { color: rgba(255,255,255,.8); }
+  .btn-back { display:inline-flex; gap:8px; align-items:center; text-decoration:none; color:#20b2aa; font-weight:700; }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+    <div>
+      <h1 style="margin:0; color:#fff; font-size:1.35rem; font-weight:800;">
+        {{ user.firstName }} {{ user.lastName }} <span style="color:rgba(255,255,255,.35); font-weight:700;">(#{{ user.id }})</span>
+      </h1>
+      <div style="color:rgba(255,255,255,.45); margin-top:4px;">{{ user.email }}</div>
+    </div>
+    <a class="btn-back" href="{{ path('admin_user_index') }}"><i class="fa fa-arrow-left"></i> Retour</a>
+  </div>
+
+  <div class="nx-grid">
+    <div class="nx-card">
+      <div class="kpi-label">Logins aujourd’hui</div>
+      <div class="kpi-value">{{ loginToday }}</div>
+      <div class="kpi-sub">Basé sur les événements `LOGIN_SUCCESS`</div>
+    </div>
+    <div class="nx-card">
+      <div class="kpi-label">Logins ce mois</div>
+      <div class="kpi-value">{{ loginMonth }}</div>
+      <div class="kpi-sub">Période: {{ loginSeriesFrom|date('d/m') }} → {{ loginSeriesTo|date('d/m') }}</div>
+    </div>
+    <div class="nx-card">
+      <div class="kpi-label">Changements mot de passe (mois)</div>
+      <div class="kpi-value">{{ passwordChangesMonth }}</div>
+      <div class="kpi-sub">Inclut changements depuis l’admin</div>
+    </div>
+  </div>
+
+  <div class="nx-card">
+    <div style="color:#fff; font-weight:800; margin-bottom:10px;">Série (14 jours) — logins</div>
+    <table class="nx-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th style="text-align:right;">Logins</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set d = loginSeriesFrom %}
+        {% for i in 0..13 %}
+          {% set key = d|date('Y-m-d') %}
+          <tr>
+            <td>{{ d|date('d/m/Y') }}</td>
+            <td style="text-align:right; font-weight:800;">{{ loginSeries[key]|default(0) }}</td>
+          </tr>
+          {% set d = d|date_modify('+1 day') %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
+

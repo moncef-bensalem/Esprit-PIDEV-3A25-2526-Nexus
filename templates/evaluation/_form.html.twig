@@ -1,0 +1,285 @@
+{{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'evaluationForm'}}) }}
+
+<div class="mb-3">
+    {{ form_label(form.commentaireGlobal) }}
+    {{ form_widget(form.commentaireGlobal, {'attr': {
+        'spellcheck': 'true',
+        'lang': 'fr',
+        'class': 'form-control sc-field',
+        'data-sc-id': 'commentaireGlobal'
+    }}) }}
+    {{ form_errors(form.commentaireGlobal) }}
+    {# Spell-check panel injected by JS #}
+    <div class="sc-panel" id="sc-panel-commentaireGlobal" hidden></div>
+</div>
+
+<div class="mb-3">
+    {{ form_label(form.decisionPreliminaire) }}
+    {{ form_widget(form.decisionPreliminaire) }}
+    {{ form_errors(form.decisionPreliminaire) }}
+</div>
+
+<div class="mb-3" id="reviewDeadlineGroup">
+    {{ form_label(form.reviewDeadline) }}
+    {{ form_widget(form.reviewDeadline) }}
+    {{ form_errors(form.reviewDeadline) }}
+</div>
+
+<div class="mb-3">
+    {{ form_label(form.candidat) }}
+    {{ form_widget(form.candidat) }}
+    {{ form_errors(form.candidat) }}
+</div>
+
+<div class="d-flex justify-content-end gap-2 mt-4">
+    <a href="{{ path('evaluation_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    <button type="submit" class="btn btn-success px-4">Enregistrer</button>
+</div>
+
+{{ form_end(form) }}
+
+{# ── Spell-check styles ── #}
+<style>
+.sc-panel {
+    margin-top: 6px;
+    background: rgba(2, 8, 20, 0.92);
+    border: 1px solid rgba(239, 180, 60, 0.35);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: .82rem;
+    color: #e2c97e;
+    position: relative;
+}
+.sc-panel-title {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(239, 180, 60, .65);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sc-word-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.sc-word-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(239, 180, 60, .1);
+    border: 1px solid rgba(239, 180, 60, .3);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: .8rem;
+    color: #f5d78e;
+    cursor: default;
+    position: relative;
+}
+.sc-word-chip:hover .sc-suggestions-dropdown {
+    display: flex;
+}
+.sc-suggestions-dropdown {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 999;
+    background: #0d1b2a;
+    border: 1px solid rgba(239, 180, 60, .4);
+    border-radius: 8px;
+    min-width: 130px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+.sc-suggestion-item {
+    padding: 7px 13px;
+    font-size: .82rem;
+    color: #d6e6f5;
+    cursor: pointer;
+    transition: background .12s;
+}
+.sc-suggestion-item:hover {
+    background: rgba(239, 180, 60, .15);
+    color: #fff;
+}
+.sc-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(239,180,60,.2);
+    border-top-color: rgba(239,180,60,.8);
+    border-radius: 50%;
+    animation: sc-spin .7s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+@keyframes sc-spin { to { transform: rotate(360deg); } }
+.sc-clean {
+    color: rgba(76, 210, 130, .85);
+    font-size: .8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+</style>
+
+<script>
+(function () {
+    /* ── Decision / deadline toggle ── */
+    const decisionSelect = document.querySelector('select[name$="[decisionPreliminaire]"]');
+    const deadlineGroup  = document.getElementById('reviewDeadlineGroup');
+    const deadlineInput  = document.querySelector('input[name$="[reviewDeadline]"]');
+
+    function toggleDeadline() {
+        const show = decisionSelect && decisionSelect.value === 'A_REVOIR';
+        if (!deadlineGroup || !deadlineInput) return;
+        deadlineGroup.style.display = show ? '' : 'none';
+        deadlineInput.required = show;
+        if (!show) deadlineInput.value = '';
+    }
+    if (decisionSelect) {
+        decisionSelect.addEventListener('change', toggleDeadline);
+        toggleDeadline();
+    }
+
+    /* ── Spell-check module ── */
+    const DEBOUNCE_MS   = 900;
+    const DICT_API      = 'https://api.datamuse.com/words?sp={word}&max=5&md=f';
+    const MIN_WORD_LEN  = 3;
+    // Basic French stopword/common-word skip list to reduce noise
+    const SKIP_WORDS    = new Set([
+        'le','la','les','de','du','des','un','une','et','en','à','au','aux',
+        'ce','se','sa','son','ses','mon','ma','mes','ton','ta','tes',
+        'que','qui','qu','ne','pas','plus','par','sur','sous','dans','avec',
+        'pour','est','sont','été','avoir','être','faire','très','bien','mais',
+        'ou','si','car','donc','or','ni','je','tu','il','elle','nous','vous',
+        'ils','elles','me','te','lui','leur','nous','vous','y','en',
+    ]);
+
+    // Simple tokeniser — returns unique lowercase words only
+    function extractWords(text) {
+        const raw = text.match(/[a-zA-ZÀ-öø-ÿ'-]{3,}/g) || [];
+        const seen = new Set();
+        return raw.filter(w => {
+            const lc = w.toLowerCase().replace(/^['-]+|['-]+$/g, '');
+            if (lc.length < MIN_WORD_LEN) return false;
+            if (SKIP_WORDS.has(lc)) return false;
+            if (seen.has(lc)) return false;
+            seen.add(lc);
+            return true;
+        }).map(w => w.replace(/^['-]+|['-]+$/g, ''));
+    }
+
+    // Datamuse spell-check: if top result has very high score & matches, word is ok
+    // We use /words?sp= (sounds-like) — if no close match found → flag as suspect
+    async function checkWord(word) {
+        try {
+            const url = `https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&max=6`;
+            const res = await fetch(url);
+            if (!res.ok) return { ok: true, suggestions: [] };
+            const data = await res.json();
+            if (!data.length) return { ok: false, suggestions: [] };
+            // If exact match is first result → correct
+            const exact = data[0].word.toLowerCase() === word.toLowerCase();
+            if (exact) return { ok: true, suggestions: [] };
+            // Provide top suggestions
+            return {
+                ok: false,
+                suggestions: data.slice(0, 4).map(d => d.word),
+            };
+        } catch {
+            return { ok: true, suggestions: [] }; // fail-open
+        }
+    }
+
+    function renderPanel(panelEl, results) {
+        const misspelled = results.filter(r => !r.ok);
+        if (!misspelled.length) {
+            panelEl.hidden = false;
+            panelEl.innerHTML = `
+                <div class="sc-panel-title">✏ Orthographe</div>
+                <div class="sc-clean">✓ Aucune erreur détectée</div>`;
+            return;
+        }
+        const chips = misspelled.map(r => {
+            const suggs = r.suggestions.length
+                ? r.suggestions.map(s =>
+                    `<div class="sc-suggestion-item" data-word="${r.word}" data-sug="${s}">${s}</div>`
+                  ).join('')
+                : '<div class="sc-suggestion-item" style="opacity:.5;cursor:default">Aucune suggestion</div>';
+            return `
+                <span class="sc-word-chip" title="Cliquer pour suggestions">
+                    ⚠ ${r.word}
+                    <div class="sc-suggestions-dropdown">${suggs}</div>
+                </span>`;
+        }).join('');
+
+        panelEl.hidden = false;
+        panelEl.innerHTML = `
+            <div class="sc-panel-title">✏ Orthographe — ${misspelled.length} mot(s) suspect(s)</div>
+            <div class="sc-word-list">${chips}</div>`;
+
+        // Click suggestion → replace word in textarea
+        panelEl.querySelectorAll('.sc-suggestion-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const field = panelEl.previousElementSibling.tagName === 'DIV'
+                    ? null
+                    : panelEl.previousElementSibling;
+                // Find the textarea linked to this panel
+                const scId  = panelEl.id.replace('sc-panel-', '');
+                const textarea = document.querySelector(`[data-sc-id="${scId}"]`);
+                if (textarea) {
+                    const orig = item.dataset.word;
+                    const sug  = item.dataset.sug;
+                    // Replace first occurrence (case-insensitive)
+                    textarea.value = textarea.value.replace(
+                        new RegExp(`\\b${orig}\\b`, 'i'), sug
+                    );
+                    triggerCheck(textarea, panelEl);
+                }
+            });
+        });
+    }
+
+    async function runSpellCheck(textarea, panelEl) {
+        const words = extractWords(textarea.value);
+        if (!words.length) { panelEl.hidden = true; return; }
+
+        panelEl.hidden = false;
+        panelEl.innerHTML = `
+            <div class="sc-panel-title">
+                <span class="sc-spinner"></span> Vérification en cours…
+            </div>`;
+
+        const checks = await Promise.all(
+            words.map(async w => ({ word: w, ...(await checkWord(w)) }))
+        );
+        renderPanel(panelEl, checks);
+    }
+
+    const timers = new WeakMap();
+
+    function triggerCheck(textarea, panelEl) {
+        if (timers.has(textarea)) clearTimeout(timers.get(textarea));
+        const t = setTimeout(() => runSpellCheck(textarea, panelEl), DEBOUNCE_MS);
+        timers.set(textarea, t);
+    }
+
+    document.querySelectorAll('.sc-field').forEach(textarea => {
+        const scId   = textarea.dataset.scId;
+        const panel  = document.getElementById(`sc-panel-${scId}`);
+        if (!panel) return;
+
+        textarea.addEventListener('input', () => triggerCheck(textarea, panel));
+        textarea.addEventListener('blur',  () => runSpellCheck(textarea, panel));
+
+        // Run on page load if field already has content (edit mode)
+        if (textarea.value.trim().length > 10) {
+            triggerCheck(textarea, panel);
+        }
+    });
+})();
+</script>

@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau Candidature{% endblock %}
+
+{% block page_title %}Nouvelle candidature{% endblock %}
+
+{% block content %}
+<div class="mc-header">
+    <div>
+        <div class="mc-header-title"><i class="fas fa-plus-circle" style="color:var(--cyan); margin-right: 12px;"></i> Créer une candidature (Admin)</div>
+        <div class="mc-header-sub">Ajoutez manuellement une candidature au système.</div>
+    </div>
+    <div class="mc-header-actions">
+        <a href="{{ path('app_candidature_index') }}" style="color:rgba(255,255,255,0.6); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fas fa-arrow-left"></i> Retour au pipeline
+        </a>
+    </div>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    {{ include('candidature/_form.html.twig') }}
+</div>
+{% endblock %}

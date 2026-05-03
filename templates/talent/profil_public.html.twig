@@ -1,0 +1,169 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ talent.prenom }} {{ talent.nom }} — Profil Nexus{% endblock %}
+{% block page_title %}Profil Talent{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:0 auto;">
+
+    {# ── Hero Card ── #}
+    <div class="profil-hero">
+        <div class="profil-avatar">{{ talent.prenom|slice(0,1)|upper }}{{ talent.nom|slice(0,1)|upper }}</div>
+        <div class="profil-hero-info">
+            <h1 class="profil-name">{{ talent.prenom }} {{ talent.nom }}</h1>
+            <div class="profil-poste">{{ talent.poste }}</div>
+            <span class="profil-dept-badge">{{ talent.departement|upper }}</span>
+        </div>
+        <div class="profil-qr-wrap">
+            <img src="{{ qrUrl }}" alt="QR Code" class="profil-qr-img">
+            <div class="profil-qr-label">Scannez pour partager</div>
+        </div>
+    </div>
+
+    {# ── Info Grid ── #}
+    <div class="profil-grid">
+        <div class="profil-card">
+            <div class="profil-card-icon"><i class="fa-solid fa-envelope"></i></div>
+            <div>
+                <div class="profil-card-label">Email</div>
+                <div class="profil-card-value"><a href="mailto:{{ talent.email }}" style="color:#20b2aa;">{{ talent.email }}</a></div>
+            </div>
+        </div>
+        {% if talent.telephone %}
+        <div class="profil-card">
+            <div class="profil-card-icon"><i class="fa-solid fa-phone"></i></div>
+            <div>
+                <div class="profil-card-label">Téléphone</div>
+                <div class="profil-card-value">{{ talent.telephone }}</div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="profil-card">
+            <div class="profil-card-icon"><i class="fa-solid fa-briefcase"></i></div>
+            <div>
+                <div class="profil-card-label">Expérience</div>
+                <div class="profil-card-value">{{ talent.anneesExperience ?? 0 }} ans</div>
+            </div>
+        </div>
+        {% if talent.niveauEtudes %}
+        <div class="profil-card">
+            <div class="profil-card-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+            <div>
+                <div class="profil-card-label">Niveau d'études</div>
+                <div class="profil-card-value">{{ talent.niveauEtudes }}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% if talent.dateEmbauche %}
+        <div class="profil-card">
+            <div class="profil-card-icon"><i class="fa-solid fa-calendar"></i></div>
+            <div>
+                <div class="profil-card-label">Date d'embauche</div>
+                <div class="profil-card-value">{{ talent.dateEmbauche|date('d/m/Y') }}</div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="profil-card">
+            <div class="profil-card-icon"><i class="fa-solid fa-building"></i></div>
+            <div>
+                <div class="profil-card-label">Département</div>
+                <div class="profil-card-value">{{ talent.departement }}</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Actions ── #}
+    <div class="profil-actions">
+        <a href="{{ path('app_talent_index') }}" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Retour à la liste</a>
+        {% if is_granted('ROLE_ADMIN') %}
+        <a href="{{ path('app_talent_edit', {'id': talent.id}) }}" class="btn-edit"><i class="fa-solid fa-pen"></i> Modifier</a>
+        {% endif %}
+        <a href="{{ qrUrl }}" class="btn-qr" download="qrcode_{{ talent.prenom }}_{{ talent.nom }}.png" target="_blank">
+            <i class="fa-solid fa-qrcode"></i> Télécharger QR Code
+        </a>
+    </div>
+</div>
+
+<style>
+/* Hero */
+.profil-hero {
+    display: flex; align-items: center; gap: 24px;
+    background: rgba(13,25,42,.9);
+    border: 1px solid rgba(32,178,170,.2);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.profil-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at top left, rgba(32,178,170,.08) 0%, transparent 60%);
+    pointer-events: none;
+}
+.profil-avatar {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 800; color: #fff; flex-shrink: 0;
+    box-shadow: 0 0 24px rgba(32,178,170,.35);
+}
+.profil-hero-info { flex: 1; }
+.profil-name { font-size: 1.7rem; font-weight: 800; color: #fff; margin: 0 0 4px; }
+.profil-poste { color: rgba(255,255,255,.55); font-size: .95rem; margin-bottom: 10px; }
+.profil-dept-badge {
+    display: inline-block;
+    background: rgba(32,178,170,.15); color: #20b2aa;
+    border: 1px solid rgba(32,178,170,.3);
+    padding: 4px 14px; border-radius: 20px;
+    font-size: .75rem; font-weight: 700; letter-spacing: 1px;
+}
+.profil-qr-wrap { text-align: center; flex-shrink: 0; }
+.profil-qr-img {
+    width: 120px; height: 120px;
+    border-radius: 12px;
+    border: 2px solid rgba(32,178,170,.3);
+    padding: 6px; background: #fff;
+    box-shadow: 0 0 20px rgba(32,178,170,.15);
+}
+.profil-qr-label { font-size: .68rem; color: rgba(255,255,255,.3); margin-top: 6px; }
+
+/* Info grid */
+.profil-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+}
+.profil-card {
+    display: flex; align-items: center; gap: 14px;
+    background: rgba(13,25,42,.75);
+    border: 1px solid rgba(32,178,170,.12);
+    border-radius: 14px; padding: 16px 18px;
+    transition: border-color .2s;
+}
+.profil-card:hover { border-color: rgba(32,178,170,.3); }
+.profil-card-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(32,178,170,.1);
+    display: flex; align-items: center; justify-content: center;
+    color: #20b2aa; font-size: 1rem; flex-shrink: 0;
+}
+.profil-card-label { font-size: .72rem; color: rgba(255,255,255,.3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 3px; }
+.profil-card-value { font-size: .92rem; color: #fff; font-weight: 500; }
+
+/* Actions */
+.profil-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-back, .btn-edit, .btn-qr {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 10px;
+    font-size: .86rem; font-weight: 600;
+    text-decoration: none; cursor: pointer; transition: all .2s;
+}
+.btn-back { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.7); }
+.btn-back:hover { background: rgba(255,255,255,.1); color: #fff; }
+.btn-edit { background: rgba(32,178,170,.1); border: 1px solid rgba(32,178,170,.3); color: #20b2aa; }
+.btn-edit:hover { background: rgba(32,178,170,.2); color: #fff; }
+.btn-qr { background: linear-gradient(135deg, #20b2aa, #0288d1); border: none; color: #fff; }
+.btn-qr:hover { opacity: .88; color: #fff; }
+</style>
+{% endblock %}

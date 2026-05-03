@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau OffreEmploi{% endblock %}
+
+{% block page_title %}Nouvelle offre d'emploi{% endblock %}
+
+{% block content %}
+<div class="mc-header">
+    <div>
+        <div class="mc-header-title"><i class="fas fa-plus-circle" style="color:var(--cyan); margin-right: 12px;"></i> Créer une offre</div>
+        <div class="mc-header-sub">Renseignez les détails pour publier une nouvelle opportunité.</div>
+    </div>
+    <div class="mc-header-actions">
+        <a href="{{ path('app_offre_emploi_index') }}" style="color:rgba(255,255,255,0.6); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    {{ include('offre_emploi/_form.html.twig') }}
+</div>
+{% endblock %}

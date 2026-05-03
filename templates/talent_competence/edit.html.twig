@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier Compétence - NEXUS{% endblock %}
+{% block page_title %}Modifier une Compétence{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="max-width:700px;">
+    <div class="top-bar">
+        <h1><i class="fa-solid fa-pen"></i> Modifier la Compétence #{{ talent_competence.id }}</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_talent_competence_index') }}" class="btn"><i class="fa-solid fa-arrow-left"></i> Retour</a>
+        </div>
+    </div>
+    <div class="form-card">
+        {{ include('talent_competence/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+    </div>
+    <div style="margin-top:16px;">
+        {{ include('talent_competence/_delete_form.html.twig') }}
+    </div>
+</div>
+<style>
+.top-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+.top-bar h1 { font-size:1.4rem; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px; margin:0; }
+.top-actions { display:flex; gap:10px; }
+.btn { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:9px; font-size:.84rem; font-weight:600; cursor:pointer; text-decoration:none; border:1px solid rgba(32,178,170,.3); background:rgba(32,178,170,.08); color:rgba(32,178,170,.9); transition:all .18s; }
+.btn:hover { background:rgba(32,178,170,.18); color:#fff; }
+.form-card { background:rgba(13,25,42,.85); border:1px solid rgba(32,178,170,.15); border-radius:16px; padding:28px; }
+</style>
+{% endblock %}
