@@ -8,6 +8,7 @@
 /public/bundles/
 /var/
 /vendor/
+.phpunit-local/
 ###< symfony/framework-bundle ###
 
 ###> symfony/phpunit-bridge ###

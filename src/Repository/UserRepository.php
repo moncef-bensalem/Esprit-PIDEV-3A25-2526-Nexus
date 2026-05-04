@@ -26,6 +26,9 @@ class UserRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /**
+     * @return list<User>
+     */
     public function searchUsers(?string $query, ?string $role): array
     {
         $qb = $this->createQueryBuilder('u')
@@ -49,6 +52,9 @@ class UserRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * @return array<string, int>
+     */
     public function getRoleDistribution(): array
     {
         $users = $this->findAll();
