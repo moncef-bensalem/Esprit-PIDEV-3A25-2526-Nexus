@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background: transparent; 
+            padding: 20px; 
+            color: #e2eaf4;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+        
+        .invalid-feedback { display: block; color: #ff6b6b; font-size: 0.8rem; margin-top: 4px; }
+
+        /* override global error to fit dark theme */
+        .form-global-error {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-left: 4px solid #ef4444;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: .86rem;
+            color: #fca5a5;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    {% include 'planification/_form.html.twig' %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Leaflet CSS + JS (free, no token needed) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        /* Dark tile layer via CSS invert for Leaflet */
+        .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); }
+        .leaflet-container { background: #0d1d30; }
+        .leaflet-popup-content-wrapper {
+            background: #0d1d30;
+            border: 1px solid rgba(79,195,247,0.4);
+            color: #e2eaf4;
+            border-radius: 8px;
+            font-size: .83rem;
+        }
+        .leaflet-popup-tip { background: #0d1d30; }
+        .leaflet-popup-close-button { color: #4fc3f7 !important; }
+        .leaflet-control-zoom a {
+            background: #0d1d30 !important;
+            color: #4fc3f7 !important;
+            border-color: rgba(79,195,247,0.3) !important;
+        }
+    </style>
+
+    <!-- Map modal -->
+    <div class="modal fade" id="mapModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background:#0d1d30;border:1px solid rgba(255,255,255,0.1);border-radius:14px;overflow:hidden;">
+                <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08);padding:12px 18px;">
+                    <h6 class="modal-title mb-0" style="color:#e2eaf4;font-size:.9rem;font-weight:600;">
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#4fc3f7" stroke-width="2" style="margin-right:6px;vertical-align:middle;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                        </svg>
+                        <span id="map-modal-title">Localisation</span>
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="filter:brightness(.7);"></button>
+                </div>
+                <div class="modal-body p-0" style="position:relative;">
+                    <div id="map-container" style="width:100%;height:420px;"></div>
+                    <div id="map-loading" style="display:none;position:absolute;inset:0;background:rgba(13,29,48,0.93);align-items:center;justify-content:center;flex-direction:column;gap:10px;">
+                        <div class="spinner-border" style="color:#4fc3f7;width:2rem;height:2rem;" role="status"></div>
+                        <p style="color:#a0b4c8;font-size:.85rem;margin:0;">Recherche en cours…</p>
+                    </div>
+                    <div id="map-not-found" style="display:none;position:absolute;inset:0;background:rgba(13,29,48,0.93);align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+                        <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                        <p style="color:#fcd34d;font-size:.88rem;margin:0;">Localisation introuvable automatiquement.</p>
+                        <a id="osm-fallback-link" href="#" target="_blank" style="color:#4fc3f7;font-size:.82rem;text-decoration:none;border:1px solid rgba(79,195,247,0.3);padding:6px 14px;border-radius:8px;">
+                            🔍 Rechercher sur OpenStreetMap
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Scroller en haut si erreur de validation
+        if (document.querySelector('.form-global-error, .invalid-feedback')) {
+            window.scrollTo(0, 0);
+        }
+
+        let mapInstance = null;
+
+        function showOverlay(id) {
+            ['map-loading', 'map-not-found'].forEach(function(oid) {
+                document.getElementById(oid).style.display = (oid === id) ? 'flex' : 'none';
+            });
+        }
+        function hideOverlays() {
+            ['map-loading', 'map-not-found'].forEach(function(oid) {
+                document.getElementById(oid).style.display = 'none';
+            });
+        }
+
+        // Clean a complex address into a simpler searchable query
+        function simplifyAddress(addr) {
+            return addr
+                .replace(/\bBP\s*\d+/gi, '')        // remove "BP 160"
+                .replace(/\b\d{4,5}\b/g, '')         // remove postal codes
+                .replace(/[-–—]/g, ',')               // replace dashes with commas
+                .replace(/[.]/g, ' ')                 // replace dots with spaces
+                .replace(/,\s*,/g, ',')               // remove double commas
+                .replace(/\s{2,}/g, ' ')              // collapse spaces
+                .trim()
+                .replace(/^,|,$/g, '')                // trim leading/trailing commas
+                .trim();
+        }
+
+        function nominatimFetch(query) {
+            return fetch(
+                'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query),
+                { headers: { 'Accept-Language': 'fr', 'Accept': 'application/json' } }
+            ).then(function(r) { return r.json(); });
+        }
+
+        function renderMap(lat, lng, originalLocation, displayName) {
+            if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+
+            mapInstance = L.map('map-container').setView([lat, lng], 15);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(mapInstance);
+
+            const blueIcon = L.divIcon({
+                className: '',
+                html: '<div style="width:14px;height:14px;background:#4fc3f7;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 3px rgba(79,195,247,0.4);"></div>',
+                iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -12]
+            });
+
+            L.marker([lat, lng], { icon: blueIcon })
+                .addTo(mapInstance)
+                .bindPopup(
+                    '<strong>' + originalLocation + '</strong>' +
+                    (displayName ? '<br><small style="color:#a0b4c8">' + displayName + '</small>' : ''),
+                    { maxWidth: 300 }
+                )
+                .openPopup();
+
+            hideOverlays();
+        }
+
+        document.getElementById('open-map-btn').addEventListener('click', function () {
+            const location = document.getElementById('planification_localisation').value.trim();
+            if (!location) {
+                alert('Veuillez d\'abord saisir une localisation.');
+                return;
+            }
+
+            document.getElementById('map-modal-title').textContent = location;
+            document.getElementById('osm-fallback-link').href =
+                'https://www.openstreetmap.org/search?query=' + encodeURIComponent(location);
+
+            const modal = new bootstrap.Modal(document.getElementById('mapModal'));
+            modal.show();
+            showOverlay('map-loading');
+
+            // Attempt 1: full address
+            nominatimFetch(location)
+            .then(function(data) {
+                if (data && data.length > 0) {
+                    renderMap(parseFloat(data[0].lat), parseFloat(data[0].lon), location, data[0].display_name);
+                    return;
+                }
+                // Attempt 2: simplified address
+                const simplified = simplifyAddress(location);
+                return nominatimFetch(simplified).then(function(data2) {
+                    if (data2 && data2.length > 0) {
+                        renderMap(parseFloat(data2[0].lat), parseFloat(data2[0].lon), location, data2[0].display_name);
+                        return;
+                    }
+                    // Attempt 3: just first meaningful segment before dash/comma
+                    const firstPart = location.split(/[-,]/)[0].trim();
+                    return nominatimFetch(firstPart).then(function(data3) {
+                        if (data3 && data3.length > 0) {
+                            renderMap(parseFloat(data3[0].lat), parseFloat(data3[0].lon), location, data3[0].display_name);
+                        } else {
+                            showOverlay('map-not-found');
+                        }
+                    });
+                });
+            })
+            .catch(function() {
+                showOverlay('map-not-found');
+            });
+        });
+
+        document.getElementById('mapModal').addEventListener('hidden.bs.modal', function () {
+            if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+        });
+
+        document.getElementById('mapModal').addEventListener('shown.bs.modal', function () {
+            if (mapInstance) { mapInstance.invalidateSize(); }
+        });
+    </script>
+</body>
+</html>

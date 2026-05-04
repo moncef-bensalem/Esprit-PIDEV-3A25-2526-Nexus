@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Departement{% endblock %}
+
+{% block page_title %}Détail Département{% endblock %}
+
+{% block content %}
+<style>
+    .mc-show-card { background: rgba(13,25,42,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 32px; max-width: 700px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .mc-detail-row { display: flex; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .mc-detail-row:last-child { border-bottom: none; }
+    .mc-detail-label { width: 200px; flex-shrink: 0; font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+    .mc-detail-value { flex: 1; font-size: 0.95rem; color: #fff; line-height: 1.5; }
+</style>
+
+<div class="mc-header">
+    <div>
+        <div class="mc-header-title"><i class="fas fa-building" style="color:var(--cyan); margin-right: 12px;"></i> Visualisation du département</div>
+        <div class="mc-header-sub">Informations complètes sur ce département.</div>
+    </div>
+    <div class="mc-header-actions" style="display:flex; align-items:center; gap: 12px;">
+        <a href="{{ path('app_departement_index') }}" style="color:rgba(255,255,255,0.6); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <a href="{{ path('app_departement_edit', {'id_departement': departement.id_departement}) }}" style="background: linear-gradient(135deg, #20b2aa, #0288d1); color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fas fa-edit"></i> Modifier
+        </a>
+        <div style="background:rgba(239,83,80,.1); border-radius:10px; padding: 4px 10px; display: flex; align-items:center;">
+            {{ include('departement/_delete_form.html.twig') }}
+        </div>
+    </div>
+</div>
+
+<div class="mc-show-card">
+    <div class="mc-detail-row">
+        <div class="mc-detail-label">Nom du Département</div>
+        <div class="mc-detail-value" style="font-size: 1.2rem; font-weight: 700; color: #fff;">
+            <i class="fas fa-building" style="color:var(--cyan); margin-right: 6px;"></i> 
+            {{ departement.libelle }}
+        </div>
+    </div>
+    <div class="mc-detail-row">
+        <div class="mc-detail-label">ID Système</div>
+        <div class="mc-detail-value" style="color: rgba(255,255,255,0.5);">#{{ departement.id_departement }}</div>
+    </div>
+</div>
+{% endblock %}

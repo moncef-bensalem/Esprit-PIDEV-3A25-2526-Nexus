@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: DejaVu Sans, sans-serif;
+        font-size: 11px;
+        color: #1e293b;
+        background: #fff;
+        padding: 20px 24px;
+    }
+
+    .doc-header {
+        border-bottom: 3px solid #0f766e;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        display: table;
+        width: 100%;
+    }
+    .doc-header-left  { display: table-cell; vertical-align: middle; }
+    .doc-header-right { display: table-cell; vertical-align: middle; text-align: right; color: #64748b; font-size: 10px; }
+
+    .doc-title  { font-size: 20px; font-weight: 700; color: #0f766e; letter-spacing: 0.5px; }
+    .doc-sub    { font-size: 11px; color: #475569; margin-top: 2px; }
+
+    .candidat-section { margin-bottom: 28px; page-break-inside: avoid; }
+
+    .candidat-heading {
+        background: #0f766e;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 10px;
+        border-radius: 4px 4px 0 0;
+        letter-spacing: 0.3px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+    }
+
+    thead tr {
+        background: #f0fdfa;
+        color: #134e4a;
+    }
+
+    thead th {
+        padding: 6px 8px;
+        text-align: left;
+        font-weight: 700;
+        border: 1px solid #99f6e4;
+    }
+
+    tbody tr:nth-child(even)  { background: #f8fafc; }
+    tbody tr:nth-child(odd)   { background: #ffffff; }
+
+    tbody td {
+        padding: 5px 8px;
+        border: 1px solid #e2e8f0;
+        vertical-align: top;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 20px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .badge-favorable   { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .badge-defavorable { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .badge-arevoir     { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+
+    /* Score cell */
+    .score-high   { color: #15803d; font-weight: 700; }
+    .score-medium { color: #b45309; font-weight: 700; }
+    .score-low    { color: #dc2626; font-weight: 700; }
+    .score-na     { color: #94a3b8; }
+
+    .doc-footer {
+        margin-top: 18px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 8px;
+        font-size: 9px;
+        color: #94a3b8;
+        text-align: center;
+    }
+
+    .page-break { page-break-after: always; }
+</style>
+</head>
+<body>
+
+{# ── Header ── #}
+<div class="doc-header">
+    <div class="doc-header-left">
+        <div class="doc-title">Rapport des Évaluations</div>
+        <div class="doc-sub">Trié par score moyen décroissant · {{ byCandidat|length }} candidat(s)</div>
+    </div>
+    <div class="doc-header-right">
+        Généré le {{ generatedAt|date('d/m/Y à H:i') }}<br>
+        Nexus Platform
+    </div>
+</div>
+
+{# ── One section per candidat ── #}
+{% for candidatId, data in byCandidat %}
+<div class="candidat-section">
+
+    <div class="candidat-heading">
+        👤 {{ data.label }}
+        &nbsp;·&nbsp;
+        {{ data.evaluations|length }} évaluation(s)
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:6%">#</th>
+                <th style="width:13%">Date</th>
+                <th style="width:14%">Décision</th>
+                <th style="width:11%">Score moy.</th>
+                <th style="width:16%">Recruteur</th>
+                <th>Commentaire global</th>
+                <th style="width:13%">Critères (notes)</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in data.evaluations %}
+            {% set eval = row.entity %}
+            {% set avg  = row.avg %}
+
+            {# Score CSS class #}
+            {% if avg is null %}
+                {% set scoreClass = 'score-na' %}
+            {% elseif avg >= 14 %}
+                {% set scoreClass = 'score-high' %}
+            {% elseif avg >= 8 %}
+                {% set scoreClass = 'score-medium' %}
+            {% else %}
+                {% set scoreClass = 'score-low' %}
+            {% endif %}
+
+            {# Decision badge class #}
+            {% set decision = eval.decisionPreliminaire %}
+            {% if decision == 'FAVORABLE' %}
+                {% set badgeClass = 'badge-favorable' %}
+            {% elseif decision == 'DEFAVORABLE' %}
+                {% set badgeClass = 'badge-defavorable' %}
+            {% else %}
+                {% set badgeClass = 'badge-arevoir' %}
+            {% endif %}
+
+            <tr>
+                <td>{{ eval.idEvaluation }}</td>
+                <td>{{ eval.dateCreation|date('d/m/Y') }}</td>
+                <td>
+                    <span class="badge {{ badgeClass }}">{{ decision }}</span>
+                    {% if decision == 'A_REVOIR' and eval.reviewDeadline %}
+                        <br><span style="font-size:9px;color:#64748b;">⏰ {{ eval.reviewDeadline|date('d/m/Y') }}</span>
+                    {% endif %}
+                </td>
+                <td class="{{ scoreClass }}">
+                    {% if avg is not null %}
+                        {{ avg|number_format(2, '.') }}/20
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if eval.recruteur %}
+                        {{ eval.recruteur.firstName }} {{ eval.recruteur.lastName }}
+                    {% else %}
+                        <span style="color:#94a3b8;">—</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:9px;">
+                    {{ eval.commentaireGlobal|slice(0, 180) }}{% if eval.commentaireGlobal|length > 180 %}…{% endif %}
+                </td>
+                <td style="font-size:9px;">
+                    {% if eval.scoreCompetences is empty %}
+                        <span style="color:#94a3b8;">Aucun</span>
+                    {% else %}
+                        {% for sc in eval.scoreCompetences %}
+                            {{ sc.nomCritere }}: <strong>{{ sc.noteAttribuee }}</strong>{% if not loop.last %}<br>{% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+{% endfor %}
+
+<div class="doc-footer">
+    Nexus Platform — Rapport confidentiel — {{ generatedAt|date('d/m/Y H:i') }}
+</div>
+
+</body>
+</html>

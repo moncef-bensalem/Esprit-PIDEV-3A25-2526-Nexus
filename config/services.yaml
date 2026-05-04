@@ -1,0 +1,94 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    gemini.api_key: '%env(string:GEMINI_API_KEY)%'
+    gemini.model.default: 'gemini-1.5-flash'
+    gemini.hate_threshold.default: 'BLOCK_MEDIUM_AND_ABOVE'
+    gemini.timeout.default: 3.0
+    gemini.model: '%env(default:gemini.model.default:string:GEMINI_MODEL)%'
+    gemini.hate_threshold: '%env(default:gemini.hate_threshold.default:string:GEMINI_HATE_THRESHOLD)%'
+    gemini.timeout: '%env(default:gemini.timeout.default:float:GEMINI_TIMEOUT)%'
+    nohate.model.default: 'gemini-1.5-flash'
+    nohate.hate_threshold.default: 'BLOCK_MEDIUM_AND_ABOVE'
+    nohate.timeout.default: 3.0
+    mailer.from_email.default: 'contact@nexus-app.com'
+    mailer.from_name.default: 'Nexus RH'
+    mailer.from_email: '%env(default:mailer.from_email.default:string:MAILER_FROM_EMAIL)%'
+    mailer.from_name: '%env(default:mailer.from_name.default:string:MAILER_FROM_NAME)%'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+    App\Service\WeatherService:
+        arguments:
+            $apiKey: '%env(OPENWEATHERMAP_API_KEY)%'
+
+    App\Service\GrokService:
+        arguments:
+            $apiKey: '%env(GROQ_API_KEY)%'
+
+    App\Service\GroqService:
+        arguments:
+            $groqApiKey: '%env(TALENT_CHATBOT_GROQ_API_KEY)%'
+            $groqApiUrl: '%env(GROQ_API_URL)%'
+            $groqModel:  'llama-3.1-8b-instant'
+
+    App\Service\ChatbotService:
+        arguments:
+            $em:   '@doctrine.orm.entity_manager'
+            $groq: '@App\Service\GroqService'
+
+    App\Service\SmsNotificationService:
+        arguments:
+            $twilioSid: '%env(TWILIO_SID)%'
+            $twilioToken: '%env(TWILIO_TOKEN)%'
+            $twilioFromNumber: '%env(TWILIO_FROM_NUMBER)%'
+            $adminPhoneNumber: '%env(TWILIO_ADMIN_PHONE_NUMBER)%'
+
+    App\Service\AdzunaService:
+        arguments:
+            $adzunaAppId:  '%env(ADZUNA_APP_ID)%'
+            $adzunaAppKey: '%env(ADZUNA_APP_KEY)%'
+
+    App\Service\MyMemoryService:
+        arguments:
+            $email: '%env(MYMEMORY_EMAIL)%'
+
+    App\Service\DeepLService:
+        arguments:
+            $apiKey: '%env(DEEPL_API_KEY)%'
+    App\Service\GeminiSafetyClient:
+        arguments:
+            $apiKey: '%env(string:NOHATE_API_KEY)%'
+            $model: '%env(default:nohate.model.default:string:NOHATE_MODEL)%'
+            $hateThreshold: '%env(default:nohate.hate_threshold.default:string:NOHATE_HATE_THRESHOLD)%'
+            $timeout: '%env(default:nohate.timeout.default:float:NOHATE_TIMEOUT)%'
+
+    App\Service\EvaluationDecisionMailer:
+        arguments:
+            $fromEmail: '%env(string:GMAIL_FROM_EMAIL)%'
+            $fromName: '%env(string:GMAIL_FROM_NAME)%'
+            $gmailDsn: '%env(GMAIL_DSN)%'
+
+    App\Service\TwoFactorService:
+        arguments:
+            $fromEmail: '%mailer.from_email%'
+            $fromName: '%mailer.from_name%'
+            $appSecret: '%kernel.secret%'

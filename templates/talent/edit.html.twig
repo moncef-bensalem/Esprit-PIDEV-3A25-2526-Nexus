@@ -1,0 +1,154 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier Talent{% endblock %}
+{% block page_title %}✏️ Modifier Profil Talent{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+/* Dark Neon Form Styling */
+.edit-container {
+    max-width: 900px;
+    margin: 30px auto;
+    background: rgba(13, 25, 42, 0.85);
+    border: 1px solid rgba(32, 178, 170, 0.25);
+    border-radius: 20px;
+    padding: 35px 40px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+}
+
+.edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.edit-header h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-grid .full-width {
+    grid-column: 1 / -1;
+}
+
+.neon-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.neon-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.neon-input {
+    background: rgba(7, 14, 23, 0.6);
+    border: 1px solid rgba(32, 178, 170, 0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: #fff;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.neon-input:focus {
+    outline: none;
+    border-color: #20b2aa;
+    box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.15);
+    background: rgba(13, 25, 42, 0.9);
+}
+
+.neon-actions {
+    margin-top: 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.btn-neon-save {
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    border: none;
+    padding: 14px 30px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 5px 15px rgba(32, 178, 170, 0.3);
+}
+
+.btn-neon-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(32, 178, 170, 0.4);
+}
+
+.btn-neon-back {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7);
+    padding: 12px 24px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-neon-back:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+/* Fix symfony date widgets (if rendering as 3 selects) */
+.neon-input select {
+    background: rgba(7, 14, 23, 0.6);
+    border: 1px solid rgba(32, 178, 170, 0.2);
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+@media(max-width: 650px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .neon-actions { flex-direction: column; gap: 20px; align-items: stretch; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <div class="edit-header">
+        <h1><i class="fa-solid fa-user-pen" style="color: #20b2aa; margin-right: 12px;"></i> Informations Talent</h1>
+    </div>
+
+    {{ include('talent/_form.html.twig', {'button_label': 'Mettre à jour le profil'}) }}
+</div>
+{% endblock %}

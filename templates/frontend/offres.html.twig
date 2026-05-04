@@ -1,0 +1,323 @@
+{% extends 'base.html.twig' %}
+{% block title %}Offres d'emploi — Nexus Carrières{% endblock %}
+{% block page_title %}Offres d'emploi{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* ── Hero ── */
+.hero {
+    text-align: center;
+    padding: 64px 24px 52px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 48px;
+}
+.hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(32,178,170,.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 60%, rgba(2,136,209,.07) 0%, transparent 70%);
+    pointer-events: none;
+}
+.hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 16px; border-radius: 20px;
+    background: rgba(32,178,170,.12); border: 1px solid rgba(32,178,170,.25);
+    font-size: .75rem; font-weight: 700; color: #20b2aa; letter-spacing: .8px;
+    text-transform: uppercase; margin-bottom: 22px;
+}
+.hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700; color: #fff; line-height: 1.18;
+    margin-bottom: 16px;
+}
+.hero-title span {
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.hero-sub {
+    font-size: 1rem; color: rgba(255,255,255,.42);
+    max-width: 540px; margin: 0 auto 28px; line-height: 1.7;
+}
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero-btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: 10px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    color: rgba(255,255,255,.65); font-size: .86rem; font-weight: 600;
+    text-decoration: none; transition: all .18s;
+}
+.hero-btn-ghost:hover { background: rgba(255,255,255,.08); color: #fff; }
+.hero-btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: 10px;
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    color: #fff; font-size: .86rem; font-weight: 700;
+    text-decoration: none; transition: opacity .18s, transform .18s;
+}
+.hero-btn-primary:hover { opacity: .88; transform: translateY(-1px); color: #fff; }
+
+/* ── Count bar ── */
+.count-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.count-bar-title { font-size: .9rem; font-weight: 700; color: rgba(255,255,255,.7); }
+.count-bar-title span { color: #20b2aa; }
+.count-bar-line { flex: 1; height: 1px; background: rgba(32,178,170,.14); min-width: 20px; }
+
+/* ── Grid ── */
+.jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+/* ── Job Card ── */
+.job-card {
+    background: rgba(13,25,42,.75);
+    border: 1px solid rgba(32,178,170,.14);
+    border-radius: 16px;
+    padding: 22px;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    transition: transform .25s, box-shadow .25s, border-color .25s;
+    backdrop-filter: blur(10px);
+}
+.job-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 45px rgba(0,0,0,.38);
+    border-color: rgba(32,178,170,.28);
+}
+.job-card-top-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #20b2aa, #0288d1);
+    border-radius: 16px 16px 0 0;
+}
+.job-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.job-icon {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: rgba(32,178,170,.12); border: 1px solid rgba(32,178,170,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; color: #20b2aa;
+}
+.job-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 10px;
+    background: rgba(32,178,170,.1); border: 1px solid rgba(32,178,170,.2);
+    font-size: .68rem; font-weight: 700; color: #20b2aa; letter-spacing: .3px;
+}
+.job-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 5px; line-height: 1.3; }
+.job-dept {
+    font-size: .78rem; color: rgba(255,255,255,.4);
+    display: flex; align-items: center; gap: 5px; margin-bottom: 16px;
+}
+.job-divider { border: none; border-top: 1px solid rgba(255,255,255,.05); margin: 0 0 16px; }
+.job-metas { display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px; flex: 1; }
+.job-meta { display: flex; align-items: center; gap: 8px; font-size: .79rem; color: rgba(255,255,255,.46); }
+.job-meta i { color: #20b2aa; font-size: .72rem; width: 13px; text-align: center; }
+.job-meta strong { color: rgba(255,255,255,.7); }
+.job-apply-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 16px; border-radius: 10px; width: 100%;
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    color: #fff; font-size: .83rem; font-weight: 700;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: opacity .18s, transform .18s;
+}
+.job-apply-btn:hover { opacity: .88; transform: translateY(-1px); color: #fff; }
+
+/* ── Empty ── */
+.empty-state {
+    grid-column: 1 / -1; text-align: center; padding: 72px 32px;
+    background: rgba(13,25,42,.6);
+    border: 1px dashed rgba(32,178,170,.2); border-radius: 16px;
+}
+.empty-icon  { font-size: 2.8rem; color: rgba(32,178,170,.22); margin-bottom: 18px; }
+.empty-title { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,.5); margin-bottom: 7px; }
+.empty-sub   { font-size: .82rem; color: rgba(255,255,255,.26); }
+
+/* ── Pagination ── */
+.pagination {
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+    margin-top: 40px; padding: 0; list-style: none;
+}
+.pagination span, .pagination a {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(13,25,42,.6); border: 1px solid rgba(255,255,255,.05);
+    color: rgba(255,255,255,.6); font-size: .85rem; font-weight: 600;
+    text-decoration: none; transition: all .2s; cursor: pointer;
+}
+.pagination a:hover {
+    background: rgba(32,178,170,.1); border-color: rgba(32,178,170,.3); color: #20b2aa;
+}
+.pagination li.active span {
+    background: linear-gradient(135deg, #20b2aa, #0288d1);
+    color: #fff; border-color: transparent; box-shadow: 0 4px 12px rgba(32,178,170,.2);
+}
+.pagination li.disabled span {
+    opacity: 0.4; cursor: not-allowed; pointer-events: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Hero ── #}
+<div class="hero">
+    <div class="hero-eyebrow"><i class="fa fa-rocket"></i> Rejoignez notre équipe</div>
+    <h1 class="hero-title">
+        Trouvez votre<br><span>prochain défi professionnel</span>
+    </h1>
+    <p class="hero-sub">
+        Parcourez nos offres d'emploi, trouvez le poste qui vous correspond
+        et rejoignez une équipe d'innovateurs passionnés.
+    </p>
+    <div class="hero-actions">
+        {% if app.user %}
+            <a href="{{ path('candidate_mes_candidatures') }}" class="hero-btn-primary">
+                <i class="fa fa-file-alt"></i> Mes candidatures
+            </a>
+        {% else %}
+            <a href="{{ path('app_public_suivi') }}" class="hero-btn-ghost">
+                <i class="fa fa-search"></i> Suivre ma candidature
+            </a>
+            <a href="{{ path('app_login') }}" class="hero-btn-primary">
+                <i class="fa fa-sign-in-alt"></i> Se connecter
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- SEARCH BAR -->
+<div style="margin-bottom: 24px; position: relative; max-width: 800px; margin-left: auto; margin-right: auto;">
+    <input type="text" id="jobSearchInput" placeholder="Rechercher par titre de poste ou département..." value="{{ app.request.query.get('q') }}"
+           style="width: 100%; padding: 18px 20px 18px 54px; border-radius: 12px; background: rgba(13,25,42,.6); border: 1px solid rgba(32,178,170,.3); color: #fff; font-size: 1.05rem; transition: border-color 0.2s, box-shadow 0.2s; outline: none;" 
+           onfocus="this.style.borderColor='rgba(32,178,170,.8)'; this.style.boxShadow='0 0 15px rgba(32,178,170,.2)';"
+           onblur="this.style.borderColor='rgba(32,178,170,.3)'; this.style.boxShadow='none';"/>
+    <i class="fa fa-search" style="position: absolute; left: 22px; top: 21px; color: rgba(255,255,255,.4); font-size: 1.1rem;"></i>
+</div>
+
+{# ── Count bar ── #}
+<div class="count-bar" style="margin-top: 10px;">
+    <div class="count-bar-title" id="jobsCountTitle">
+        <span>{{ offres.getNbResults() }}</span> offre{{ offres.getNbResults() != 1 ? 's' : '' }} disponible{{ offres.getNbResults() != 1 ? 's' : '' }}
+    </div>
+    <div class="count-bar-line"></div>
+</div>
+
+{# ── Jobs grid ── #}
+<div id="jobsContainer">
+    <div class="jobs-grid">
+        {% for offre in offres %}
+            <div class="job-card">
+            <div class="job-card-top-bar"></div>
+
+            <div class="job-card-header">
+                <div class="job-icon"><i class="fa fa-laptop-code"></i></div>
+                <span class="job-badge"><i class="fa fa-circle" style="font-size:.5rem;"></i> Ouvert</span>
+            </div>
+
+            <div class="job-title">{{ offre.titre_poste }}</div>
+            <div class="job-dept"><i class="fa fa-building"></i> {{ offre.departement ?? 'Non précisé' }}</div>
+
+            <hr class="job-divider">
+
+            <div class="job-metas">
+                <div class="job-meta">
+                    <i class="fa fa-money-bill-wave"></i>
+                    <span>
+                        {% if offre.salaire_propose %}
+                            <strong>{{ offre.salaire_propose|number_format(0, '.', ' ') }} {{ offre.devise }}</strong>
+                        {% else %}
+                            Salaire non spécifié
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="job-meta">
+                    <i class="fa fa-calendar-alt"></i>
+                    <span>Publiée le <strong>{{ offre.date_creation ? offre.date_creation|date('d/m/Y') : 'Récemment' }}</strong></span>
+                </div>
+                {% if offre.type_contrat is defined and offre.type_contrat %}
+                <div class="job-meta">
+                    <i class="fa fa-file-contract"></i>
+                    <span><strong>{{ offre.type_contrat }}</strong></span>
+                </div>
+                {% endif %}
+            </div>
+
+            <a href="{{ path('app_public_postuler', {'id_offre': offre.id_offre}) }}" class="job-apply-btn">
+                <i class="fa fa-paper-plane"></i> Postuler maintenant
+            </a>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fa fa-briefcase"></i></div>
+            <div class="empty-title">Aucune offre disponible actuellement</div>
+            <div class="empty-sub">Revenez bientôt, de nouvelles opportunités sont régulièrement publiées.</div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="pagination-wrapper">
+        {{ pagerfanta(offres, 'twitter_bootstrap3', {'prev_message': '←', 'next_message': '→'}) }}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('jobSearchInput');
+    if (!searchInput) return;
+
+    let timer;
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            const query = e.target.value;
+            const url = new URL(window.location.href);
+            if (query) {
+                url.searchParams.set('q', query);
+            } else {
+                url.searchParams.delete('q');
+            }
+            url.searchParams.delete('page');
+
+            document.getElementById('jobsContainer').style.opacity = '0.5';
+
+            fetch(url.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                const newContainer = doc.getElementById('jobsContainer');
+                if (newContainer) {
+                    document.getElementById('jobsContainer').innerHTML = newContainer.innerHTML;
+                    document.getElementById('jobsContainer').style.opacity = '1';
+                }
+                
+                const newCount = doc.getElementById('jobsCountTitle');
+                if (newCount) {
+                    document.getElementById('jobsCountTitle').innerHTML = newCount.innerHTML;
+                }
+
+                window.history.pushState({}, '', url.toString());
+            })
+            .catch(error => {
+                console.error("Erreur AJAX:", error);
+                document.getElementById('jobsContainer').style.opacity = '1';
+            });
+        }, 400);
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,162 @@
+<div class="form-card">
+    {{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'offre-form'}}) }}
+        <div class="form-body">
+            {% for child in form %}
+                {% if child.vars.name != '_token' %}
+                    <div class="field-group" style="margin-bottom: 20px;">
+                        {{ form_label(child, null, {'label_attr': {'class': 'field-label', 'style': 'display:block;margin-bottom:8px;font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.7);'}}) }}
+                        {{ form_widget(child, {'attr': {'class': 'field-input', 'style': 'width:100%;padding:12px 14px;background:rgba(13,25,42,0.6);border:1px solid rgba(32,178,170,0.2);border-radius:10px;color:#fff;font-size:0.9rem;transition:all 0.2s;'}}) }}
+                        {% if child.vars.errors|length > 0 %}
+                            <div class="field-error" style="color:#ef5350;font-size:0.8rem;margin-top:6px;"><i class="fa fa-exclamation-circle"></i> {{ child.vars.errors[0].message }}</div>
+                        {% endif %}
+
+                        {# ── AI Salary Suggestion Box (appears after salaire_propose field) ── #}
+                        {% if child.vars.name == 'salaire_propose' %}
+                            <div id="ai-salary-box" style="
+                                display: none;
+                                margin-top: 12px;
+                                padding: 16px 18px;
+                                background: rgba(32,178,170,0.06);
+                                border: 1px solid rgba(32,178,170,0.25);
+                                border-radius: 14px;
+                            ">
+                                {# Header #}
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <span style="font-size:1.2rem;">💡</span>
+                                        <span style="font-size:0.8rem;font-weight:700;color:#20b2aa;text-transform:uppercase;letter-spacing:0.5px;">IA — Estimation Salariale</span>
+                                    </div>
+                                    <span id="ai-rates-badge" style="font-size:0.65rem;padding:2px 8px;border-radius:20px;display:none;"></span>
+                                </div>
+
+                                {# Main salary range #}
+                                <div id="ai-salary-range" style="font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:6px;">—</div>
+
+                                {# Seniority chip (shows when detected) #}
+                                <div id="ai-seniority-chip" style="display:none;margin-bottom:8px;">
+                                    <span style="font-size:0.7rem;padding:3px 10px;border-radius:20px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.35);color:#c4b5fd;font-weight:600;"></span>
+                                </div>
+
+                                {# Confidence + count meta #}
+                                <div id="ai-salary-meta" style="font-size:0.78rem;color:rgba(255,255,255,0.4);">
+                                    Sélectionnez un département pour voir la prédiction
+                                </div>
+                            </div>
+                            <style>
+                                @keyframes fadeInUp {
+                                    from { opacity: 0; transform: translateY(6px); }
+                                    to   { opacity: 1; transform: translateY(0); }
+                                }
+                            </style>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {{ form_rest(form) }}
+        </div>
+        <div style="margin-top: 24px; text-align: right;">
+            <button class="btn btn-primary" style="background: linear-gradient(135deg, #20b2aa, #0288d1); color: #fff; border: none; padding: 12px 28px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+                <i class="fa fa-save" style="margin-right: 6px;"></i> {{ button_label|default('Enregistrer') }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>
+
+<script>
+(function() {
+    const deptSelect   = document.querySelector('[name*="departementRel"]');
+    const deviseSelect = document.querySelector('[name*="devise"]');
+    const titreInput   = document.querySelector('[name*="titre_poste"]');
+    const salaryBox    = document.getElementById('ai-salary-box');
+    const rangeEl      = document.getElementById('ai-salary-range');
+    const metaEl       = document.getElementById('ai-salary-meta');
+    const seniorityEl  = document.getElementById('ai-seniority-chip');
+    const ratesBadge   = document.getElementById('ai-rates-badge');
+
+    if (!deptSelect || !salaryBox) return;
+
+    let debounceTimer = null;
+
+    function confidenceColor(c) {
+        if (c === 'élevée')  return '#4caf50';
+        if (c === 'modérée') return '#fbc02d';
+        return '#ef5350';
+    }
+    function confidenceIcon(c) {
+        if (c === 'élevée')  return '🟢';
+        if (c === 'modérée') return '🟠';
+        return '🔴';
+    }
+
+    function fetchEstimate() {
+        const deptText = deptSelect.options[deptSelect.selectedIndex]?.text;
+        const devise   = deviseSelect ? (deviseSelect.value || 'TND') : 'TND';
+        const titre    = titreInput   ? (titreInput.value || '') : '';
+
+        if (!deptText || deptSelect.selectedIndex === 0) {
+            salaryBox.style.display = 'none';
+            return;
+        }
+
+        rangeEl.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:1rem;animation:fadeInUp 0.3s ease">⏳ Calcul en cours...</span>';
+        metaEl.textContent = '';
+        seniorityEl.style.display = 'none';
+        ratesBadge.style.display = 'none';
+        salaryBox.style.display = 'block';
+        salaryBox.style.animation = 'fadeInUp 0.3s ease';
+
+        const url = `/admin/offre-emploi/ai/salary-estimate?dept=${encodeURIComponent(deptText)}&devise=${encodeURIComponent(devise)}&titre=${encodeURIComponent(titre)}`;
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    rangeEl.innerHTML = `<span style="color:rgba(255,255,255,0.3);font-size:0.95rem;">Données insuffisantes</span>`;
+                    metaEl.textContent = 'Ajoutez plus d\'offres pour ce département.';
+                    return;
+                }
+
+                const min  = Number(data.min).toLocaleString('fr-TN');
+                const max  = Number(data.max).toLocaleString('fr-TN');
+                const conf = data.confidence;
+                const note = data.global ? ' <em style="color:rgba(255,255,255,0.3)">(estimation globale)</em>' : '';
+
+                rangeEl.innerHTML = `${min} – ${max} <span style="font-size:1rem;font-weight:400;color:rgba(255,255,255,0.5);">${data.devise}</span>`;
+
+                // Seniority chip
+                if (data.seniority_label) {
+                    seniorityEl.style.display = 'block';
+                    seniorityEl.querySelector('span').textContent = '🎯 ' + data.seniority_label;
+                } else {
+                    seniorityEl.style.display = 'none';
+                }
+
+                // Live rates badge
+                if (data.rates_source === 'live') {
+                    ratesBadge.style.cssText = 'font-size:0.65rem;padding:2px 8px;border-radius:20px;display:inline-block;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#6ee7b7;';
+                    ratesBadge.textContent = '🌐 Taux en direct';
+                } else {
+                    ratesBadge.style.cssText = 'font-size:0.65rem;padding:2px 8px;border-radius:20px;display:inline-block;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);color:#fde68a;';
+                    ratesBadge.textContent = '📴 Taux hors-ligne';
+                }
+
+                metaEl.innerHTML = `${confidenceIcon(conf)} Confiance : <strong style="color:${confidenceColor(conf)}">${conf}</strong> &nbsp;·&nbsp; Basé sur <strong>${data.count}</strong> offres${note}`;
+            })
+            .catch(() => {
+                salaryBox.style.display = 'none';
+            });
+    }
+
+    function debouncedFetch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(fetchEstimate, 400);
+    }
+
+    deptSelect.addEventListener('change', fetchEstimate);
+    if (deviseSelect) deviseSelect.addEventListener('change', fetchEstimate);
+    if (titreInput)   titreInput.addEventListener('input', debouncedFetch);
+
+    // On the edit page, a dept is already selected — trigger immediately
+    if (deptSelect.value) fetchEstimate();
+})();
+</script>

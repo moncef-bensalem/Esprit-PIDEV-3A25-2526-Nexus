@@ -1,0 +1,23 @@
+<div class="form-card">
+    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+        <div class="form-body">
+            {% for child in form %}
+                {% if child.vars.name != '_token' %}
+                    <div class="field-group" style="margin-bottom: 20px;">
+                        {{ form_label(child, null, {'label_attr': {'class': 'field-label', 'style': 'display:block;margin-bottom:8px;font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.7);'}}) }}
+                        {{ form_widget(child, {'attr': {'class': 'field-input', 'style': 'width:100%;padding:12px 14px;background:rgba(13,25,42,0.6);border:1px solid rgba(32,178,170,0.2);border-radius:10px;color:#fff;font-size:0.9rem;transition:all 0.2s;'}}) }}
+                        {% if child.vars.errors|length > 0 %}
+                            <div class="field-error" style="color:#ef5350;font-size:0.8rem;margin-top:6px;"><i class="fa fa-exclamation-circle"></i> {{ child.vars.errors[0].message }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {{ form_rest(form) }}
+        </div>
+        <div style="margin-top: 24px; text-align: right;">
+            <button class="btn btn-primary" style="background: linear-gradient(135deg, #20b2aa, #0288d1); color: #fff; border: none; padding: 12px 28px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+                <i class="fa fa-save" style="margin-right: 6px;"></i> {{ button_label|default('Enregistrer') }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>

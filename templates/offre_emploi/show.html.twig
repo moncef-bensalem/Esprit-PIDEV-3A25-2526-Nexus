@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}OffreEmploi{% endblock %}
+
+{% block page_title %}Détails de l'offre{% endblock %}
+
+{% block content %}
+<style>
+    .mc-show-card { background: rgba(13,25,42,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 32px; max-width: 900px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .mc-detail-row { display: flex; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .mc-detail-row:last-child { border-bottom: none; }
+    .mc-detail-label { width: 200px; flex-shrink: 0; font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+    .mc-detail-value { flex: 1; font-size: 0.95rem; color: #fff; line-height: 1.5; }
+    .status-badge { font-size: 0.75rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
+</style>
+
+<div class="mc-header">
+    <div>
+        <div class="mc-header-title"><i class="fas fa-eye" style="color:var(--cyan); margin-right: 12px;"></i> Visualisation de l'offre</div>
+        <div class="mc-header-sub">Détails de l'offre d'emploi #{{ offre_emploi.id_offre }}.</div>
+    </div>
+    <div class="mc-header-actions" style="display:flex; align-items:center; gap: 12px;">
+        <a href="{{ path('app_offre_emploi_index') }}" style="color:rgba(255,255,255,0.6); text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+        <a href="{{ path('app_offre_emploi_edit', {'id_offre': offre_emploi.id_offre}) }}" class="btn-create" style="padding: 8px 16px;">
+            <i class="fas fa-edit"></i> Modifier
+        </a>
+        <div style="background:rgba(239,83,80,.1); border-radius:10px; padding: 4px 10px; display: flex; align-items:center;">
+            {{ include('offre_emploi/_delete_form.html.twig') }}
+        </div>
+    </div>
+</div>
+
+<div class="mc-show-card">
+    <div class="mc-detail-row">
+        <div class="mc-detail-label">Titre du poste</div>
+        <div class="mc-detail-value" style="font-size: 1.3rem; font-weight: 700; color: #20b2aa;">{{ offre_emploi.titre_poste }}</div>
+    </div>
+    <div class="mc-detail-row">
+        <div class="mc-detail-label">Département</div>
+        <div class="mc-detail-value"><i class="fas fa-building" style="color:rgba(255,255,255,0.4); margin-right:6px;"></i> {{ offre_emploi.departement }}</div>
+    </div>
+    <div class="mc-detail-row">
+        <div class="mc-detail-label">Statut</div>
+        <div class="mc-detail-value">
+            <span class="status-badge" style="
+                {% if offre_emploi.statut_offre == 'Publiée' %}background:rgba(32,178,170,0.15); color:#20b2aa;
+                {% elseif offre_emploi.statut_offre == 'Clôturée' %}background:rgba(229,57,53,0.15); color:#e53935;
+                {% else %}background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.6);{% endif %}
+            ">{{ offre_emploi.statut_offre }}</span>
+        </div>
+    </div>
+    <div class="mc-detail-row">
+        <div class="mc-detail-label">Salaire Proposé</div>
+        <div class="mc-detail-value"><i class="fas fa-money-bill-wave" style="color:var(--cyan); margin-right:6px;"></i> {{ offre_emploi.salaire_propose|number_format(0, '.', ' ') }} {{ offre_emploi.devise }}</div>
+    </div>
+    <div class="mc-detail-row">
+        <div class="mc-detail-label">Date de Création</div>
+        <div class="mc-detail-value"><i class="fas fa-calendar-alt text-muted" style="margin-right:6px;"></i> {{ offre_emploi.date_creation ? offre_emploi.date_creation|date('d/m/Y H:i') : '-' }}</div>
+    </div>
+    <div class="mc-detail-row">
+        <div class="mc-detail-label">Description du Poste</div>
+        <div class="mc-detail-value" style="white-space: pre-wrap; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03);">{{ offre_emploi.description }}</div>
+    </div>
+</div>
+{% endblock %}
