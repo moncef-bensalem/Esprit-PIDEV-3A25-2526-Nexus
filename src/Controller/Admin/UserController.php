@@ -27,7 +27,10 @@ class UserController extends AbstractController
         $query = $request->query->get('q');
         $role = $request->query->get('role');
 
-        $users = $repository->searchUsers($query, $role);
+        $users = $repository->searchUsers(
+            is_string($query) ? $query : null,
+            is_string($role) ? $role : null
+        );
 
         return $this->render('admin/user/index.html.twig', [
             'users' => $users,
@@ -45,7 +48,10 @@ class UserController extends AbstractController
 
         $query = $request->query->get('q');
         $role = $request->query->get('role');
-        $users = $repository->searchUsers($query, $role);
+        $users = $repository->searchUsers(
+            is_string($query) ? $query : null,
+            is_string($role) ? $role : null
+        );
 
         $response = $this->render('admin/user/_rows.html.twig', [
             'users' => $users,

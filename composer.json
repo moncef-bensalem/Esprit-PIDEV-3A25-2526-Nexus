@@ -72,7 +72,6 @@
         },
         "platform": {
             "php": "8.2.12"
-            "php": "8.2.0"
         },
         "sort-packages": true
     },
@@ -118,12 +117,9 @@
         }
     },
     "require-dev": {
-        "ahmed-bhs/doctrine-doctor": "1.1",
-        "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^10.5",
         "ahmed-bhs/doctrine-doctor": "^1.1",
         "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "*",
+        "phpunit/phpunit": "^10.5",
         "symfony/browser-kit": "6.4.*",
         "symfony/css-selector": "6.4.*",
         "symfony/debug-bundle": "6.4.*",

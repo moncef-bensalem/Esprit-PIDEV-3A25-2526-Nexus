@@ -20,6 +20,7 @@ class EvaluationType extends AbstractType
             ->add('commentaireGlobal', TextareaType::class, [
                 'label' => 'Commentaire global',
                 'required' => true,
+                'empty_data' => '',
                 'attr' => [
                     'class' => 'form-control',
                     'rows' => 4,
@@ -30,6 +31,7 @@ class EvaluationType extends AbstractType
                 'label' => 'Décision préliminaire',
                 'required' => true,
                 'placeholder' => '-- Choisir --',
+                'empty_data' => '',
                 'choices' => [
                     'FAVORABLE' => 'FAVORABLE',
                     'DEFAVORABLE' => 'DEFAVORABLE',

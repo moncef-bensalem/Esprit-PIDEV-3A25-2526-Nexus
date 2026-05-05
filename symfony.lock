@@ -1,7 +1,6 @@
 {
     "ahmed-bhs/doctrine-doctor": {
         "version": "1.1",
-        "version": "0.1",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
             "branch": "main",
@@ -11,7 +10,6 @@
         "files": [
             "./config/packages/doctrine_doctor.yaml"
         ]
-        }
     },
     "babdev/pagerfanta-bundle": {
         "version": "v4.6.0"
@@ -98,19 +96,11 @@
             "branch": "main",
             "version": "10.0",
             "ref": "bb22cf8d8c554a623b427d5f3416b538f5525233"
-        "version": "11.5",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "11.1",
-            "ref": "ca0bc067abfb40a8de1b2561b96cbfc2b833c314"
         },
         "files": [
             "./.env.test",
             "./phpunit.xml.dist",
             "./tests/bootstrap.php"
-            "./tests/bootstrap.php",
-            "./bin/phpunit"
         ]
     },
     "symfony/asset-mapper": {

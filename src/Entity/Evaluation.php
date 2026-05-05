@@ -33,7 +33,7 @@ class Evaluation
         minMessage: "Le commentaire global doit contenir au moins {{ limit }} caracteres.",
         maxMessage: "Le commentaire global ne doit pas depasser {{ limit }} caracteres."
     )]
-    private string $commentaireGlobal;
+    private string $commentaireGlobal = '';
 
     #[ORM\Column(type: "string", length: 255)]
     #[Assert\NotBlank(message: "La decision preliminaire est obligatoire.")]
@@ -41,13 +41,14 @@ class Evaluation
         choices: ["FAVORABLE", "DEFAVORABLE", "A_REVOIR"],
         message: "La decision preliminaire est invalide."
     )]
-    private string $decisionPreliminaire;
+    private string $decisionPreliminaire = '';
 
     #[ORM\Column(type: "date", nullable: true)]
     private ?\DateTimeInterface $reviewDeadline = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsCandidat")]
     #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: true, onDelete: "SET NULL")]
+    #[Assert\NotNull(message: "Le candidat est obligatoire.")]
     private ?User $candidat = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsRecruteur")]
@@ -61,6 +62,7 @@ class Evaluation
 
     public function __construct()
     {
+        $this->dateCreation = new \DateTime();
         $this->scoreCompetences = new ArrayCollection();
     }
 
@@ -114,9 +116,9 @@ class Evaluation
         return $this->decisionPreliminaire;
     }
 
-    public function setDecisionPreliminaire(string $value): static
+    public function setDecisionPreliminaire(?string $value): static
     {
-        $this->decisionPreliminaire = $value;
+        $this->decisionPreliminaire = $value ?? '';
         return $this;
     }
 
