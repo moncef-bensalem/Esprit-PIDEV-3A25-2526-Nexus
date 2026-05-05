@@ -21,4 +21,5 @@ return [
     Endroid\QrCodeBundle\EndroidQrCodeBundle::class => ['all' => true],
     BabDev\PagerfantaBundle\BabDevPagerfantaBundle::class => ['all' => true],
     AhmedBhs\DoctrineDoctor\DoctrineDoctorBundle::class => ['dev' => true, 'test' => true],
+    AhmedBhs\DoctrineDoctor\DoctrineDoctorBundle::class => ['dev' => true],
 ];

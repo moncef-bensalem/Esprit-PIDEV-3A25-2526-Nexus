@@ -60,6 +60,10 @@ class MyMemoryService
         return $text;
     }
 
+    /**
+     * @param array<array-key, mixed> $texts
+     * @return array<array-key, string>
+     */
     public function translateBatch(array $texts, string $targetLang, string $sourceLang = 'fr'): array
     {
         $results = [];
@@ -69,6 +73,7 @@ class MyMemoryService
         return $results;
     }
 
+    /** @return array<string, string> */
     public function getSupportedLanguages(): array
     {
         return self::LANGUAGES;

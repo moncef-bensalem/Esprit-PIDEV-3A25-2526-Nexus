@@ -4,7 +4,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "babdev/pagerfanta-bundle": "^4.6",
@@ -52,6 +52,7 @@
         "symfony/string": "6.4.*",
         "symfony/translation": "6.4.*",
         "symfony/twig-bundle": "6.4.*",
+        "symfony/uid": "6.4.*",
         "symfony/ux-turbo": "^2.34",
         "symfony/validator": "6.4.*",
         "symfony/web-link": "6.4.*",
@@ -71,6 +72,7 @@
         },
         "platform": {
             "php": "8.2.12"
+            "php": "8.2.0"
         },
         "sort-packages": true
     },
@@ -119,12 +121,16 @@
         "ahmed-bhs/doctrine-doctor": "1.1",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^10.5",
+        "ahmed-bhs/doctrine-doctor": "^1.1",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "*",
         "symfony/browser-kit": "6.4.*",
         "symfony/css-selector": "6.4.*",
         "symfony/debug-bundle": "6.4.*",
         "symfony/maker-bundle": "^1.0",
         "symfony/phpunit-bridge": "^8.0",
         "symfony/stopwatch": "6.4.*",
-        "symfony/web-profiler-bundle": "6.4.*"
+        "symfony/web-profiler-bundle": "6.4.*",
+        "webmozart/assert": "1.11"
     }
 }

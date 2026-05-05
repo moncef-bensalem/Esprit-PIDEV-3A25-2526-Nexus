@@ -3,36 +3,68 @@
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
- * Native PHP Linear Regression Salary Estimator.
+ * Multi-Feature Salary Estimator.
  *
- * No external APIs. No external libraries.
- * Trained entirely on the existing offre_emploi data in the database.
- * Uses Ordinary Least Squares (OLS) with Department + Devise as features.
+ * Features:
+ *   1. Department mean (historical data from DB)
+ *   2. Seniority multiplier (NLP on job title)
+ *   3. Real-time EUR/USD → TND exchange rates (frankfurter.app, cached 6h)
+ *   4. Standard deviation confidence interval (OLS)
  */
 class SalaryEstimatorService
 {
-    // Minimum data points required to make a prediction (lowered so small depts work)
     private const MIN_POINTS = 1;
 
-    // Currency conversion weights to normalize salaries to TND equivalent
-    private const DEVISE_WEIGHTS = [
+    // Fallback rates if the live API is unreachable (approximate)
+    private const FALLBACK_RATES_TO_TND = [
         'TND' => 1.0,
-        'EUR' => 3.3,
-        'USD' => 3.1,
+        'EUR' => 3.38,
+        'USD' => 3.08,
     ];
 
-    public function __construct(private readonly Connection $connection) {}
+    // Free API — no key required, supports TND, updates daily
+    private const FX_API_URL = 'https://open.er-api.com/v6/latest/EUR';
+
+    // Seniority keywords and their salary multipliers
+    private const SENIORITY = [
+        'stage'     => 0.50,
+        'intern'    => 0.50,
+        'stagiaire' => 0.50,
+        'junior'    => 0.80,
+        'débutant'  => 0.80,
+        'senior'    => 1.30,
+        'lead'      => 1.45,
+        'expert'    => 1.45,
+        'manager'   => 1.55,
+        'directeur' => 1.70,
+        'director'  => 1.70,
+        'chef'      => 1.40,
+        'head'      => 1.50,
+    ];
+
+    public function __construct(
+        private readonly Connection         $connection,
+        private readonly HttpClientInterface $httpClient,
+        private readonly CacheInterface      $cache,
+    ) {}
 
     /**
-     * Main entry point. Loads training data from DB and returns salary prediction.
+     * Main entry point.
      *
-     * @return array{min: float, max: float, mean: float, confidence: string, count: int, devise: string}|null
+     * @param string $departement  Department name
+     * @param string $devise       Target currency (TND, EUR, USD)
+     * @param string $titrePoste   Job title for seniority detection (optional)
+     * @return array<string, mixed>|null
      */
-    public function estimate(string $departement, string $devise): ?array
+    public function estimate(string $departement, string $devise, string $titrePoste = ''): ?array
     {
-        // Case-insensitive, trimmed match to handle inconsistent data entry
+        $rates = $this->getLiveRates();
+
         $sql = "
             SELECT salaire_propose, devise
             FROM offre_emploi
@@ -43,25 +75,39 @@ class SalaryEstimatorService
         $rows = $this->connection->executeQuery($sql, ['dept' => $departement])->fetchAllAssociative();
 
         if (count($rows) < self::MIN_POINTS) {
-            // Fallback: try across all departments if this one has too little data
-            return $this->estimateGlobal($devise);
+            return $this->estimateGlobal($devise, $titrePoste, $rates);
         }
 
-        // Normalize all salaries to the requested currency
-        $salaries = $this->normalizeSalaries($rows, $devise);
+        $salaries = $this->normalizeSalaries($rows, $devise, $rates);
 
         if (empty($salaries)) {
             return null;
         }
 
-        return $this->buildResult($salaries, count($rows), $devise);
+        $result = $this->buildResult($salaries, count($rows), $devise);
+
+        // Apply seniority multiplier on top of the statistical result
+        $seniority = $this->detectSeniority($titrePoste);
+        if ($seniority !== null) {
+            $result['min']              = (int) round($result['min']  * $seniority['multiplier']);
+            $result['max']              = (int) round($result['max']  * $seniority['multiplier']);
+            $result['mean']             = (int) round($result['mean'] * $seniority['multiplier']);
+            $result['seniority_label']  = $seniority['label'];
+            $result['seniority_mult']   = $seniority['multiplier'];
+        }
+
+        $result['rates_source'] = $rates['source'];
+
+        return $result;
     }
 
+    // ─── Private helpers ────────────────────────────────────────────────────
+
     /**
-     * Fallback: if not enough data for the specific department,
-     * run a Linear Regression across the whole dataset grouped by devise.
+     * @param array<string, float|string> $rates
+     * @return array<string, mixed>|null
      */
-    private function estimateGlobal(string $devise): ?array
+    private function estimateGlobal(string $devise, string $titrePoste, array $rates): ?array
     {
         $sql = "
             SELECT salaire_propose, devise
@@ -75,62 +121,145 @@ class SalaryEstimatorService
             return null;
         }
 
-        $salaries = $this->normalizeSalaries($rows, $devise);
-
+        $salaries = $this->normalizeSalaries($rows, $devise, $rates);
         if (empty($salaries)) {
             return null;
         }
 
-        // Mark lower confidence since this is global not department-specific
         $result = $this->buildResult($salaries, count($rows), $devise);
-        $result['confidence'] = 'faible';
-        $result['global'] = true;
+        $result['confidence']    = 'faible';
+        $result['global']        = true;
+        $result['rates_source']  = $rates['source'];
+
+        $seniority = $this->detectSeniority($titrePoste);
+        if ($seniority !== null) {
+            $result['min']             = (int) round($result['min']  * $seniority['multiplier']);
+            $result['max']             = (int) round($result['max']  * $seniority['multiplier']);
+            $result['mean']            = (int) round($result['mean'] * $seniority['multiplier']);
+            $result['seniority_label'] = $seniority['label'];
+            $result['seniority_mult']  = $seniority['multiplier'];
+        }
 
         return $result;
     }
 
     /**
-     * Convert all salaries to the target devise using conversion weights,
-     * then run the core OLS Linear Regression to produce a prediction range.
+     * Fetch live EUR→TND and USD→TND rates from frankfurter.app.
+     * Cached for 6 hours so we don't hammer the API.
+     * Falls back to hardcoded rates if the API is unreachable.
+     * 
+     * @return array<string, float|string>
      */
-    private function normalizeSalaries(array $rows, string $targetDevise): array
+    private function getLiveRates(): array
     {
-        $targetWeight = self::DEVISE_WEIGHTS[$targetDevise] ?? 1.0;
-        $salaries = [];
+        return $this->cache->get('salary_estimator_fx_rates', function (ItemInterface $item) {
+            $item->expiresAfter(6 * 3600); // cache 6 hours
+
+            try {
+                // open.er-api.com: free, no API key, supports TND
+                // Returns rates relative to EUR base
+                $response = $this->httpClient->request('GET', self::FX_API_URL, ['timeout' => 4]);
+                $data     = $response->toArray();
+
+                if (($data['result'] ?? '') !== 'success') {
+                    throw new \RuntimeException('API returned non-success result');
+                }
+
+                $rates   = $data['rates'];
+                // 1 EUR = X TND  →  1 TND = 1/X EUR  →  EUR_to_TND = rates['TND']
+                $eurToTnd = (float) ($rates['TND'] ?? self::FALLBACK_RATES_TO_TND['EUR']);
+                // 1 EUR = Y USD, 1 EUR = X TND  →  1 USD = X/Y TND
+                $usdToTnd = $eurToTnd / (float) ($rates['USD'] ?? 1.17);
+
+                return [
+                    'TND'    => 1.0,
+                    'EUR'    => round($eurToTnd, 4),
+                    'USD'    => round($usdToTnd, 4),
+                    'source' => 'live',
+                    'date'   => $data['time_last_update_utc'] ?? date('Y-m-d'),
+                ];
+            } catch (\Throwable) {
+                return array_merge(self::FALLBACK_RATES_TO_TND, [
+                    'source' => 'fallback',
+                    'date'   => date('Y-m-d'),
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Convert all salaries to the target currency using live rates.
+     * 
+     * @param array<int, array<string, mixed>> $rows
+     * @param array<string, float|string> $rates
+     * @return array<int, float>
+     */
+    private function normalizeSalaries(array $rows, string $targetDevise, array $rates): array
+    {
+        $targetRate = (float) ($rates[$targetDevise] ?? 1.0);
+        $salaries   = [];
 
         foreach ($rows as $row) {
-            $salary = (float) $row['salaire_propose'];
-            $sourceWeight = self::DEVISE_WEIGHTS[$row['devise'] ?? 'TND'] ?? 1.0;
+            $salary     = (float) $row['salaire_propose'];
+            $sourceRate = $rates[$row['devise'] ?? 'TND'] ?? 1.0;
 
-            // Convert to TND base, then to target currency
-            $normalized = ($salary * $sourceWeight) / $targetWeight;
-            $salaries[] = $normalized;
+            // Convert: salary → TND base → target currency
+            $inTnd      = $salary * (float) $sourceRate;
+            $converted  = $inTnd / $targetRate;
+            $salaries[] = $converted;
         }
 
         return $salaries;
     }
 
     /**
-     * Core statistical calculation using Ordinary Least Squares principles.
-     * Returns mean, standard deviation, and a ±1σ confidence interval.
+     * Scan job title for seniority keywords and return multiplier + label.
+     * 
+     * @return array<string, mixed>|null
+     */
+    private function detectSeniority(string $title): ?array
+    {
+        if ($title === '') {
+            return null;
+        }
+
+        $lower = mb_strtolower($title);
+
+        foreach (self::SENIORITY as $keyword => $multiplier) {
+            if (str_contains($lower, $keyword)) {
+                $pct   = $multiplier >= 1.0
+                    ? '+' . round(($multiplier - 1) * 100) . '%'
+                    : '-' . round((1 - $multiplier) * 100) . '%';
+                return [
+                    'multiplier' => $multiplier,
+                    'label'      => ucfirst($keyword) . ' (' . $pct . ')',
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Core OLS: mean ± 1 standard deviation → prediction range.
+     * 
+     * @param array<int, float> $salaries
+     * @return array<string, mixed>
      */
     private function buildResult(array $salaries, int $rawCount, string $devise): array
     {
-        $n = count($salaries);
+        $n    = count($salaries);
         $mean = array_sum($salaries) / $n;
 
-        // Calculate standard deviation
         $variance = 0.0;
         foreach ($salaries as $s) {
             $variance += ($s - $mean) ** 2;
         }
         $stdDev = $n > 1 ? sqrt($variance / ($n - 1)) : $mean * 0.15;
 
-        // The prediction range is mean ± 1 standard deviation (68% confidence interval)
-        $min = max(0, round($mean - $stdDev));
-        $max = round($mean + $stdDev);
+        $min = max(0, (int) round($mean - $stdDev));
+        $max = (int) round($mean + $stdDev);
 
-        // Confidence based on sample size
         $confidence = match (true) {
             $rawCount >= 10 => 'élevée',
             $rawCount >= 5  => 'modérée',
@@ -138,13 +267,16 @@ class SalaryEstimatorService
         };
 
         return [
-            'min'        => $min,
-            'max'        => $max,
-            'mean'       => round($mean),
-            'confidence' => $confidence,
-            'count'      => $rawCount,
-            'devise'     => $devise,
-            'global'     => false,
+            'min'            => $min,
+            'max'            => $max,
+            'mean'           => (int) round($mean),
+            'confidence'     => $confidence,
+            'count'          => $rawCount,
+            'devise'         => $devise,
+            'global'         => false,
+            'seniority_label'=> null,
+            'seniority_mult' => null,
+            'rates_source'   => 'fallback',
         ];
     }
 }

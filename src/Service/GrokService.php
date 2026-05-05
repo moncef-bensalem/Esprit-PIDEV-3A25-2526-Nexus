@@ -56,6 +56,7 @@ class GrokService
         return $data['choices'][0]['message']['content'] ?? 'Désolé, je n\'ai pas pu générer une réponse.';
     }
 
+    /** @param array<string, mixed> $ctx */
     private function buildSystemPrompt(array $ctx): string
     {
         if (isset($ctx['planifications']) && is_array($ctx['planifications'])) {
@@ -65,6 +66,7 @@ class GrokService
         return $this->buildSingleEventPrompt($ctx);
     }
 
+    /** @param array<string, mixed> $ctx */
     private function buildSingleEventPrompt(array $ctx): string
     {
         $lines = [];
@@ -91,6 +93,7 @@ class GrokService
         return implode("\n", $lines);
     }
 
+    /** @param array<string, mixed> $ctx */
     private function buildMultiEventPrompt(array $ctx): string
     {
         $lines = [];

@@ -21,6 +21,7 @@ class CandidateProfileController extends AbstractController
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher
     ): Response {
+        /** @var \App\Entity\User|null $user */
         $user = $this->getUser();
         if (!$user) {
             throw $this->createAccessDeniedException('Vous devez être connecté.');

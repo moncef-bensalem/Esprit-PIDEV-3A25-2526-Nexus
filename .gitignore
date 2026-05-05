@@ -8,6 +8,7 @@
 /public/bundles/
 /var/
 /vendor/
+.phpunit-local/
 ###< symfony/framework-bundle ###
 
 ###> symfony/phpunit-bridge ###
@@ -24,6 +25,10 @@
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
 
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
+env
 ###> phpunit/phpunit ###
 /phpunit.xml
 /.phpunit.cache/
@@ -32,3 +37,4 @@
 ###> phpstan/phpstan ###
 phpstan.neon
 ###< phpstan/phpstan ###
+env

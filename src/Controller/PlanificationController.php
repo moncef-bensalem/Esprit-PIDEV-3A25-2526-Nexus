@@ -70,6 +70,7 @@ class PlanificationController extends AbstractController
         $isAdmin = $this->isGranted('ROLE_ADMIN');
 
         // Relâchement temporaire du filtre
+        /** @var Planification[] $planifications */
         $planifications = $repo->findAll();
         $events = [];
 
@@ -88,7 +89,7 @@ class PlanificationController extends AbstractController
 
             $events[] = [
                 'id' => $p->getIdEvent(),
-                'title' => ucfirst($p->getTypeEvent()) . ($p->getDescription() ? ' - ' . mb_substr($p->getDescription(), 0, 30) : ''),
+                'title' => ucfirst($p->getTypeEvent() ?? '') . ($p->getDescription() ? ' - ' . mb_substr($p->getDescription(), 0, 30) : ''),
                 'start' => $start,
                 'end' => $end,
                 'color' => $color,
@@ -112,7 +113,7 @@ class PlanificationController extends AbstractController
         $dateParam = $request->query->get('date');
         if ($dateParam) {
             try {
-                $planification->setDate(new \DateTime($dateParam));
+                $planification->setDate(new \DateTime((string) $dateParam));
             } catch (\Exception) {
             }
         }
@@ -151,8 +152,12 @@ class PlanificationController extends AbstractController
             return $this->redirectToRoute('planification_index');
         } elseif ($form->isSubmitted()) {
             foreach ($form->getErrors(true) as $error) {
+                if (!$error instanceof \Symfony\Component\Form\FormError) {
+                    continue;
+                }
                 error_log("Form Error: " . $error->getMessage());
-                error_log("At path: " . $error->getOrigin()->getName());
+                $origin = $error->getOrigin();
+                error_log("At path: " . ($origin !== null ? $origin->getName() : 'unknown'));
             }
         }
 
@@ -256,7 +261,7 @@ class PlanificationController extends AbstractController
     #[Route('/{id}/delete', name: 'planification_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function delete(Request $request, Planification $planification, EntityManagerInterface $em, PushNotificationService $push): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $planification->getIdEvent(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $planification->getIdEvent(), $request->request->getString('_token'))) {
             $em->remove($planification);
             $em->flush();
             $push->sendToAll('🗑️ Planification annulée', '🗑️ Planification annulée');
