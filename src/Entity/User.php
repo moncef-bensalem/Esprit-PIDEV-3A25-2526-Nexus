@@ -25,6 +25,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Email(message: 'Veuillez saisir un email valide.')]
     private ?string $email = null;
 
+    /** @var list<string> */
     #[ORM\Column(type: "json")]
     private array $roles = ['ROLE_CANDIDATE'];
 
@@ -66,6 +67,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean')]
     private bool $isVerified = false;
 
+    /** @var array<int, float>|null */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $faceDescriptor = null;
 
@@ -96,6 +98,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email ?? '';
     }
 
+    /**
+     * @return list<string>
+     */
     public function getRoles(): array
     {
         $roles = $this->roles;
@@ -105,6 +110,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_values(array_unique($roles));
     }
 
+    /**
+     * @param list<string> $value
+     */
     public function setRoles(array $value): static
     {
         $this->roles = array_values(array_unique($value));
@@ -206,11 +214,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @return array<int, float>|null
+     */
     public function getFaceDescriptor(): ?array
     {
         return $this->faceDescriptor;
     }
 
+    /**
+     * @param array<int, float>|null $faceDescriptor
+     */
     public function setFaceDescriptor(?array $faceDescriptor): static
     {
         $this->faceDescriptor = $faceDescriptor;
