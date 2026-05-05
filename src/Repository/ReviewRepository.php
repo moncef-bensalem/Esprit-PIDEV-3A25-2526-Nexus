@@ -32,4 +32,14 @@ class ReviewRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
         return round((float) $avg, 1);
     }
+
+    /** @return Review[] */
+    public function findAllWithPlanification(): array
+    {
+        return $this->createQueryBuilder('r')
+            ->leftJoin('r.planification', 'p')
+            ->addSelect('p')
+            ->getQuery()
+            ->getResult();
+    }
 }

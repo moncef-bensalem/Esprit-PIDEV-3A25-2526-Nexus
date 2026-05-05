@@ -80,9 +80,7 @@ class Evaluation
     #[ORM\PrePersist]
     public function initDateCreation(): void
     {
-        if (!isset($this->dateCreation)) {
-            $this->dateCreation = new \DateTime();
-        }
+        $this->dateCreation = new \DateTime();
     }
 
     public function getDateCreation(): \DateTimeInterface

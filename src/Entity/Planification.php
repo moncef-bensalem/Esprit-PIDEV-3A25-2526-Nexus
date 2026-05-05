@@ -191,8 +191,8 @@ class Planification
         return $this;
     }
 
-    #[ORM\OneToMany(mappedBy: "planification", targetEntity: Review::class, cascade: ["persist", "remove"])]
     /** @var Collection<int, Review> */
+    #[ORM\OneToMany(mappedBy: "planification", targetEntity: Review::class, cascade: ["persist", "remove"])]
     private Collection $reviews;
 
     public function __construct()

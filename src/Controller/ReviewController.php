@@ -28,7 +28,7 @@ class ReviewController extends AbstractController
     ): Response {
         $filterLowRating = $request->query->getBoolean('low_rating', false);
 
-        $queryBuilder = $planifRepo->createQueryBuilder('p')->orderBy('p.id_event', 'DESC');
+        $queryBuilder = $planifRepo->createQueryBuilderWithReviews('p')->orderBy('p.id_event', 'DESC');
         $planifications = $paginator->paginate(
             $queryBuilder,
             $request->query->getInt('page', 1),
@@ -51,9 +51,8 @@ class ReviewController extends AbstractController
     #[Route('/new/{id}', name: 'review_new', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
     public function new(Request $request, Planification $planification, EntityManagerInterface $em, PushNotificationService $push): Response
     {
-        /** @var \App\Entity\User $user */
         $user = $this->getUser();
-        if (!$user) {
+        if (!$user instanceof \App\Entity\User) {
             throw $this->createAccessDeniedException('Vous devez être connecté pour laisser un avis.');
         }
 
@@ -124,7 +123,7 @@ class ReviewController extends AbstractController
     #[Route('/export-pdf', name: 'review_export_pdf', methods: ['GET'])]
     public function exportPdf(ReviewRepository $reviewRepo, PdfService $pdf, Environment $twig): Response
     {
-        $reviews = $reviewRepo->findAll();
+        $reviews = $reviewRepo->findAllWithPlanification();
 
         $html = $twig->render('review/pdf.html.twig', [
             'reviews' => $reviews,

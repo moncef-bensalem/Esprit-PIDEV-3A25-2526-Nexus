@@ -30,7 +30,7 @@ class Review
 
     #[ORM\ManyToOne(targetEntity: Planification::class, inversedBy: "reviews")]
     #[ORM\JoinColumn(name: 'planification_id', referencedColumnName: 'id_event', onDelete: 'CASCADE')]
-    private Planification $planification;
+    private ?Planification $planification = null;
 
     #[ORM\Column(type: "integer", nullable: true)]
     #[Assert\NotBlank(message: 'La note est obligatoire.')]

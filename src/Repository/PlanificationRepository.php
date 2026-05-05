@@ -19,11 +19,31 @@ class PlanificationRepository extends ServiceEntityRepository
     public function findByUser(User $user): array
     {
         return $this->createQueryBuilder('p')
+            ->leftJoin('p.reviews', 'r')
+            ->addSelect('r')
             ->where('p.user = :user')
             ->setParameter('user', $user)
             ->orderBy('p.date', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    /** @return Planification[] */
+    public function findAllWithReviews(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.reviews', 'r')
+            ->addSelect('r')
+            ->orderBy('p.id_event', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function createQueryBuilderWithReviews(string $alias = 'p'): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->createQueryBuilder($alias)
+            ->leftJoin("{$alias}.reviews", 'r')
+            ->addSelect('r');
     }
 
     public function countActifs(): int

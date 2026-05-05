@@ -16,6 +16,17 @@ use App\Entity\Planification;
  */
 class SatisfactionPredictionService
 {
+    /**
+     * @return array{
+     *     probability: int,
+     *     confidence: string,
+     *     reviewCount: int,
+     *     avgRating: float|null,
+     *     positiveCount: int,
+     *     negativeCount: int,
+     *     recommendation: string
+     * }
+     */
     public function predict(Planification $planification): array
     {
         $reviews     = $planification->getReviews()->toArray();

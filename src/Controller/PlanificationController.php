@@ -30,7 +30,7 @@ class PlanificationController extends AbstractController
         $isAdmin = $this->isGranted('ROLE_ADMIN');
 
         // Relâchement temporaire du filtre pour permettre le test avec les données sans user_id
-        $planifications = $repo->findAll();
+        $planifications = $repo->findAllWithReviews();
 
         $total = count($planifications);
         $actifs = $isAdmin ? $repo->countActifs() : 0;
@@ -47,7 +47,7 @@ class PlanificationController extends AbstractController
     #[Route('/export-pdf', name: 'planification_export_pdf', methods: ['GET'])]
     public function exportPdf(PlanificationRepository $repo, PdfService $pdf, Environment $twig): Response
     {
-        $planifications = $repo->findAll();
+        $planifications = $repo->findAllWithReviews();
 
         $html = $twig->render('planification/export_pdf.html.twig', [
             'planifications' => $planifications,
@@ -209,8 +209,18 @@ class PlanificationController extends AbstractController
     }
 
     #[Route('/{id}', name: 'planification_show', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function show(Planification $planification, WeatherService $weather): Response
+    public function show(int $id, PlanificationRepository $repo, WeatherService $weather): Response
     {
+        $planification = $repo->createQueryBuilderWithReviews('p')
+            ->where('p.id_event = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$planification instanceof Planification) {
+            throw $this->createNotFoundException('Planification not found.');
+        }
+
         $weatherData = null;
         if ($planification->getDate() !== null) {
             $weatherData = $weather->getWeatherForEvent(
