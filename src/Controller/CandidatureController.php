@@ -127,7 +127,7 @@ final class CandidatureController extends AbstractController
         $candidature = $entityManager->getRepository(Candidature::class)->find($id_candidature);
         if (!$candidature) throw $this->createNotFoundException('Candidature introuvable');
 
-        if ($this->isCsrfTokenValid('delete'.$candidature->getId_candidature(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$candidature->getId_candidature(), (string) $request->request->get('_token'))) {
             $entityManager->remove($candidature);
             $entityManager->flush();
         }

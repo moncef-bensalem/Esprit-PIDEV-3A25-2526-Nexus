@@ -23,6 +23,11 @@ class CvAnalysisService
         $candidat = $candidature->getCandidat();
         $offre = $candidature->getOffreEmploi();
 
+        if (!$candidat || !$offre) {
+            $this->logger->error("Candidat or OffreEmploi is null for candidature.");
+            return;
+        }
+
         if (!file_exists($cvFilePath)) {
             $this->logger->error("CV file not found: " . $cvFilePath);
             return;

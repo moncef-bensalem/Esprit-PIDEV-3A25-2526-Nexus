@@ -16,6 +16,7 @@ class OffreEmploi
     #[ORM\Column(type: "bigint")]
     private string $id_offre;
 
+    /** @var Collection<int, Candidature> */
     #[ORM\OneToMany(mappedBy: 'offre_emploi', targetEntity: Candidature::class, cascade: ['remove'])]
     private Collection $candidatures;
 
@@ -64,6 +65,9 @@ class OffreEmploi
     #[ORM\Column(type: "string", length: 10, nullable: true)]
     #[Assert\NotBlank(message: "La devise est requise")]
     private ?string $devise = null;
+
+    // Variable non-mappée en DB (juste pour corriger PHPStan)
+    private ?int $fk_departement_id = null;
 
     public function getId_offre(): string
     {

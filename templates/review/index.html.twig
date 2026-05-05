@@ -688,6 +688,25 @@
         }
         .suggestion-chip:hover { background: rgba(79,195,247,.17); }
 
+        .prediction-chip {
+            background: linear-gradient(135deg, rgba(167,139,250,.15), rgba(236,72,153,.15)) !important;
+            border-color: rgba(236,72,153,.4) !important;
+            color: #fbcfe8 !important;
+            font-weight: 600;
+            display: inline-flex !important;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(236,72,153,.2);
+            animation: pulseChip 2s infinite alternate;
+        }
+        .prediction-chip:hover {
+            background: linear-gradient(135deg, rgba(167,139,250,.25), rgba(236,72,153,.25)) !important;
+            box-shadow: 0 0 18px rgba(236,72,153,.4);
+        }
+        @keyframes pulseChip {
+            from { box-shadow: 0 0 4px rgba(236,72,153,.1); }
+            to { box-shadow: 0 0 14px rgba(236,72,153,.35); }
+        }
+
         .chat-input-row {
             padding: 11px 14px;
             border-top: 1px solid rgba(79,195,247,.12);

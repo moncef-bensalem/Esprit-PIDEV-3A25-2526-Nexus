@@ -24,7 +24,7 @@ class PublicFrontendController extends AbstractController
         try {
             $tool = new SchemaTool($em);
             $classes = $em->getMetadataFactory()->getAllMetadata();
-            $tool->updateSchema($classes, true);
+            $tool->updateSchema($classes);
             return new Response('Base de donnees mise a jour avec succes ! <br><a href="/jobs">Aller au site</a>');
         } catch (\Exception $e) {
             return new Response('Erreur: ' . $e->getMessage());
@@ -73,6 +73,7 @@ class PublicFrontendController extends AbstractController
         }
         $defaultData = [];
         if ($this->getUser()) {
+            /** @var \App\Entity\User $user */
             $user = $this->getUser();
             $defaultData['nom_complet'] = trim($user->getFirstName() . ' ' . $user->getLastName());
             $defaultData['email'] = $user->getEmail();
@@ -86,11 +87,14 @@ class PublicFrontendController extends AbstractController
             $nom = $data['nom_complet'];
             $email = $data['email'];
 
-            /** @var UploadedFile $cvFile */
+            /** @var UploadedFile|null $cvFile */
             $cvFile = $form->get('cv')->getData();
             $newFilename = null;
 
+            $projectDir = $this->getParameter('kernel.project_dir');
+            $dirStr = is_string($projectDir) ? $projectDir : '';
             $fullCvPath = null;
+            
             if ($cvFile) {
                 $originalFilename = pathinfo($cvFile->getClientOriginalName(), PATHINFO_FILENAME);
                 $safeFilename = $slugger->slug($originalFilename);
@@ -98,10 +102,10 @@ class PublicFrontendController extends AbstractController
 
                 try {
                     $cvFile->move(
-                        $this->getParameter('kernel.project_dir').'/public/uploads/cvs',
+                        $dirStr.'/public/uploads/cvs',
                         $newFilename
                     );
-                    $fullCvPath = $this->getParameter('kernel.project_dir').'/public/uploads/cvs/'.$newFilename;
+                    $fullCvPath = $dirStr.'/public/uploads/cvs/'.$newFilename;
                 } catch (FileException $e) {
                     $this->addFlash('error', 'Erreur lors du téléchargement du fichier.');
                     return $this->redirectToRoute('app_public_postuler', ['id_offre' => $id_offre]);
