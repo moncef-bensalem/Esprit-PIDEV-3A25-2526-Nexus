@@ -18,9 +18,9 @@ final class OffreEmploiController extends AbstractController
     #[Route('/ai/salary-estimate', name: 'app_offre_emploi_salary_estimate', methods: ['GET'])]
     public function salaryEstimate(Request $request, SalaryEstimatorService $estimator): JsonResponse
     {
-        $dept   = $request->query->get('dept', '');
-        $devise = $request->query->get('devise', 'TND');
-        $titre  = $request->query->get('titre', '');
+        $dept   = (string) $request->query->get('dept', '');
+        $devise = (string) $request->query->get('devise', 'TND');
+        $titre  = (string) $request->query->get('titre', '');
 
         if (!$dept) {
             return $this->json(['error' => 'Département requis'], 400);
@@ -42,6 +42,11 @@ final class OffreEmploiController extends AbstractController
         $statut = $request->query->get('statut');
         
         $qb = $entityManager->getRepository(OffreEmploi::class)->createQueryBuilder('o');
+        
+        // ✅ OPTIMISATION N+1 : LEFT JOIN FETCH charge toutes les candidatures
+        // en UNE SEULE requête au lieu de N requêtes séparées (une par offre)
+        $qb->leftJoin('o.candidatures', 'c')
+           ->addSelect('c');
         
         if ($search) {
             $qb->andWhere('o.titre_poste LIKE :search OR o.departement LIKE :search')
@@ -169,7 +174,7 @@ final class OffreEmploiController extends AbstractController
         $offreEmploi = $entityManager->getRepository(OffreEmploi::class)->find($id_offre);
         if (!$offreEmploi) throw $this->createNotFoundException('Offre introuvable');
 
-        if ($this->isCsrfTokenValid('delete'.$offreEmploi->getId_offre(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$offreEmploi->getId_offre(), (string) $request->request->get('_token'))) {
             $entityManager->remove($offreEmploi);
             $entityManager->flush();
         }

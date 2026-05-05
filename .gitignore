@@ -28,3 +28,7 @@
 phpstan.neon
 ###< phpstan/phpstan ###
 env
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###

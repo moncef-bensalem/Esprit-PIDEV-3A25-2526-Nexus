@@ -59,6 +59,7 @@ class SalaryEstimatorService
      * @param string $departement  Department name
      * @param string $devise       Target currency (TND, EUR, USD)
      * @param string $titrePoste   Job title for seniority detection (optional)
+     * @return array<string, mixed>|null
      */
     public function estimate(string $departement, string $devise, string $titrePoste = ''): ?array
     {
@@ -102,6 +103,10 @@ class SalaryEstimatorService
 
     // ─── Private helpers ────────────────────────────────────────────────────
 
+    /**
+     * @param array<string, float|string> $rates
+     * @return array<string, mixed>|null
+     */
     private function estimateGlobal(string $devise, string $titrePoste, array $rates): ?array
     {
         $sql = "
@@ -142,6 +147,8 @@ class SalaryEstimatorService
      * Fetch live EUR→TND and USD→TND rates from frankfurter.app.
      * Cached for 6 hours so we don't hammer the API.
      * Falls back to hardcoded rates if the API is unreachable.
+     * 
+     * @return array<string, float|string>
      */
     private function getLiveRates(): array
     {
@@ -182,10 +189,14 @@ class SalaryEstimatorService
 
     /**
      * Convert all salaries to the target currency using live rates.
+     * 
+     * @param array<int, array<string, mixed>> $rows
+     * @param array<string, float|string> $rates
+     * @return array<int, float>
      */
     private function normalizeSalaries(array $rows, string $targetDevise, array $rates): array
     {
-        $targetRate = $rates[$targetDevise] ?? 1.0;
+        $targetRate = (float) ($rates[$targetDevise] ?? 1.0);
         $salaries   = [];
 
         foreach ($rows as $row) {
@@ -193,7 +204,7 @@ class SalaryEstimatorService
             $sourceRate = $rates[$row['devise'] ?? 'TND'] ?? 1.0;
 
             // Convert: salary → TND base → target currency
-            $inTnd      = $salary * $sourceRate;
+            $inTnd      = $salary * (float) $sourceRate;
             $converted  = $inTnd / $targetRate;
             $salaries[] = $converted;
         }
@@ -203,6 +214,8 @@ class SalaryEstimatorService
 
     /**
      * Scan job title for seniority keywords and return multiplier + label.
+     * 
+     * @return array<string, mixed>|null
      */
     private function detectSeniority(string $title): ?array
     {
@@ -229,6 +242,9 @@ class SalaryEstimatorService
 
     /**
      * Core OLS: mean ± 1 standard deviation → prediction range.
+     * 
+     * @param array<int, float> $salaries
+     * @return array<string, mixed>
      */
     private function buildResult(array $salaries, int $rawCount, string $devise): array
     {

@@ -129,7 +129,7 @@ final class DepartementController extends AbstractController
         $departement = $entityManager->getRepository(Departement::class)->find($id_departement);
         if (!$departement) throw $this->createNotFoundException('Département introuvable');
 
-        if ($this->isCsrfTokenValid('delete'.$departement->getId_departement(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$departement->getId_departement(), (string) $request->request->get('_token'))) {
             $entityManager->remove($departement);
             $entityManager->flush();
         }
