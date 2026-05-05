@@ -39,6 +39,12 @@ class EvaluationController extends AbstractController
         $data = $this->buildIndexData($request, $entityManager, $evaluationRepository, $paginator, $user, $this->isGranted('ROLE_ADMIN'));
         $evaluationsJson = $this->statsService->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
 
+        // All evaluations (no pagination) for calendar + pie chart
+        $allEvaluationsJson = $this->statsService->serializeEvaluationsForDashboard(
+            $data['allEvaluations'],
+            $data['allAverageScoresById']
+        );
+
         return $this->render('evaluation/index.html.twig', [
             'evaluations' => $data['evaluations'],
             'averageScoresById' => $data['averageScoresById'],
@@ -51,6 +57,7 @@ class EvaluationController extends AbstractController
             'recruteurOptions' => $data['recruteurOptions'],
             'candidatOptions' => $data['candidatOptions'],
             'evaluationsJson' => json_encode($evaluationsJson, JSON_THROW_ON_ERROR),
+            'allEvaluationsJson' => json_encode($allEvaluationsJson, JSON_THROW_ON_ERROR),
             'pagination' => $data['pagination'],
         ]);
     }
@@ -63,8 +70,14 @@ class EvaluationController extends AbstractController
 
         $evaluationsJson = $this->statsService->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
 
+        // All evaluations (no pagination) for calendar + pie chart
+        $allEvaluationsJson = $this->statsService->serializeEvaluationsForDashboard(
+            $data['allEvaluations'],
+            $data['allAverageScoresById']
+        );
+
         $counts = ['FAVORABLE' => 0, 'DEFAVORABLE' => 0, 'A_REVOIR' => 0];
-        foreach ($evaluationsJson as $e) {
+        foreach ($allEvaluationsJson as $e) {
             $decision = (string) $e['decision'];
             if (array_key_exists($decision, $counts)) {
                 $counts[$decision]++;
@@ -82,13 +95,14 @@ class EvaluationController extends AbstractController
         ]);
 
         return $this->json([
-            'evaluations'   => $evaluationsJson,
-            'counts'        => $counts,
-            'cardsHtml'     => $cardsHtml,
+            'evaluations'    => $evaluationsJson,
+            'allEvaluations' => $allEvaluationsJson,
+            'counts'         => $counts,
+            'cardsHtml'      => $cardsHtml,
             'paginationHtml' => $paginationHtml,
-            'currentPage'   => $pagination->getCurrentPageNumber(),
-            'pageCount'     => $pagination->getPageCount(),
-            'totalItems'    => $pagination->getTotalItemCount(),
+            'currentPage'    => $pagination->getCurrentPageNumber(),
+            'pageCount'      => $pagination->getPageCount(),
+            'totalItems'     => $pagination->getTotalItemCount(),
         ]);
     }
 
@@ -370,7 +384,7 @@ public function exportPdf(
         $sort = (string) $request->query->get('orderBy', 'dateCreation'); // 'score' | 'dateCreation'
         $page = max(1, (int) $request->query->get('page', 1));
         /** @var int $pageSize */
-        $pageSize = 50;
+        $pageSize = 9;
 
         $decisionFilter = (string) $request->query->get('decision', '');
         $recruteurFilter = (string) $request->query->get('recruteur', '');
@@ -405,21 +419,34 @@ public function exportPdf(
             $averageScoresById[$evaluation->getIdEvaluation()] = $this->statsService->computeAverageScore($evaluation);
         }
 
+        // Fetch ALL matching evaluations (no pagination) for calendar + pie chart
+        /** @var Evaluation[] $allEvaluations */
+        $allEvaluations = $evaluationRepository->createFilteredQueryBuilder($filters)
+            ->getQuery()
+            ->getResult();
+
+        $allAverageScoresById = [];
+        foreach ($allEvaluations as $evaluation) {
+            $allAverageScoresById[$evaluation->getIdEvaluation()] = $this->statsService->computeAverageScore($evaluation);
+        }
+
         $scopedRecruteur = $isAdmin ? null : $currentUser;
         $filterOptions = $evaluationRepository->findFilterOptions($scopedRecruteur);
 
         return [
-            'evaluations'     => $evaluations,
-            'averageScoresById' => $averageScoresById,
-            'q'               => $q,
-            'sort'            => $sort,
-            'decision'        => $decisionFilter,
-            'recruteur'       => $recruteurFilter,
-            'candidat'        => $candidatFilter,
-            'decisionOptions' => $filterOptions['decisions'],
-            'recruteurOptions' => $filterOptions['recruteurs'],
-            'candidatOptions' => $filterOptions['candidats'],
-            'pagination'      => $pagination,
+            'evaluations'         => $evaluations,
+            'averageScoresById'   => $averageScoresById,
+            'allEvaluations'      => $allEvaluations,
+            'allAverageScoresById' => $allAverageScoresById,
+            'q'                   => $q,
+            'sort'                => $sort,
+            'decision'            => $decisionFilter,
+            'recruteur'           => $recruteurFilter,
+            'candidat'            => $candidatFilter,
+            'decisionOptions'     => $filterOptions['decisions'],
+            'recruteurOptions'    => $filterOptions['recruteurs'],
+            'candidatOptions'     => $filterOptions['candidats'],
+            'pagination'          => $pagination,
         ];
     }
 

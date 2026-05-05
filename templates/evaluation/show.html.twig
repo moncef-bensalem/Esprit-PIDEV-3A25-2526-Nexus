@@ -137,10 +137,10 @@
                 {% set normalized = score.noteAttribuee|replace({',': '.'}) %}
                 {% set noteValue = normalized matches '/^-?\d+(\.\d+)?$/' ? normalized + 0 : 0 %}
                 {% set clampedNote = noteValue < 0 ? 0 : (noteValue > 20 ? 20 : noteValue) %}
-                {% set hue = (clampedNote / 20) * 270 %}
+                {% set hue = (clampedNote / 20) * 120 %}
 
                 <div class="score-card"
-                     style="background: hsl({{ hue }}, 70%, 35%);"
+                     style="background: hsl({{ hue }}, 80%, 30%);"
                      ondblclick="window.location.href='{{ path('score_competence_show', {idEvaluation: evaluation.idEvaluation, idDetail: score.idDetail}) }}'">
                     <div class="score-name">{{ score.nomCritere }}</div>
                     <div class="score-note">Note attribuee: {{ score.noteAttribuee }}/20</div>

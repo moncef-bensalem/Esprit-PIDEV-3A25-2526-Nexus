@@ -396,6 +396,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const resetBtn = document.getElementById('resetFiltersBtn');
 
     let evaluations = {{ evaluationsJson|raw }};
+    let allEvaluations = {{ allEvaluationsJson|raw }};
     let deadlinesByDate = new Map();
     let pieChart = null;
     let hasShownDeadlineReminder = false;
@@ -405,7 +406,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     function rebuildDeadlinesMap() {
         const map = new Map();
-        for (const e of evaluations) {
+        for (const e of allEvaluations) {
             if (e.decision !== 'A_REVOIR' || !e.reviewDeadline) continue;
             if (!map.has(e.reviewDeadline)) map.set(e.reviewDeadline, []);
             map.get(e.reviewDeadline).push(e);
@@ -577,15 +578,16 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function setDashboardData(nextEvaluations, nextCounts) {
+    function setDashboardData(nextEvaluations, nextAllEvaluations, nextCounts) {
         evaluations = Array.isArray(nextEvaluations) ? nextEvaluations : [];
+        allEvaluations = Array.isArray(nextAllEvaluations) ? nextAllEvaluations : [];
         rebuildDeadlinesMap();
         renderMonth();
-        renderOrUpdatePie(nextCounts ?? getCountsFromEvaluations(evaluations));
+        renderOrUpdatePie(nextCounts ?? getCountsFromEvaluations(allEvaluations));
     }
 
     rebuildDeadlinesMap();
-    setDashboardData(evaluations, getCountsFromEvaluations(evaluations));
+    setDashboardData(evaluations, allEvaluations, getCountsFromEvaluations(allEvaluations));
 
     function formatFrDate(iso) {
         const parts = String(iso ?? '').split('-');
@@ -626,14 +628,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
         dateEl.textContent = formatFrDate(next.reviewDeadline);
         daysEl.textContent = daysLabel;
-        evalEl.textContent = `#${next.id}`;
+        evalEl.textContent = next.candidatName ? `${next.candidatName} (#${next.id})` : `#${next.id}`;
         linkEl.href = next.url || '#';
 
         const modal = new bootstrap.Modal(modalEl, { backdrop: true, focus: true });
         modal.show();
     }
 
-    showClosestReviewDeadlineReminder(evaluations);
+    showClosestReviewDeadlineReminder(allEvaluations);
 
     let abortController = null;
     let debounceTimer = null;
@@ -687,7 +689,11 @@ window.addEventListener('DOMContentLoaded', () => {
                 currentPage = payload.currentPage;
             }
 
-            setDashboardData(payload.evaluations, payload.counts);
+            setDashboardData(
+                payload.evaluations,
+                payload.allEvaluations ?? payload.evaluations,
+                payload.counts
+            );
 
             // Update the browser URL without a reload so back/refresh works
             try {

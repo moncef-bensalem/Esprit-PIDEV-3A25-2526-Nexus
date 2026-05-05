@@ -41,7 +41,7 @@ class EvaluationStatsService
     /**
      * @param Evaluation[]          $evaluations
      * @param array<int, float|null> $averageScoresById
-     * @return list<array{id: int, decision: string, reviewDeadline: string|null, url: string, avgScore: float|null, dateCreation: string|null}>
+     * @return list<array{id: int, decision: string, reviewDeadline: string|null, url: string, avgScore: float|null, dateCreation: string|null, candidatName: string}>
      */
     public function serializeEvaluationsForDashboard(array $evaluations, array $averageScoresById): array
     {
@@ -51,6 +51,12 @@ class EvaluationStatsService
             if ($id === null) {
                 continue;
             }
+
+            $candidat = $e->getCandidat();
+            $candidatName = $candidat
+                ? trim($candidat->getFirstName() . ' ' . $candidat->getLastName())
+                : '';
+
             $out[] = [
                 'id'             => $id,
                 'decision'       => (string) $e->getDecisionPreliminaire(),
@@ -58,6 +64,7 @@ class EvaluationStatsService
                 'url'            => $this->urlGenerator->generate('evaluation_show', ['idEvaluation' => $id]),
                 'avgScore'       => $averageScoresById[$id] ?? null,
                 'dateCreation'   => $e->getDateCreation()->format('Y-m-d H:i'),
+                'candidatName'   => $candidatName,
             ];
         }
 
