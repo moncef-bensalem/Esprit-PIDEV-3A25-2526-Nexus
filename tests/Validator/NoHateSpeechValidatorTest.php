@@ -9,6 +9,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Validator\Test\ConstraintValidatorTestCase;
 
+/**
+ * @extends ConstraintValidatorTestCase<NoHateSpeechValidator>
+ */
 class NoHateSpeechValidatorTest extends ConstraintValidatorTestCase
 {
     private GeminiSafetyClient&MockObject $geminiSafetyClient;

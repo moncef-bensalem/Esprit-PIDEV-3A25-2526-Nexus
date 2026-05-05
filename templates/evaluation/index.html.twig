@@ -265,7 +265,7 @@
 
 {% if not is_candidate_only|default(false) %}
 <div class="flash-wrap">
-    <form method="get" action="{{ path('evaluation_index') }}" class="row g-2 align-items-end">
+    <form id="evaluationFiltersForm" method="get" action="{{ path('evaluation_index') }}" class="row g-2 align-items-end">
         <div class="col-md-4">
             <label class="form-label text-white-50 mb-1">Recherche</label>
             <input type="text" name="q" class="form-control" placeholder="Candidat, recruteur, decision, commentaire..." value="{{ q }}">
@@ -273,7 +273,7 @@
 
         <div class="col-md-2">
             <label class="form-label text-white-50 mb-1">Tri</label>
-            <select name="sort" class="form-select">
+            <select name="orderBy" class="form-select">
                 <option value="score" {{ sort == 'score' ? 'selected' : '' }}>Trier par score</option>
                 <option value="dateCreation" {{ sort == 'dateCreation' ? 'selected' : '' }}>Trier par date</option>
             </select>
@@ -331,10 +331,10 @@
     {% endfor %}
 </div>
 
-{% if evaluations is empty %}
-    <div class="empty-state">{% if is_candidate_only|default(false) %}Aucune decision preliminaire enregistree pour votre compte.{% else %}Aucune evaluation trouvee.{% endif %}</div>
-{% else %}
-    {% if is_candidate_only|default(false) %}
+{% if is_candidate_only|default(false) %}
+    {% if evaluations is empty %}
+        <div class="empty-state">Aucune decision preliminaire enregistree pour votre compte.</div>
+    {% else %}
     <div class="cards-grid">
         {% for evaluation in evaluations %}
             {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
@@ -346,11 +346,14 @@
             </div>
         {% endfor %}
     </div>
-    {% else %}
+    {% endif %}
+{% else %}
     <div id="evaluationsCards">
         {% include 'evaluation/_cards.html.twig' with { evaluations: evaluations, averageScoresById: averageScoresById } %}
     </div>
-    {% endif %}
+    <div id="paginationBar">
+        {% include 'evaluation/_pagination.html.twig' with { pagination: pagination } %}
+    </div>
 {% endif %}
 
 {# Reminder modal (closest reviewDeadline) #}
@@ -388,17 +391,22 @@
 window.addEventListener('DOMContentLoaded', () => {
     const dataUrl = {{ path('evaluation_index_data')|json_encode|raw }};
     const cardsEl = document.getElementById('evaluationsCards');
-    const formEl = document.querySelector('form[action="{{ path('evaluation_index') }}"]');
+    const paginationBarEl = document.getElementById('paginationBar');
+    const formEl = document.getElementById('evaluationFiltersForm');
     const resetBtn = document.getElementById('resetFiltersBtn');
 
     let evaluations = {{ evaluationsJson|raw }};
+    let allEvaluations = {{ allEvaluationsJson|raw }};
     let deadlinesByDate = new Map();
     let pieChart = null;
     let hasShownDeadlineReminder = false;
 
+
+    let currentPage = {{ pagination is defined ? pagination.currentPageNumber : 1 }};
+
     function rebuildDeadlinesMap() {
         const map = new Map();
-        for (const e of evaluations) {
+        for (const e of allEvaluations) {
             if (e.decision !== 'A_REVOIR' || !e.reviewDeadline) continue;
             if (!map.has(e.reviewDeadline)) map.set(e.reviewDeadline, []);
             map.get(e.reviewDeadline).push(e);
@@ -427,7 +435,6 @@ window.addEventListener('DOMContentLoaded', () => {
         return `${y}-${m}-${day}`;
     }
 
-    // JS getDay(): 0=Sun..6=Sat ; on veut 0=Lun..6=Dim
     function mondayIndex(d) {
         const js = d.getDay();
         return (js + 6) % 7;
@@ -452,7 +459,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const last = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
         const startOffset = mondayIndex(first);
 
-        // On affiche 6 semaines (42 cases) pour une grille stable
         const start = new Date(first);
         start.setDate(first.getDate() - startOffset);
 
@@ -500,7 +506,6 @@ window.addEventListener('DOMContentLoaded', () => {
             calEl.appendChild(dayEl);
         }
 
-        // Evite lint "unused" en gardant last variable utile si besoin plus tard
         void last;
     }
 
@@ -515,7 +520,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     renderMonth();
 
-    // Pie chart decisions preliminaires
     const ctx = document.getElementById('decisionPie');
     function getCountsFromEvaluations(list) {
         const c = { FAVORABLE: 0, DEFAVORABLE: 0, A_REVOIR: 0 };
@@ -574,18 +578,18 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function setDashboardData(nextEvaluations, nextCounts) {
+    function setDashboardData(nextEvaluations, nextAllEvaluations, nextCounts) {
         evaluations = Array.isArray(nextEvaluations) ? nextEvaluations : [];
+        allEvaluations = Array.isArray(nextAllEvaluations) ? nextAllEvaluations : [];
         rebuildDeadlinesMap();
         renderMonth();
-        renderOrUpdatePie(nextCounts ?? getCountsFromEvaluations(evaluations));
+        renderOrUpdatePie(nextCounts ?? getCountsFromEvaluations(allEvaluations));
     }
 
     rebuildDeadlinesMap();
-    setDashboardData(evaluations, getCountsFromEvaluations(evaluations));
+    setDashboardData(evaluations, allEvaluations, getCountsFromEvaluations(allEvaluations));
 
     function formatFrDate(iso) {
-        // iso attendu: YYYY-MM-DD
         const parts = String(iso ?? '').split('-');
         if (parts.length !== 3) return String(iso ?? '');
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -624,27 +628,47 @@ window.addEventListener('DOMContentLoaded', () => {
 
         dateEl.textContent = formatFrDate(next.reviewDeadline);
         daysEl.textContent = daysLabel;
-        evalEl.textContent = `#${next.id}`;
+        evalEl.textContent = next.candidatName ? `${next.candidatName} (#${next.id})` : `#${next.id}`;
         linkEl.href = next.url || '#';
 
         const modal = new bootstrap.Modal(modalEl, { backdrop: true, focus: true });
         modal.show();
     }
 
-    showClosestReviewDeadlineReminder(evaluations);
+    showClosestReviewDeadlineReminder(allEvaluations);
 
     let abortController = null;
     let debounceTimer = null;
 
+    // Bind pagination button clicks inside a container (works after innerHTML replacement)
+    function bindPaginationButtons(container) {
+        if (!container) return;
+        container.querySelectorAll('.js-page-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const page = parseInt(btn.dataset.page, 10);
+                if (!Number.isNaN(page)) {
+                    currentPage = page;
+                    refreshWithAjax();
+                    // Scroll cards into view smoothly
+                    cardsEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    }
+
     async function refreshWithAjax() {
-        if (!formEl || !cardsEl) return;
+        if (!formEl) return;
 
         const params = new URLSearchParams(new FormData(formEl));
+        params.set('page', String(currentPage));
+
         if (abortController) abortController.abort();
         abortController = new AbortController();
 
         try {
-            cardsEl.style.opacity = '0.6';
+            if (cardsEl) cardsEl.style.opacity = '0.6';
+            if (paginationBarEl) paginationBarEl.style.opacity = '0.6';
+
             const res = await fetch(`${dataUrl}?${params.toString()}`, {
                 headers: { 'Accept': 'application/json' },
                 signal: abortController.signal
@@ -652,16 +676,37 @@ window.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const payload = await res.json();
 
-            if (typeof payload.cardsHtml === 'string') {
+            if (cardsEl && typeof payload.cardsHtml === 'string') {
                 cardsEl.innerHTML = payload.cardsHtml;
             }
-            setDashboardData(payload.evaluations, payload.counts);
+            if (paginationBarEl && typeof payload.paginationHtml === 'string') {
+                paginationBarEl.innerHTML = payload.paginationHtml;
+                bindPaginationButtons(paginationBarEl);
+            }
+
+            // Keep currentPage in sync with what the server actually returned
+            if (typeof payload.currentPage === 'number') {
+                currentPage = payload.currentPage;
+            }
+
+            setDashboardData(
+                payload.evaluations,
+                payload.allEvaluations ?? payload.evaluations,
+                payload.counts
+            );
+
+            // Update the browser URL without a reload so back/refresh works
+            try {
+                const urlParams = new URLSearchParams(params);
+                window.history.replaceState({}, '', `${formEl.action}?${urlParams.toString()}`);
+            } catch (_) { /* ignore */ }
+
         } catch (e) {
             if (e && e.name === 'AbortError') return;
-            // En cas d'erreur, on garde l'UI actuelle sans bloquer l'utilisateur
-            console.error(e);
+            console.error('AJAX refresh error:', e);
         } finally {
-            cardsEl.style.opacity = '1';
+            if (cardsEl) cardsEl.style.opacity = '1';
+            if (paginationBarEl) paginationBarEl.style.opacity = '1';
         }
     }
 
@@ -673,7 +718,7 @@ window.addEventListener('DOMContentLoaded', () => {
     function resetFiltersToDefault() {
         if (!formEl) return;
         const q = formEl.querySelector('input[name="q"]');
-        const sort = formEl.querySelector('select[name="sort"]');
+        const sort = formEl.querySelector('select[name="orderBy"]');
         const decision = formEl.querySelector('select[name="decision"]');
         const recruteur = formEl.querySelector('select[name="recruteur"]');
         const candidat = formEl.querySelector('select[name="candidat"]');
@@ -684,12 +729,11 @@ window.addEventListener('DOMContentLoaded', () => {
         if (recruteur) recruteur.value = '';
         if (candidat) candidat.value = '';
 
-        // On remet aussi l'URL "propre" (sans querystring) même si on reste en AJAX.
+        currentPage = 1;
+
         try {
             window.history.replaceState({}, '', formEl.action);
-        } catch (e) {
-            // ignore
-        }
+        } catch (_) { /* ignore */ }
 
         scheduleRefresh();
     }
@@ -697,13 +741,17 @@ window.addEventListener('DOMContentLoaded', () => {
     if (formEl) {
         formEl.addEventListener('submit', (ev) => {
             ev.preventDefault();
+            currentPage = 1; // filter change always goes back to page 1
             scheduleRefresh();
         });
-        formEl.addEventListener('input', scheduleRefresh);
-        formEl.addEventListener('change', scheduleRefresh);
+        formEl.addEventListener('input', () => { currentPage = 1; scheduleRefresh(); });
+        formEl.addEventListener('change', () => { currentPage = 1; scheduleRefresh(); });
     }
 
     resetBtn?.addEventListener('click', resetFiltersToDefault);
+
+    // Wire up the server-rendered pagination buttons on initial load
+    bindPaginationButtons(paginationBarEl);
 });
 </script>
 {% endblock %}

@@ -71,6 +71,7 @@
             "endroid/installer": true
         },
         "platform": {
+            "php": "8.2.12"
             "php": "8.2.0"
         },
         "sort-packages": true
@@ -117,6 +118,9 @@
         }
     },
     "require-dev": {
+        "ahmed-bhs/doctrine-doctor": "1.1",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^10.5",
         "ahmed-bhs/doctrine-doctor": "^1.1",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "*",

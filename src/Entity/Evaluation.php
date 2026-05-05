@@ -13,6 +13,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity]
 #[ORM\Table(name: "evaluation")]
+#[ORM\HasLifecycleCallbacks]
 class Evaluation
 {
     #[ORM\Id]
@@ -21,7 +22,6 @@ class Evaluation
     private ?int $idEvaluation = null;
 
     #[ORM\Column(type: "datetime")]
-    #[Assert\NotNull(message: "La date de creation est obligatoire.")]
     private \DateTimeInterface $dateCreation;
 
     #[ORM\Column(type: "text")]
@@ -47,13 +47,14 @@ class Evaluation
     private ?\DateTimeInterface $reviewDeadline = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsCandidat")]
-    #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
+    #[ORM\JoinColumn(name: "fk_candidat_id", referencedColumnName: "id", nullable: true, onDelete: "SET NULL")]
     private ?User $candidat = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "evaluationsAsRecruteur")]
-    #[ORM\JoinColumn(name: "fk_recruteur_id", referencedColumnName: "id", nullable: true, onDelete: "CASCADE")]
+    #[ORM\JoinColumn(name: "fk_recruteur_id", referencedColumnName: "id", nullable: true, onDelete: "SET NULL")]
     private ?User $recruteur = null;
 
+    /** @var Collection<int, ScoreCompetence> */
     #[ORM\OneToMany(mappedBy: "evaluation", targetEntity: ScoreCompetence::class, cascade: ["persist", "remove"])]
     #[Assert\Valid]
     private Collection $scoreCompetences;
@@ -74,12 +75,20 @@ class Evaluation
         return $this;
     }
 
+    #[ORM\PrePersist]
+    public function initDateCreation(): void
+    {
+        if (!isset($this->dateCreation)) {
+            $this->dateCreation = new \DateTime();
+        }
+    }
+
     public function getDateCreation(): \DateTimeInterface
     {
         return $this->dateCreation;
     }
 
-    public function setDateCreation(\DateTimeInterface $value): static
+    protected function setDateCreation(\DateTimeInterface $value): static
     {
         if ($value instanceof \DateTimeImmutable) {
             $value = \DateTime::createFromImmutable($value);
@@ -173,6 +182,7 @@ class Evaluation
         return $this;
     }
 
+    /** @return Collection<int, ScoreCompetence> */
     public function getScoreCompetences(): Collection
     {
         return $this->scoreCompetences;

@@ -6,9 +6,12 @@ use App\Entity\Evaluation;
 use App\Entity\ScoreCompetence;
 use App\Entity\User;
 use App\Form\EvaluationType;
+use App\Repository\EvaluationRepository;
 use App\Security\EvaluationVoter;
 use App\Service\EvaluationDecisionMailer;
+use App\Service\EvaluationStatsService;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,12 +28,22 @@ use Dompdf\Options;
 #[IsGranted('ROLE_RH')]
 class EvaluationController extends AbstractController
 {
+    public function __construct(private readonly EvaluationStatsService $statsService)
+    {
+    }
+
     #[Route('', name: 'evaluation_index', methods: ['GET'])]
-    public function index(Request $request, EntityManagerInterface $entityManager): Response
+    public function index(Request $request, EntityManagerInterface $entityManager, EvaluationRepository $evaluationRepository, PaginatorInterface $paginator): Response
     {
         $user = $this->requireUser();
-        $data = $this->buildIndexData($request, $entityManager, $user, $this->isGranted('ROLE_ADMIN'));
-        $evaluationsJson = $this->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
+        $data = $this->buildIndexData($request, $entityManager, $evaluationRepository, $paginator, $user, $this->isGranted('ROLE_ADMIN'));
+        $evaluationsJson = $this->statsService->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
+
+        // All evaluations (no pagination) for calendar + pie chart
+        $allEvaluationsJson = $this->statsService->serializeEvaluationsForDashboard(
+            $data['allEvaluations'],
+            $data['allAverageScoresById']
+        );
 
         return $this->render('evaluation/index.html.twig', [
             'evaluations' => $data['evaluations'],
@@ -44,20 +57,28 @@ class EvaluationController extends AbstractController
             'recruteurOptions' => $data['recruteurOptions'],
             'candidatOptions' => $data['candidatOptions'],
             'evaluationsJson' => json_encode($evaluationsJson, JSON_THROW_ON_ERROR),
+            'allEvaluationsJson' => json_encode($allEvaluationsJson, JSON_THROW_ON_ERROR),
+            'pagination' => $data['pagination'],
         ]);
     }
 
     #[Route('/data', name: 'evaluation_index_data', methods: ['GET'])]
-    public function indexData(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function indexData(Request $request, EntityManagerInterface $entityManager, EvaluationRepository $evaluationRepository, PaginatorInterface $paginator): JsonResponse
     {
         $user = $this->requireUser();
-        $data = $this->buildIndexData($request, $entityManager, $user, $this->isGranted('ROLE_ADMIN'));
+        $data = $this->buildIndexData($request, $entityManager, $evaluationRepository, $paginator, $user, $this->isGranted('ROLE_ADMIN'));
 
-        $evaluationsJson = $this->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
+        $evaluationsJson = $this->statsService->serializeEvaluationsForDashboard($data['evaluations'], $data['averageScoresById']);
+
+        // All evaluations (no pagination) for calendar + pie chart
+        $allEvaluationsJson = $this->statsService->serializeEvaluationsForDashboard(
+            $data['allEvaluations'],
+            $data['allAverageScoresById']
+        );
 
         $counts = ['FAVORABLE' => 0, 'DEFAVORABLE' => 0, 'A_REVOIR' => 0];
-        foreach ($evaluationsJson as $e) {
-            $decision = (string) ($e['decision'] ?? '');
+        foreach ($allEvaluationsJson as $e) {
+            $decision = (string) $e['decision'];
             if (array_key_exists($decision, $counts)) {
                 $counts[$decision]++;
             }
@@ -68,10 +89,20 @@ class EvaluationController extends AbstractController
             'averageScoresById' => $data['averageScoresById'],
         ]);
 
+        $pagination = $data['pagination'];
+        $paginationHtml = $this->renderView('evaluation/_pagination.html.twig', [
+            'pagination' => $pagination,
+        ]);
+
         return $this->json([
-            'evaluations' => $evaluationsJson,
-            'counts' => $counts,
-            'cardsHtml' => $cardsHtml,
+            'evaluations'    => $evaluationsJson,
+            'allEvaluations' => $allEvaluationsJson,
+            'counts'         => $counts,
+            'cardsHtml'      => $cardsHtml,
+            'paginationHtml' => $paginationHtml,
+            'currentPage'    => $pagination->getCurrentPageNumber(),
+            'pageCount'      => $pagination->getPageCount(),
+            'totalItems'     => $pagination->getTotalItemCount(),
         ]);
     }
 
@@ -80,7 +111,6 @@ class EvaluationController extends AbstractController
     {
         $recruteur = $this->requireUser();
         $evaluation = new Evaluation();
-        $evaluation->setDateCreation(new \DateTimeImmutable());
 
         $candidates = $this->getCandidateUsers($entityManager);
 
@@ -246,6 +276,7 @@ public function exportPdf(
     ->from(Evaluation::class, 'e')
     ->leftJoin('e.scoreCompetences', 'sc')
     ->orderBy('e.dateCreation', 'DESC')
+    ->setMaxResults(500)
     ->getQuery()
     ->getResult();
     $byCandidat = [];
@@ -274,8 +305,7 @@ public function exportPdf(
             'avg'    => $avg,
         ];
     }
- 
-    // 3. Sort each candidat's evaluations by avg score descending (null last)
+
     foreach ($byCandidat as &$data) {
         usort($data['evaluations'], static function (array $a, array $b): int {
             if ($a['avg'] === null && $b['avg'] === null) return 0;
@@ -285,17 +315,14 @@ public function exportPdf(
         });
     }
     unset($data);
- 
-    // 4. Sort candidats alphabetically
+
     uasort($byCandidat, static fn ($a, $b) => strcmp($a['label'], $b['label']));
- 
-    // 5. Render HTML template for dompdf
+
     $html = $twig->render('evaluation/pdf_export.html.twig', [
         'byCandidat' => $byCandidat,
         'generatedAt' => new \DateTimeImmutable(),
     ]);
- 
-    // 6. Generate PDF with dompdf
+
     $options = new Options();
     $options->set('defaultFont', 'DejaVu Sans');
     $options->set('isHtml5ParserEnabled', true);
@@ -313,16 +340,18 @@ public function exportPdf(
     ]);
 }
 
-    /**
-     * @return list<User>
-     */
+    /** @return User[] */
     private function getCandidateUsers(EntityManagerInterface $entityManager): array
     {
-        $users = $entityManager->getRepository(User::class)->findAll();
-
-        return array_values(array_filter($users, static function (User $user): bool {
-            return in_array('ROLE_CANDIDAT', $user->getRoles(), true);
-        }));
+        return $entityManager->createQueryBuilder()
+            ->select('u')
+            ->from(User::class, 'u')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_CANDIDAT%')
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     private function requireUser(): User
@@ -346,52 +375,16 @@ public function exportPdf(
         return ((int) $max) + 1;
     }
 
-    private function computeAverageScore(Evaluation $evaluation): ?float
-    {
-        $sum = 0.0;
-        $count = 0;
-
-        foreach ($evaluation->getScoreCompetences() as $scoreCompetence) {
-            $raw = trim($scoreCompetence->getNoteAttribuee());
-            if ($raw === '') {
-                continue;
-            }
-
-            // Le champ est un string: on normalise "," => "."
-            $normalized = str_replace(',', '.', $raw);
-            if (!is_numeric($normalized)) {
-                continue;
-            }
-
-            $sum += (float) $normalized;
-            $count++;
-        }
-
-        if ($count === 0) {
-            return null;
-        }
-
-        return $sum / $count;
-    }
-
     /**
-     * @return array{
-     *   evaluations: list<Evaluation>,
-     *   averageScoresById: array<int, ?float>,
-     *   q: string,
-     *   sort: string,
-     *   decision: string,
-     *   recruteur: string,
-     *   candidat: string,
-     *   decisionOptions: list<string>,
-     *   recruteurOptions: array<string, string>,
-     *   candidatOptions: array<string, string>
-     * }
+     * @return array<string, mixed>
      */
-    private function buildIndexData(Request $request, EntityManagerInterface $entityManager, User $currentUser, bool $isAdmin): array
+    private function buildIndexData(Request $request, EntityManagerInterface $entityManager, EvaluationRepository $evaluationRepository, PaginatorInterface $paginator, User $currentUser, bool $isAdmin): array
     {
         $q = trim((string) $request->query->get('q', ''));
-        $sort = (string) $request->query->get('sort', 'dateCreation'); // 'score' | 'dateCreation'
+        $sort = (string) $request->query->get('orderBy', 'dateCreation'); // 'score' | 'dateCreation'
+        $page = max(1, (int) $request->query->get('page', 1));
+        /** @var int $pageSize */
+        $pageSize = 9;
 
         $decisionFilter = (string) $request->query->get('decision', '');
         $recruteurFilter = (string) $request->query->get('recruteur', '');
@@ -401,149 +394,60 @@ public function exportPdf(
             $recruteurFilter = (string) $currentUser->getId();
         }
 
-        $criteria = [];
+        $filters = [
+            'q'          => $q,
+            'sort'       => $sort,
+            'decision'   => $decisionFilter,
+            'candidatId' => $candidatFilter,
+        ];
+
         if (!$isAdmin) {
-            $criteria['recruteur'] = $currentUser;
+            $filters['recruteur'] = $currentUser;
+        } elseif ($recruteurFilter !== '') {
+            $filters['recruteurId'] = $recruteurFilter;
         }
 
-        $evaluationsAll = $entityManager->getRepository(Evaluation::class)->findBy($criteria, ['dateCreation' => 'DESC']);
+        $qb = $evaluationRepository->createFilteredQueryBuilder($filters);
+
+        $pagination = $paginator->paginate($qb, $page, $pageSize);
+
+        /** @var Evaluation[] $evaluations */
+        $evaluations = iterator_to_array($pagination);
 
         $averageScoresById = [];
-        foreach ($evaluationsAll as $evaluation) {
-            $averageScoresById[$evaluation->getIdEvaluation()] = $this->computeAverageScore($evaluation);
+        foreach ($evaluations as $evaluation) {
+            $averageScoresById[$evaluation->getIdEvaluation()] = $this->statsService->computeAverageScore($evaluation);
         }
 
-        // Options distinctes (pour remplir les selects)
-        $decisionOptions = [];
-        $recruteurOptions = []; // id => label (inclut "none" via key 'none')
-        $candidatOptions = [];
-        foreach ($evaluationsAll as $evaluation) {
-            $decisionOptions[$evaluation->getDecisionPreliminaire()] = true;
+        // Fetch ALL matching evaluations (no pagination) for calendar + pie chart
+        /** @var Evaluation[] $allEvaluations */
+        $allEvaluations = $evaluationRepository->createFilteredQueryBuilder($filters)
+            ->getQuery()
+            ->getResult();
 
-            if ($evaluation->getRecruteur() === null) {
-                $recruteurOptions['none'] = 'Non assigne';
-            } else {
-                $recruteurOptions[(string) $evaluation->getRecruteur()->getId()] = $evaluation->getRecruteur()->getFirstName().' '.$evaluation->getRecruteur()->getLastName();
-            }
-
-            if ($evaluation->getCandidat() === null) {
-                $candidatOptions['none'] = 'Non assigne';
-            } else {
-                $candidatOptions[(string) $evaluation->getCandidat()->getId()] = $evaluation->getCandidat()->getFirstName().' '.$evaluation->getCandidat()->getLastName();
-            }
+        $allAverageScoresById = [];
+        foreach ($allEvaluations as $evaluation) {
+            $allAverageScoresById[$evaluation->getIdEvaluation()] = $this->statsService->computeAverageScore($evaluation);
         }
 
-        $needle = $q !== '' ? mb_strtolower($q) : '';
-
-        $evaluations = array_values(array_filter($evaluationsAll, function (Evaluation $evaluation) use ($needle, $decisionFilter, $recruteurFilter, $candidatFilter): bool {
-            if ($decisionFilter !== '' && $evaluation->getDecisionPreliminaire() !== $decisionFilter) {
-                return false;
-            }
-
-            if ($recruteurFilter !== '') {
-                if ($recruteurFilter === 'none' && $evaluation->getRecruteur() !== null) {
-                    return false;
-                }
-                if ($recruteurFilter !== 'none') {
-                    $recruteur = $evaluation->getRecruteur();
-                    if ($recruteur === null || (string) $recruteur->getId() !== $recruteurFilter) {
-                        return false;
-                    }
-                }
-            }
-
-            if ($candidatFilter !== '') {
-                if ($candidatFilter === 'none' && $evaluation->getCandidat() !== null) {
-                    return false;
-                }
-                if ($candidatFilter !== 'none') {
-                    $candidat = $evaluation->getCandidat();
-                    if ($candidat === null || (string) $candidat->getId() !== $candidatFilter) {
-                        return false;
-                    }
-                }
-            }
-
-            if ($needle !== '') {
-                $candidateLabel = $evaluation->getCandidat() ? ($evaluation->getCandidat()->getFirstName().' '.$evaluation->getCandidat()->getLastName()) : 'Non assigne';
-                $recruteurLabel = $evaluation->getRecruteur() ? ($evaluation->getRecruteur()->getFirstName().' '.$evaluation->getRecruteur()->getLastName()) : 'Non assigne';
-                $haystack = $evaluation->getIdEvaluation()
-                    .' '.$candidateLabel
-                    .' '.$recruteurLabel
-                    .' '.$evaluation->getDecisionPreliminaire()
-                    .' '.$evaluation->getCommentaireGlobal();
-
-                if (mb_stripos($haystack, $needle) === false) {
-                    return false;
-                }
-            }
-
-            return true;
-        }));
-
-        // Tri
-        if ($sort === 'score') {
-            usort($evaluations, function (Evaluation $a, Evaluation $b) use ($averageScoresById): int {
-                $avgA = $averageScoresById[$a->getIdEvaluation()] ?? null;
-                $avgB = $averageScoresById[$b->getIdEvaluation()] ?? null;
-
-                $valA = $avgA === null ? -1 : $avgA;
-                $valB = $avgB === null ? -1 : $avgB;
-
-                $cmp = $valB <=> $valA; // DESC
-                if ($cmp !== 0) {
-                    return $cmp;
-                }
-
-                return $b->getDateCreation() <=> $a->getDateCreation(); // tie-break
-            });
-        } else {
-            usort($evaluations, static function (Evaluation $a, Evaluation $b): int {
-                return $b->getDateCreation() <=> $a->getDateCreation(); // DESC
-            });
-        }
+        $scopedRecruteur = $isAdmin ? null : $currentUser;
+        $filterOptions = $evaluationRepository->findFilterOptions($scopedRecruteur);
 
         return [
-            'evaluations' => $evaluations,
-            'averageScoresById' => $averageScoresById,
-            'q' => $q,
-            'sort' => $sort,
-            'decision' => $decisionFilter,
-            'recruteur' => $recruteurFilter,
-            'candidat' => $candidatFilter,
-            'decisionOptions' => array_keys($decisionOptions),
-            'recruteurOptions' => $recruteurOptions,
-            'candidatOptions' => $candidatOptions,
+            'evaluations'         => $evaluations,
+            'averageScoresById'   => $averageScoresById,
+            'allEvaluations'      => $allEvaluations,
+            'allAverageScoresById' => $allAverageScoresById,
+            'q'                   => $q,
+            'sort'                => $sort,
+            'decision'            => $decisionFilter,
+            'recruteur'           => $recruteurFilter,
+            'candidat'            => $candidatFilter,
+            'decisionOptions'     => $filterOptions['decisions'],
+            'recruteurOptions'    => $filterOptions['recruteurs'],
+            'candidatOptions'     => $filterOptions['candidats'],
+            'pagination'          => $pagination,
         ];
     }
 
-    /**
-     * @param list<Evaluation> $evaluations
-     * @param array<int, ?float> $averageScoresById
-     * @return list<array{
-     *   id:int,
-     *   decision:string,
-     *   reviewDeadline:?string,
-     *   url:string,
-     *   avgScore:?float,
-     *   dateCreation:string
-     * }>
-     */
-    private function serializeEvaluationsForDashboard(array $evaluations, array $averageScoresById): array
-    {
-        $out = [];
-        foreach ($evaluations as $e) {
-            $id = $e->getIdEvaluation();
-            $out[] = [
-                'id' => $id,
-                'decision' => (string) $e->getDecisionPreliminaire(),
-                'reviewDeadline' => $e->getReviewDeadline() ? $e->getReviewDeadline()->format('Y-m-d') : null,
-                'url' => $this->generateUrl('evaluation_show', ['idEvaluation' => $id]),
-                'avgScore' => $averageScoresById[$id] ?? null,
-                'dateCreation' => $e->getDateCreation()->format('Y-m-d H:i'),
-            ];
-        }
-
-        return $out;
-    }
 }

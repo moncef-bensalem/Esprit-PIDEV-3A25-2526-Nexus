@@ -8,9 +8,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * VIEW : ROLE_ADMIN ou recruteur proprietaire.
- * EDIT : uniquement le recruteur proprietaire (RH et admin).
- * DELETE : ROLE_ADMIN ou recruteur proprietaire.
+ * @extends Voter<string, Evaluation>
  */
 class EvaluationVoter extends Voter
 {

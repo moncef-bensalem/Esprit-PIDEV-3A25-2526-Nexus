@@ -18,7 +18,6 @@ class ScoreCompetence
     #[Assert\Positive(message: "L'identifiant du score doit etre positif.")]
     private ?int $idDetail = null;
 
-    // varchar(255), Null: No
     #[ORM\Column(type: "string", length: 255)]
     #[Assert\NotBlank(message: "Le nom du critere est obligatoire.")]
     #[Assert\Length(
@@ -29,7 +28,6 @@ class ScoreCompetence
     )]
     private string $nomCritere;
 
-    // varchar(255), Null: No  ← screenshot shows varchar not float
     #[ORM\Column(type: "string", length: 255)]
     #[Assert\NotBlank(message: "La note attribuee est obligatoire.")]
     #[Assert\Regex(
@@ -38,7 +36,6 @@ class ScoreCompetence
     )]
     private string $noteAttribuee;
 
-    // longtext, Null: No
     #[ORM\Column(type: "text")]
     #[NoHateSpeech]
     #[Assert\Length(
@@ -47,7 +44,6 @@ class ScoreCompetence
     )]
     private string $appreciationSpecifique;
 
-    // Null: Yes → nullable
     #[ORM\ManyToOne(targetEntity: Evaluation::class, inversedBy: "scoreCompetences")]
     #[ORM\JoinColumn(name: "fk_evaluation_id", referencedColumnName: "id_evaluation", nullable: true, onDelete: "CASCADE")]
     private ?Evaluation $evaluation = null;

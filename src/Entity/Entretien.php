@@ -30,7 +30,7 @@ class Entretien
 
     #[ORM\ManyToOne(targetEntity: TypeEntretien::class, inversedBy: "entretiens")]
     #[ORM\JoinColumn(name: 'type_id', referencedColumnName: 'id_type', nullable: true, onDelete: 'CASCADE')]
-    private ?Type_entretien $type_entretien = null;
+    private ?TypeEntretien $type_entretien = null;
 
     public function getId_entretien(): string
     {
@@ -73,6 +73,28 @@ class Entretien
     public function setStatut_entretien(string $value): static
     {
         $this->statut_entretien = $value;
+        return $this;
+    }
+
+    public function getCandidature(): ?Candidature
+    {
+        return $this->candidature;
+    }
+
+    public function setCandidature(?Candidature $value): static
+    {
+        $this->candidature = $value;
+        return $this;
+    }
+
+    public function getType_entretien(): ?TypeEntretien
+    {
+        return $this->type_entretien;
+    }
+
+    public function setType_entretien(?TypeEntretien $value): static
+    {
+        $this->type_entretien = $value;
         return $this;
     }
 }
