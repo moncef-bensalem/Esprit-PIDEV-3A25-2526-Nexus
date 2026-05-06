@@ -16,7 +16,7 @@ class KanbanController extends AbstractController
     #[Route('', name: 'app_kanban_index', methods: ['GET'])]
     public function index(EntityManagerInterface $em): Response
     {
-        $candidatures = $em->getRepository(Candidature::class)->findAll();
+        $candidatures = $em->getRepository(Candidature::class)->findAllWithRelations();
 
         $kanban = [
             'RECU' => [],

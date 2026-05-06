@@ -120,21 +120,14 @@ class ChatbotService
      */
     private function getPostesDisponibles(): string
     {
-        $talents = $this->em->getRepository(Talent::class)->findAll();
-
-        $postes = [];
-        foreach ($talents as $talent) {
-            $poste = trim($talent->getPoste());
-            if ($poste && !in_array($poste, $postes, true)) {
-                $postes[] = $poste;
-            }
-        }
+        /** @var \App\Repository\TalentRepository $repository */
+        $repository = $this->em->getRepository(Talent::class);
+        $postes = $repository->findAllPostes();
 
         if (empty($postes)) {
             return "Aucun poste n'est disponible dans la base de données pour le moment.";
         }
 
-        sort($postes);
         $liste = implode("\n- ", $postes);
         return "Voici les postes disponibles dans notre base de données :\n\n- " . $liste;
     }
@@ -144,9 +137,10 @@ class ChatbotService
      */
     private function describePoste(string $poste): string
     {
-        // Vérifier si ce poste existe dans la BD
-        $talents = $this->em->getRepository(Talent::class)->findAll();
-        $postesDB = array_map(fn($t) => mb_strtolower(trim($t->getPoste())), $talents);
+        // Vérifier si ce poste existe dans la BD (via DISTINCT)
+        /** @var \App\Repository\TalentRepository $repository */
+        $repository = $this->em->getRepository(Talent::class);
+        $postesDB = array_map('mb_strtolower', $repository->findAllPostes());
 
         $exists = in_array(mb_strtolower($poste), $postesDB, true);
         $context = $exists

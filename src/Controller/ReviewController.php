@@ -35,7 +35,7 @@ class ReviewController extends AbstractController
             6
         );
 
-        $totalReviews   = count($reviewRepo->findAll());
+        $totalReviews   = $reviewRepo->count([]);
         $avgRating      = $reviewRepo->averageRating();
         $lowRatingCount = $reviewRepo->countByRatingBelow(2);
 
@@ -149,10 +149,10 @@ class ReviewController extends AbstractController
         }
 
         return $this->render('review/stats.html.twig', [
-            'total_reviews'    => count($reviewRepo->findAll()),
+            'total_reviews'    => $reviewRepo->count([]),
             'avg_rating'       => $reviewRepo->averageRating(),
             'low_rating_count' => $reviewRepo->countByRatingBelow(2),
-            'total_planifs'    => count($planifRepo->findAll()),
+            'total_planifs'    => $planifRepo->count([]),
             'rating_dist'      => $ratingDist,
         ]);
     }

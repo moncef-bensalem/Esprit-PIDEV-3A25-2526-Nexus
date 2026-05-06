@@ -2,17 +2,36 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\Candidat;
 use App\Entity\OffreEmploi;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: \App\Repository\CandidatureRepository::class)]
 #[ORM\Table(name: "candidature")]
 #[UniqueEntity(fields: ['candidat', 'offre_emploi'], message: 'Ce candidat a déjà postulé à cette offre.')]
 class Candidature
 {
+    /**
+     * @var Collection<int, Entretien>
+     */
+    #[ORM\OneToMany(targetEntity: Entretien::class, mappedBy: "candidature")]
+    private Collection $entretiens;
+
+    /**
+     * @var Collection<int, Planification>
+     */
+    #[ORM\OneToMany(targetEntity: Planification::class, mappedBy: "candidature")]
+    private Collection $planifications;
+
+    public function __construct()
+    {
+        $this->entretiens = new ArrayCollection();
+        $this->planifications = new ArrayCollection();
+    }
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -29,13 +48,13 @@ class Candidature
 
     #[ORM\Column(type: "decimal", precision: 5, scale: 2, nullable: true)]
     #[Assert\Range(min: 0, max: 100, notInRangeMessage: "Le score doit être entre 0 et 100")]
-    private ?float $score_matching = null;
+    private ?string $score_matching = null;
 
     #[ORM\Column(type: "string", length: 100, nullable: true)]
     private ?string $source_candidature = null;
 
     #[ORM\ManyToOne(targetEntity: OffreEmploi::class, inversedBy: "candidatures")]
-    #[ORM\JoinColumn(name: 'fk_offre_id', referencedColumnName: 'id_offre', nullable: true, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'fk_offre_id', referencedColumnName: 'id_offre', nullable: true)]
     private ?OffreEmploi $offre_emploi = null;
 
     #[ORM\ManyToOne(targetEntity: Candidat::class, inversedBy: "candidatures")]
@@ -79,12 +98,12 @@ class Candidature
         return $this;
     }
 
-    public function getScore_matching(): ?float
+    public function getScore_matching(): ?string
     {
         return $this->score_matching;
     }
 
-    public function setScore_matching(?float $value): static
+    public function setScore_matching(?string $value): static
     {
         $this->score_matching = $value;
         return $this;
@@ -171,13 +190,13 @@ class Candidature
         return $this->setEtat_avancement($value);
     }
 
-    public function getScoreMatching(): ?float
+    public function getScoreMatching(): ?string
     
     {
         return $this->getScore_matching();
     }
 
-    public function setScoreMatching(?float $value): static
+    public function setScoreMatching(?string $value): static
     
     {
         return $this->setScore_matching($value);
