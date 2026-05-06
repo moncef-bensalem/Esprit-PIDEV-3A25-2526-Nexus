@@ -35,7 +35,7 @@ final class TalentController extends AbstractController
         $allTalents = $entityManager->getRepository(Talent::class)->findAll();
 
         // Récupérer les paramètres de recherche
-        $search = trim($request->query->get('q', ''));
+        $search = trim((string) $request->query->get('q', ''));
         $filterDept = $request->query->get('departement', '');
         $filterPoste = $request->query->get('poste', '');
         $filterExp = $request->query->get('experience', '');
@@ -47,9 +47,9 @@ final class TalentController extends AbstractController
                 if (strpos($haystack, strtolower($search)) === false)
                     return false;
             }
-            if ($filterDept !== '' && strtolower($t->getDepartement()) !== strtolower($filterDept))
+            if ($filterDept !== '' && strtolower((string) $t->getDepartement()) !== strtolower((string) $filterDept))
                 return false;
-            if ($filterPoste !== '' && strtolower($t->getPoste()) !== strtolower($filterPoste))
+            if ($filterPoste !== '' && strtolower((string) $t->getPoste()) !== strtolower((string) $filterPoste))
                 return false;
             if ($filterExp !== '') {
                 $exp = $t->getAnneesExperience() ?? 0;

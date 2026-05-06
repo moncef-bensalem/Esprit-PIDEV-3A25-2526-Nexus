@@ -74,9 +74,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $faceDescriptor = null;
 
+    /** @var Collection<int, Evaluation> */
     #[ORM\OneToMany(mappedBy: "candidat", targetEntity: Evaluation::class)]
     private Collection $evaluationsAsCandidat;
 
+    /** @var Collection<int, Evaluation> */
     #[ORM\OneToMany(mappedBy: "recruteur", targetEntity: Evaluation::class)]
     private Collection $evaluationsAsRecruteur;
 
@@ -247,11 +249,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /** @return Collection<int, Evaluation> */
     public function getEvaluationsAsCandidat(): Collection
     {
         return $this->evaluationsAsCandidat;
     }
 
+    /** @return Collection<int, Evaluation> */
     public function getEvaluationsAsRecruteur(): Collection
     {
         return $this->evaluationsAsRecruteur;

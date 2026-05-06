@@ -104,7 +104,6 @@ class TwoFactorService
     private function hashCode(string $code, User $user): string
     {
         // Lie le code à l’utilisateur et au secret de l’app, sans stocker le code en clair
-        return hash_hmac('sha256', $user->getId() . '|' . trim($code), $this->appSecret);
+        return hash_hmac('sha256', (string) $user->getId() . '|' . trim($code), $this->appSecret);
     }
 }
-

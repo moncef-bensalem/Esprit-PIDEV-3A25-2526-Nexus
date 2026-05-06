@@ -14,10 +14,10 @@ class DeepLService
 
     /**
      * Traduit un ou plusieurs textes.
-     * @param string|array $text  Le texte ou un tableau de textes
+     * @param string|array<int, string> $text  Le texte ou un tableau de textes
      * @param string $targetLang  Ex: 'EN-US', 'FR', 'AR', 'DE', 'ES'
      * @param string $sourceLang  Ex: 'FR', 'EN' (null = auto-detect)
-     * @return string|array
+     * @return string|array<int, string>
      */
     public function translate(string|array $text, string $targetLang = 'EN-US', ?string $sourceLang = null): string|array
     {
@@ -69,6 +69,9 @@ class DeepLService
 
     /**
      * Traduit les champs clés d'un talent
+     *
+     * @param array<string, string> $fields
+     * @return array<string, string>
      */
     public function translateTalentProfile(array $fields, string $targetLang = 'EN-US'): array
     {
@@ -82,6 +85,9 @@ class DeepLService
         return array_combine(array_keys($fields), $translated);
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function getSupportedLanguages(): array
     {
         return [

@@ -34,14 +34,17 @@ class LoginAttemptSubscriber implements EventSubscriberInterface
     {
         try {
             $passport = $event->getPassport();
-            $userBadge = $passport->getBadge('user_badge');
-            if (!$userBadge || !method_exists($userBadge, 'getUserIdentifier')) {
+            if ($passport === null) {
+                return;
+            }
+            $userBadge = $passport->getBadge(\Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge::class);
+            if (!$userBadge instanceof \Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge) {
                 return;
             }
 
             $attempts = $this->loginAttemptService->registerFailure((string) $userBadge->getUserIdentifier());
             if ($attempts >= 3) {
-                $event->getRequest()->getSession()?->getFlashBag()->add('warning', 'Security alert: too many failed login attempts.');
+                $event->getRequest()->getSession()->getFlashBag()->add('warning', 'Security alert: too many failed login attempts.');
 
                 // Notification Admin (problème sécurité)
                 $email = (string) $userBadge->getUserIdentifier();
@@ -66,7 +69,7 @@ class LoginAttemptSubscriber implements EventSubscriberInterface
 
         // 1) Reset des échecs (peut échouer si table login_attempt absente)
         try {
-            $this->loginAttemptService->resetFailures($user->getEmail());
+            $this->loginAttemptService->resetFailures((string) $user->getEmail());
         } catch (\Throwable $e) {
             $this->logger->warning('LoginAttemptService resetFailures failed', [
                 'error' => $e->getMessage(),
@@ -77,8 +80,8 @@ class LoginAttemptSubscriber implements EventSubscriberInterface
         try {
             $req = $event->getRequest();
             $userEvent = new UserEvent($user, UserEvent::TYPE_LOGIN_SUCCESS);
-            $userEvent->setIp($req?->getClientIp());
-            $userEvent->setUserAgent($req?->headers->get('User-Agent'));
+            $userEvent->setIp($req->getClientIp());
+            $userEvent->setUserAgent($req->headers->get('User-Agent'));
             $this->entityManager->persist($userEvent);
             $this->entityManager->flush();
 

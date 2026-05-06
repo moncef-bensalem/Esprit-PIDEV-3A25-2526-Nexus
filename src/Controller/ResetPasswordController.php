@@ -77,6 +77,7 @@ class ResetPasswordController extends AbstractController
         }
 
         try {
+            /** @var \App\Entity\User $user */
             $user = $this->resetPasswordHelper->validateTokenAndFetchUser($token);
         } catch (ResetPasswordExceptionInterface $exception) {
             $this->addFlash('reset_password_error', sprintf('%s - %s', ResetPasswordExceptionInterface::MESSAGE_PROBLEM_VALIDATE, $exception->getReason()));
@@ -104,7 +105,7 @@ class ResetPasswordController extends AbstractController
         ]);
     }
 
-    private function sendResetEmail(object $user, MailerInterface $mailer): void
+    private function sendResetEmail(\App\Entity\User $user, MailerInterface $mailer): void
     {
         try {
             $resetToken = $this->resetPasswordHelper->generateResetToken($user);

@@ -39,7 +39,7 @@ class TwoFactorController extends AbstractController
         $error = null;
 
         if ($request->isMethod('POST')) {
-            $code = preg_replace('/\D+/', '', (string) $request->request->get('code', ''));
+            $code = (string) preg_replace('/\D+/', '', (string) $request->request->get('code', ''));
             if (strlen($code) !== 8) {
                 $error = 'Veuillez saisir un code de 8 chiffres.';
             } elseif ($twoFactorService->verify($user, $code)) {
