@@ -21,6 +21,8 @@ class AdzunaService
     /**
      * Retourne les données salariales pour un poste donné.
      * Pays: fr (France), gb (UK), us (USA)
+     *
+     * @return array<string, mixed>
      */
     public function getSalaryData(string $jobTitle, string $country = 'fr'): array
     {
@@ -46,9 +48,9 @@ class AdzunaService
                 $counts   = array_values($data['histogram']);
 
                 sort($salaries);
-                $min    = (int) min($salaries);
-                $max    = (int) max($salaries);
-                $median = (int) $salaries[(int)(count($salaries) / 2)] ?? 0;
+                $min    = !empty($salaries) ? (int) min($salaries) : 0;
+                $max    = !empty($salaries) ? (int) max($salaries) : 0;
+                $median = !empty($salaries) ? (int) $salaries[(int)(count($salaries) / 2)] : 0;
 
                 return [
                     'min'       => $min,
@@ -69,6 +71,9 @@ class AdzunaService
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function getFallbackData(string $jobTitle): array
     {
         return [

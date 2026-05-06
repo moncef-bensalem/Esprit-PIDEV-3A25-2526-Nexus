@@ -22,6 +22,7 @@ class ResetPasswordRequestRepository extends ServiceEntityRepository implements 
 
     public function createResetPasswordRequest(object $user, \DateTimeInterface $expiresAt, string $selector, string $hashedToken): ResetPasswordRequest
     {
+        /** @var \App\Entity\User $user */
         return new ResetPasswordRequest($user, $expiresAt, $selector, $hashedToken);
     }
 }

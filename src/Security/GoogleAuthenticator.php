@@ -18,9 +18,9 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
 
 class GoogleAuthenticator extends OAuth2Authenticator
 {
-    private $clientRegistry;
-    private $entityManager;
-    private $router;
+    private ClientRegistry $clientRegistry;
+    private EntityManagerInterface $entityManager;
+    private RouterInterface $router;
 
     public function __construct(ClientRegistry $clientRegistry, EntityManagerInterface $entityManager, RouterInterface $router)
     {
@@ -72,7 +72,7 @@ class GoogleAuthenticator extends OAuth2Authenticator
     {
         // 2FA uniquement pour les candidats
         $user = $token->getUser();
-        $roles = method_exists($user, 'getRoles') ? $user->getRoles() : [];
+        $roles = ($user !== null) ? $user->getRoles() : [];
         $isCandidate = in_array('ROLE_CANDIDATE', $roles, true);
 
         $targetUrl = $this->router->generate($isCandidate ? 'app_2fa_start' : 'app_after_login');

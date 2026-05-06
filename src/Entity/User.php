@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Attribute\Ignore;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -33,6 +34,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = ['ROLE_CANDIDATE'];
 
     #[ORM\Column(type: "string", length: 255)]
+    #[Ignore]
     private string $password = '';
 
     #[ORM\Column(type: "string", length: 255)]
@@ -72,18 +74,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     /** @var array<int, float>|null */
     #[ORM\Column(type: 'json', nullable: true)]
+    #[Ignore]
     private ?array $faceDescriptor = null;
 
+    /** @var Collection<int, Evaluation> */
     #[ORM\OneToMany(mappedBy: "candidat", targetEntity: Evaluation::class)]
     private Collection $evaluationsAsCandidat;
 
+    /** @var Collection<int, Evaluation> */
     #[ORM\OneToMany(mappedBy: "recruteur", targetEntity: Evaluation::class)]
     private Collection $evaluationsAsRecruteur;
+
+    /** @var Collection<int, ProfilTalent> */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: ProfilTalent::class)]
+    private Collection $profil_talents;
+
+    /** @var Collection<int, Planification> */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Planification::class)]
+    private Collection $planifications;
 
     public function __construct()
     {
         $this->evaluationsAsCandidat = new ArrayCollection();
         $this->evaluationsAsRecruteur = new ArrayCollection();
+        $this->profil_talents = new ArrayCollection();
+        $this->planifications = new ArrayCollection();
     }
 
     public function getId(): int
@@ -139,7 +154,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->password;
     }
 
-    public function setPassword(string $value): static
+    public function setPassword(#[\SensitiveParameter] string $value): static
     {
         $this->password = $value;
         $this->passwordChangedAt = new \DateTime();
@@ -247,11 +262,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /** @return Collection<int, Evaluation> */
     public function getEvaluationsAsCandidat(): Collection
     {
         return $this->evaluationsAsCandidat;
     }
 
+    /** @return Collection<int, Evaluation> */
     public function getEvaluationsAsRecruteur(): Collection
     {
         return $this->evaluationsAsRecruteur;

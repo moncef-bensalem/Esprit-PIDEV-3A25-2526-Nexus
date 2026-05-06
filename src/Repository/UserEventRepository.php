@@ -35,6 +35,8 @@ class UserEventRepository extends ServiceEntityRepository
 
     /**
      * Retourne une série [YYYY-MM-DD => count] pour un user et un type.
+     *
+     * @return array<string, int>
      */
     public function dailySeriesForUser(User $user, string $type, \DateTimeInterface $from, \DateTimeInterface $to): array
     {

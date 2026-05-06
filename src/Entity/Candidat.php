@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -9,6 +11,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: "candidat")]
 class Candidat
 {
+    /** @var Collection<int, Candidature> */
+    #[ORM\OneToMany(mappedBy: 'candidat', targetEntity: Candidature::class)]
+    private Collection $candidatures;
+
+    public function __construct()
+    {
+        $this->candidatures = new ArrayCollection();
+        $this->date_ajout = new \DateTime();
+    }
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -30,7 +41,7 @@ class Candidat
     private ?string $chemin_cv = null;
 
     #[ORM\Column(type: "decimal", precision: 5, scale: 2, nullable: true)]
-    private ?float $score_global_ia = null;
+    private ?string $score_global_ia = null;
 
     #[ORM\Column(type: "datetime")]
     private \DateTimeInterface $date_ajout;
@@ -97,12 +108,12 @@ class Candidat
         return $this;
     }
 
-    public function getScore_global_ia(): ?float
+    public function getScore_global_ia(): ?string
     {
         return $this->score_global_ia;
     }
 
-    public function setScore_global_ia(?float $value): static
+    public function setScore_global_ia(?string $value): static
     {
         $this->score_global_ia = $value;
         return $this;
@@ -234,13 +245,13 @@ class Candidat
         return $this->setChemin_cv($value);
     }
 
-    public function getScoreGlobalIa(): ?float
+    public function getScoreGlobalIa(): ?string
     
     {
         return $this->getScore_global_ia();
     }
 
-    public function setScoreGlobalIa(?float $value): static
+    public function setScoreGlobalIa(?string $value): static
     
     {
         return $this->setScore_global_ia($value);

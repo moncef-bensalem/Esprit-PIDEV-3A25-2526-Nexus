@@ -31,6 +31,9 @@ class AdminNotificationsExtension extends AbstractExtension
         return $this->repo->unreadCount();
     }
 
+    /**
+     * @return array<int, \App\Entity\AdminNotification>
+     */
     public function latest(int $limit = 8): array
     {
         if (!$this->auth->isGranted('ROLE_ADMIN') && !$this->auth->isGranted('ROLE_RH')) {

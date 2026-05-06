@@ -18,12 +18,12 @@ class TalentCompetence
     #[ORM\ManyToOne(targetEntity: Talent::class, inversedBy: "talent_competences")]
     #[ORM\JoinColumn(name: 'talent_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     #[Assert\NotNull(message: "Le talent doit être renseigné")]
-    private Talent $talent;
+    private ?Talent $talent = null;
 
     #[ORM\ManyToOne(targetEntity: Competence::class, inversedBy: "talent_competences")]
     #[ORM\JoinColumn(name: 'competence_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     #[Assert\NotNull(message: "La compétence doit être renseignée")]
-    private Competence $competence;
+    private ?Competence $competence = null;
 
     #[ORM\Column(type: "string", length: 50, nullable: true)]
     #[Assert\Length(max: 50, maxMessage: "Le niveau de maîtrise ne peut pas dépasser {{ limit }} caractères")]

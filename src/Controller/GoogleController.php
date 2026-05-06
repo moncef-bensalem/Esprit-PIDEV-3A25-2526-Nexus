@@ -10,15 +10,15 @@ use Symfony\Component\Routing\Annotation\Route;
 class GoogleController extends AbstractController
 {
     #[Route('/connect/google', name: 'connect_google_start')]
-    public function connectAction(ClientRegistry $clientRegistry)
+    public function connectAction(ClientRegistry $clientRegistry): \Symfony\Component\HttpFoundation\Response
     {
         return $clientRegistry
             ->getClient('google')
-            ->redirect(['email', 'profile']);
+            ->redirect(['email', 'profile'], []);
     }
 
     #[Route('/connect/google/check', name: 'connect_google_check')]
-    public function connectCheckAction(Request $request, ClientRegistry $clientRegistry)
+    public function connectCheckAction(Request $request, ClientRegistry $clientRegistry): void
     {
         // This is handled by the authenticator, no code is needed here
     }

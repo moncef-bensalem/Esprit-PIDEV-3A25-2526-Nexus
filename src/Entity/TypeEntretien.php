@@ -2,12 +2,24 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: "type_entretien")]
 class TypeEntretien
 {
+    /**
+     * @var Collection<int, Entretien>
+     */
+    #[ORM\OneToMany(targetEntity: Entretien::class, mappedBy: "type_entretien")]
+    private Collection $entretiens;
+
+    public function __construct()
+    {
+        $this->entretiens = new ArrayCollection();
+    }
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

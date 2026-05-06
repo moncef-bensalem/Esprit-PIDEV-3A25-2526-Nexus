@@ -32,51 +32,28 @@ final class TalentController extends AbstractController
     #[Route(name: 'app_talent_index', methods: ['GET'])]
     public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $allTalents = $entityManager->getRepository(Talent::class)->findAll();
+        /** @var \App\Repository\TalentRepository $repository */
+        $repository = $entityManager->getRepository(Talent::class);
 
         // Récupérer les paramètres de recherche
-        $search = trim($request->query->get('q', ''));
-        $filterDept = $request->query->get('departement', '');
-        $filterPoste = $request->query->get('poste', '');
-        $filterExp = $request->query->get('experience', '');
+        $search = trim((string) $request->query->get('q', ''));
+        $filterDept = (string) $request->query->get('departement', '');
+        $filterPoste = (string) $request->query->get('poste', '');
+        $filterExp = (string) $request->query->get('experience', '');
 
-        // Filtre dynamique
-        $talent = array_filter($allTalents, function (Talent $t) use ($search, $filterDept, $filterPoste, $filterExp) {
-            if ($search !== '') {
-                $haystack = strtolower($t->getNom() . ' ' . $t->getPrenom() . ' ' . $t->getPoste() . ' ' . $t->getDepartement());
-                if (strpos($haystack, strtolower($search)) === false)
-                    return false;
-            }
-            if ($filterDept !== '' && strtolower($t->getDepartement()) !== strtolower($filterDept))
-                return false;
-            if ($filterPoste !== '' && strtolower($t->getPoste()) !== strtolower($filterPoste))
-                return false;
-            if ($filterExp !== '') {
-                $exp = $t->getAnneesExperience() ?? 0;
-                if ($filterExp === '0-2' && !($exp >= 0 && $exp <= 2))
-                    return false;
-                if ($filterExp === '3-5' && !($exp >= 3 && $exp <= 5))
-                    return false;
-                if ($filterExp === '6-10' && !($exp >= 6 && $exp <= 10))
-                    return false;
-                if ($filterExp === '10+' && !($exp > 10))
-                    return false;
-            }
-            return true;
-        });
-        $talent = array_values($talent);
+        // Filtre SQL direct
+        $talent = $repository->findByFilters($search, $filterDept, $filterPoste, $filterExp);
 
-        // Données pour les listes de filtres
-        $departements = array_unique(array_map(fn(Talent $t) => $t->getDepartement(), $allTalents));
-        sort($departements);
-        $postes = array_unique(array_map(fn(Talent $t) => $t->getPoste(), $allTalents));
-        sort($postes);
+        // Listes pour les filtres (optimisées via DISTINCT)
+        $departements = $repository->findAllDepartements();
+        $postes = $repository->findAllPostes();
 
+        $totalTalents = $repository->count([]);
         $competencesCount = $entityManager->getRepository(Competence::class)->count([]);
 
         return $this->render('talent/index.html.twig', [
             'talent' => $talent,
-            'total_talents' => count($allTalents),
+            'total_talents' => $totalTalents,
             'talents_affiches' => count($talent),
             'departements_count' => count($departements),
             'competences_count' => $competencesCount,
@@ -92,85 +69,70 @@ final class TalentController extends AbstractController
     #[Route('/classements', name: 'app_talent_classements', methods: ['GET'])]
     public function classements(EntityManagerInterface $entityManager): Response
     {
-        $allTalents = $entityManager->getRepository(Talent::class)->findAll();
+        /** @var \App\Repository\TalentRepository $repository */
+        $repository = $entityManager->getRepository(Talent::class);
 
-        // Classement par expérience
-        $byExp = $allTalents;
-        usort($byExp, fn(Talent $a, Talent $b) => ($b->getAnneesExperience() ?? 0) <=> ($a->getAnneesExperience() ?? 0));
+        // Classement par expérience (Top 10)
+        $byExp = $repository->findTopByExperience(10);
 
-        // Stats par département
+        // Stats par département (DQL)
+        $deptStats = $repository->countByDepartment();
         $byDept = [];
-        foreach ($allTalents as $t) {
-            $d = $t->getDepartement();
-            if (!isset($byDept[$d]))
-                $byDept[$d] = 0;
-            $byDept[$d]++;
+        foreach ($deptStats as $row) {
+            $byDept[$row['name']] = $row['count'];
         }
-        arsort($byDept);
 
-        // Stats par poste
+        // Stats par poste (DQL)
+        $posteStats = $repository->countByPoste();
         $byPoste = [];
-        foreach ($allTalents as $t) {
-            $p = $t->getPoste();
-            if (!isset($byPoste[$p]))
-                $byPoste[$p] = 0;
-            $byPoste[$p]++;
+        foreach ($posteStats as $row) {
+            $byPoste[$row['name']] = $row['count'];
         }
-        arsort($byPoste);
 
         return $this->render('talent/classements.html.twig', [
-            'talents_by_exp' => array_slice($byExp, 0, 10),
+            'talents_by_exp' => $byExp,
             'by_departement' => $byDept,
             'by_poste' => $byPoste,
-            'total' => count($allTalents),
+            'total' => $repository->count([]),
         ]);
     }
 
     #[Route('/statistiques', name: 'app_talent_statistiques', methods: ['GET'])]
     public function statistiques(EntityManagerInterface $entityManager): Response
     {
-        $allTalents = $entityManager->getRepository(Talent::class)->findAll();
+        /** @var \App\Repository\TalentRepository $repository */
+        $repository = $entityManager->getRepository(Talent::class);
 
+        // Stats par département (DQL)
+        $deptStats = $repository->countByDepartment();
         $byDept = [];
-        $expBuckets = ['0-2 ans' => 0, '3-5 ans' => 0, '6-10 ans' => 0, '10+ ans' => 0];
-        $byNiveau = [];
-
-        foreach ($allTalents as $t) {
-            // Département
-            $d = $t->getDepartement();
-            if (!isset($byDept[$d]))
-                $byDept[$d] = 0;
-            $byDept[$d]++;
-
-            // Expérience
-            $exp = $t->getAnneesExperience() ?? 0;
-            if ($exp <= 2)
-                $expBuckets['0-2 ans']++;
-            elseif ($exp <= 5)
-                $expBuckets['3-5 ans']++;
-            elseif ($exp <= 10)
-                $expBuckets['6-10 ans']++;
-            else
-                $expBuckets['10+ ans']++;
-
-            // Niveau d'études
-            $n = $t->getNiveauEtudes() ?? 'Non précisé';
-            if (!isset($byNiveau[$n]))
-                $byNiveau[$n] = 0;
-            $byNiveau[$n]++;
+        foreach ($deptStats as $row) {
+            $byDept[$row['name']] = $row['count'];
         }
 
-        $avgExp = count($allTalents) > 0
-            ? round(array_sum(array_map(fn($t) => $t->getAnneesExperience() ?? 0, $allTalents)) / count($allTalents), 1)
-            : 0;
+        // Stats par expérience (SQL Custom ou Simple queries)
+        $expBuckets = [
+            '0-2 ans' => $repository->countByExperienceRange(0, 2),
+            '3-5 ans' => $repository->countByExperienceRange(3, 5),
+            '6-10 ans' => $repository->countByExperienceRange(6, 10),
+            '10+ ans' => $repository->countByExperienceRange(11, 100),
+        ];
+
+        // Stats par niveau d'études
+        $niveauStats = $repository->countByNiveauEtudes();
+        $byNiveau = [];
+        foreach ($niveauStats as $row) {
+            $byNiveau[$row['name'] ?: 'Non spécifié'] = $row['count'];
+        }
+
+        $avgExp = $repository->getAverageExperience();
 
         return $this->render('talent/statistiques.html.twig', [
-            'total' => count($allTalents),
-            'by_dept' => $byDept,
+            'by_departement' => $byDept,
             'exp_buckets' => $expBuckets,
             'by_niveau' => $byNiveau,
-            'avg_exp' => $avgExp,
-            'nb_depts' => count($byDept),
+            'avg_exp' => round($avgExp, 1),
+            'total' => $repository->count([]),
         ]);
     }
 

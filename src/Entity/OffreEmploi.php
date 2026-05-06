@@ -17,12 +17,17 @@ class OffreEmploi
     private string $id_offre;
 
     /** @var Collection<int, Candidature> */
-    #[ORM\OneToMany(mappedBy: 'offre_emploi', targetEntity: Candidature::class, cascade: ['remove'])]
+    #[ORM\OneToMany(mappedBy: 'offre_emploi', targetEntity: Candidature::class)]
     private Collection $candidatures;
+
+    /** @var Collection<int, OffreCompetence> */
+    #[ORM\OneToMany(mappedBy: 'offreEmploi', targetEntity: OffreCompetence::class, cascade: ['persist'])]
+    private Collection $offreCompetences;
 
     public function __construct()
     {
         $this->candidatures = new ArrayCollection();
+        $this->offreCompetences = new ArrayCollection();
         $this->statut_offre = 'Brouillon'; // Default state US-12
     }
 

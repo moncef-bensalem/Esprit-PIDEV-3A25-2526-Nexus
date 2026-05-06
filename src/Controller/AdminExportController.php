@@ -22,9 +22,9 @@ class AdminExportController extends AbstractController
     #[Route('/dashboard/pdf', name: 'admin_export_dashboard_pdf', methods: ['GET'])]
     public function exportDashboardPdf(UserRepository $userRepository, PlanificationRepository $planificationRepository): Response
     {
-        $totalUsers = count($userRepository->findAll());
+        $totalUsers = $userRepository->count([]);
         $totalCandidates = $userRepository->countCandidates();
-        $totalInterviews = count($planificationRepository->findAll());
+        $totalInterviews = $planificationRepository->count([]);
         $roleDistribution = $userRepository->getRoleDistribution();
 
         $html = $this->renderView('dashboard/export_pdf.html.twig', [

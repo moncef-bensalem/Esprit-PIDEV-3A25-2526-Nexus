@@ -26,7 +26,7 @@ class GroqService
     /**
      * Envoie une liste de messages au modèle Groq et retourne la réponse.
      *
-     * @param array $messages [['role'=>'system','content'=>'...'], ['role'=>'user','content'=>'...']]
+     * @param array<array<string, string>> $messages [['role'=>'system','content'=>'...'], ['role'=>'user','content'=>'...']]
      */
     public function chat(array $messages): string
     {

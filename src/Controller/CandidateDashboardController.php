@@ -28,7 +28,7 @@ class CandidateDashboardController extends AbstractController
             }
         }
 
-        $myInterviews = count($planificationRepository->findAll());
+        $myInterviews = $planificationRepository->count([]);
 
         return $this->render('dashboard/candidate.html.twig', [
             'myApplications' => $myApplications,

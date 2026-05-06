@@ -17,9 +17,9 @@ class AdminDashboardController extends AbstractController
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
     public function index(UserRepository $userRepository, PlanificationRepository $planificationRepository): Response
     {
-        $totalUsers = count($userRepository->findAll());
+        $totalUsers = $userRepository->count([]);
         $totalCandidates = $userRepository->countCandidates();
-        $totalInterviews = count($planificationRepository->findAll());
+        $totalInterviews = $planificationRepository->count([]);
         $roleDistribution = $userRepository->getRoleDistribution();
 
         return $this->render('dashboard/admin.html.twig', [

@@ -2,12 +2,28 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+
 #[ORM\Entity]
 #[ORM\Table(name: "competence")]
 class Competence
 {
+    /** @var Collection<int, OffreCompetence> */
+    #[ORM\OneToMany(mappedBy: 'competence', targetEntity: OffreCompetence::class)]
+    private Collection $offreCompetences;
+
+    /** @var Collection<int, TalentCompetence> */
+    #[ORM\OneToMany(mappedBy: 'competence', targetEntity: TalentCompetence::class)]
+    private Collection $talent_competences;
+
+    public function __construct()
+    {
+        $this->offreCompetences = new ArrayCollection();
+        $this->talent_competences = new ArrayCollection();
+    }
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
