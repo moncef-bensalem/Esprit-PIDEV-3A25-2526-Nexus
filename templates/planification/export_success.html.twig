@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Export iCal — Planification #{{ planification.idEvent }}{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:60vh;">
+    <div style="text-align:center;max-width:480px;padding:48px 32px;background:rgba(13,29,48,.7);border:1px solid rgba(15,157,88,.25);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#0f9d58,#00c853);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 24px rgba(15,157,88,.35);font-size:2rem;">
+            📅
+        </div>
+
+        <h2 style="font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:10px;">
+            Fichier .ics généré avec succès
+        </h2>
+        <p style="font-size:.9rem;color:rgba(255,255,255,.5);margin-bottom:32px;line-height:1.6;">
+            Votre fichier <strong style="color:rgba(255,255,255,.75);">planification-{{ planification.idEvent }}.ics</strong>
+            a été téléchargé.<br>
+            Importez-le dans Google Calendar, Outlook ou Apple Calendar.
+        </p>
+
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <a href="{{ path('planification_show', {id: planification.idEvent}) }}"
+               style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:10px;background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#fff;font-weight:600;font-size:.88rem;text-decoration:none;box-shadow:0 4px 14px rgba(79,195,247,.3);">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Retour à la planification
+            </a>
+            <a href="{{ path('planification_export_ical', {id: planification.idEvent}) }}"
+               style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:10px;background:rgba(15,157,88,.15);border:1px solid rgba(15,157,88,.3);color:#4ade80;font-weight:600;font-size:.88rem;text-decoration:none;">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Télécharger à nouveau
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

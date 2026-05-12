@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DejaVu Sans', sans-serif; background: #fff; color: #1a2a3a; font-size: 10px; }
+
+    .header { background: #0d1926; padding: 16px 24px; margin-bottom: 18px; }
+    .header-inner { display: flex; justify-content: space-between; align-items: center; }
+    .logo-title { color: #fff; font-size: 18px; font-weight: bold; }
+    .logo-sub { color: #20b2aa; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+    .header-meta { text-align: right; color: rgba(255,255,255,0.5); font-size: 9px; line-height: 1.8; }
+    .header-meta strong { color: #20b2aa; }
+
+    .section-title { margin: 0 24px 8px; font-size: 12px; font-weight: bold; color: #1a3a4a; border-left: 3px solid #20b2aa; padding-left: 10px; }
+
+    table { width: calc(100% - 48px); margin: 0 24px; border-collapse: collapse; }
+    thead tr { background: #1a3a4a; }
+    thead th { color: #20b2aa; padding: 8px 8px; text-align: left; font-size: 8px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: bold; }
+    tbody tr:nth-child(even) { background: #f5faff; }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+    tbody tr { border-bottom: 1px solid #e8f0f5; }
+    tbody td { padding: 7px 8px; color: #2a3a4a; font-size: 9px; vertical-align: middle; }
+
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 8px; font-weight: bold; text-transform: uppercase; }
+    .badge-dept  { background: #d0eeff; color: #0066aa; }
+    .badge-poste { background: #e8d8ff; color: #6633cc; }
+
+
+
+    .footer { margin-top: 16px; text-align: center; color: #8a9aaa; font-size: 8px; border-top: 1px solid #e0eaf0; padding-top: 8px; margin-left:24px; margin-right:24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-inner">
+        <div>
+            <div class="logo-title">&#x2B21; NEXUS Platform</div>
+            <div class="logo-sub">Rapport des Talents</div>
+        </div>
+        <div class="header-meta">
+            <div>Généré le <strong>{{ date|date('d/m/Y à H:i') }}</strong></div>
+            <div>Total : <strong>{{ total }} talents</strong></div>
+        </div>
+    </div>
+</div>
+
+<div class="section-title">Liste des Talents</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Prénom &amp; Nom</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th>Poste</th>
+            <th>Département</th>
+            <th>Expérience</th>
+            <th>Niveau études</th>
+            <th>Date embauche</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for t in talents %}
+        <tr>
+            <td>{{ t.id }}</td>
+            <td><strong>{{ t.prenom }} {{ t.nom }}</strong></td>
+            <td>{{ t.email }}</td>
+            <td>{{ t.telephone ?? '—' }}</td>
+            <td><span class="badge badge-poste">{{ t.poste }}</span></td>
+            <td><span class="badge badge-dept">{{ t.departement }}</span></td>
+            <td>{{ t.anneesExperience ?? 0 }} ans</td>
+            <td>{{ t.niveauEtudes ?? '—' }}</td>
+            <td>{{ t.dateEmbauche ? t.dateEmbauche|date('d/m/Y') : '—' }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="9" style="text-align:center;padding:20px;color:#8a9aaa;">Aucun talent.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<div class="footer">
+    Nexus Platform — Rapport confidentiel — {{ date|date('Y') }}
+</div>
+
+</body>
+</html>

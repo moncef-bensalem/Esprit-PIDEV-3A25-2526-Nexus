@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 11px; color: #1e293b; background: #fff; }
+
+        /* ── Header ── */
+        .header { background: #07111f; color: #fff; padding: 30px 40px; border-bottom: 4px solid #4fc3f7; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 22px; font-weight: 800; color: #4fc3f7; letter-spacing: -0.5px; margin: 0; }
+        .header p  { font-size: 11px; color: #6b8ba4; margin-top: 6px; }
+        .header-meta { text-align: right; font-size: 10px; color: #6b8ba4; }
+        .header-meta strong { color: #4fc3f7; }
+
+        /* ── Stats ── */
+        .stats-grid { display: flex; gap: 15px; margin: 25px 40px; }
+        .stat-card { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; background: #f8fafc; }
+        .stat-card .val { font-size: 24px; font-weight: 800; color: #07111f; }
+        .stat-card .lbl { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+        /* ── Table ── */
+        .section { padding: 0 40px 40px; }
+        .section-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;
+                          letter-spacing: 0.1em; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #0d1d30; color: #fff; }
+        thead th { padding: 12px 15px; text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        tbody tr { border-bottom: 1px solid #f1f5f9; }
+        tbody tr:nth-child(even) { background: #fafafa; }
+        tbody td { padding: 12px 15px; font-size: 11px; vertical-align: middle; color: #334155; }
+
+        /* ── Badges ── */
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+        .badge-entourage  { background: #e0f2fe; color: #0369a1; } /* Entretien */
+        .badge-reunion   { background: #dcfce7; color: #15803d; } /* Réunion */
+        .badge-formation { background: #fef3c7; color: #a16207; } /* Formation */
+        .badge-autre     { background: #f1f5f9; color: #475569; }
+
+        .badge-confirme  { border: 1px solid #10b981; color: #10b981; }
+        .badge-annule    { border: 1px solid #ef4444; color: #ef4444; text-decoration: line-through; }
+        .badge-prevu     { border: 1px solid #4fc3f7; color: #4fc3f7; }
+
+        /* ── Footer ── */
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px 40px;
+                  border-top: 1px solid #f1f5f9; font-size: 9px; color: #94a3b8;
+                  display: flex; justify-content: space-between; background: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-top">
+        <div>
+            <h1>Nexus | Rapport des Planifications</h1>
+            <p>Export généré le {{ "now"|date('d/m/Y à H:i') }}</p>
+        </div>
+        <div class="header-meta">
+            <strong>{{ planifications|length }}</strong> événements listés<br>
+            Nexus Platform &copy; {{ "now"|date('Y') }}
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="val">{{ planifications|length }}</div>
+        <div class="lbl">Total événements</div>
+    </div>
+    <div class="stat-card">
+        {% set confirmes = 0 %}
+        {% for p in planifications %}{% if p.statut == 'confirmé' %}{% set confirmes = confirmes + 1 %}{% endif %}{% endfor %}
+        <div class="val">{{ confirmes }}</div>
+        <div class="lbl">Confirmés</div>
+    </div>
+    <div class="stat-card">
+        {% set ceMois = 0 %}
+        {% for p in planifications %}{% if p.date and p.date|date('m') == "now"|date('m') %}{% set ceMois = ceMois + 1 %}{% endif %}{% endfor %}
+        <div class="val">{{ ceMois }}</div>
+        <div class="lbl">Ce mois-ci</div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Liste détaillée de l'agenda</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Type / Objet</th>
+                <th>Date</th>
+                <th>Horaire</th>
+                <th>Lieu / Lien</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in planifications %}
+            <tr>
+                <td>
+                    <span class="badge {{ p.typeEvent == 'entretien' ? 'badge-entourage' : (p.typeEvent == 'reunion' ? 'badge-reunion' : (p.typeEvent == 'formation' ? 'badge-formation' : 'badge-autre')) }}">
+                        {{ p.typeEvent|capitalize }}
+                    </span>
+                    <br>
+                    <span style="font-size:9px;color:#64748b;margin-top:2px;display:block;">
+                        {{ p.description|slice(0, 50) }}{{ p.description|length > 50 ? '...' : '' }}
+                    </span>
+                </td>
+                <td style="font-weight:600;">{{ p.date ? p.date|date('d/m/Y') : '—' }}</td>
+                <td style="white-space:nowrap;">{{ p.heureDebut ? p.heureDebut|date('H:i') : '—' }} - {{ p.heureFin ? p.heureFin|date('H:i') : '—' }}</td>
+                <td style="max-width:180px; word-break:break-all;">
+                    {{ p.localisation ?: (p.lienMeeting ?: '—') }}
+                </td>
+                <td>
+                    <span class="badge {{ p.statut == 'confirmé' ? 'badge-confirme' : (p.statut == 'annulé' ? 'badge-annule' : 'badge-prevu') }}">
+                        {{ p.statut|capitalize|default('Prévu') }}
+                    </span>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Aucune planification trouvée.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="footer">
+    <span>Confidentiel — Nexus Recruitment Platform</span>
+    <span>Page 1 / 1 — {{ "now"|date('d/m/Y') }}</span>
+</div>
+
+</body>
+</html>

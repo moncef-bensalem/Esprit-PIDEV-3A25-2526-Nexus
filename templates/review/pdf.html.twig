@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 12px; color: #1e293b; background: #fff; }
+
+        /* ── En-tête ── */
+        .header { background: #0d1d30; color: #fff; padding: 24px 32px; border-bottom: 4px solid #4fc3f7; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; font-weight: 700; color: #4fc3f7; letter-spacing: -0.5px; }
+        .header p  { font-size: 10px; color: #94a3b8; margin-top: 4px; }
+        .header-meta { text-align: right; font-size: 10px; color: #94a3b8; }
+        .header-meta strong { color: #4fc3f7; }
+
+        /* ── Stats résumé ── */
+        .stats-row { display: flex; gap: 12px; margin: 20px 32px; }
+        .stat-box { flex: 1; background: #f1f5f9; border-left: 3px solid #4fc3f7; padding: 10px 14px; border-radius: 4px; }
+        .stat-box .val { font-size: 20px; font-weight: 700; color: #0d1d30; }
+        .stat-box .lbl { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+        /* ── Tableau ── */
+        .section { padding: 0 32px 32px; }
+        .section-title { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;
+                         letter-spacing: 0.08em; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #0d1d30; color: #fff; }
+        thead th { padding: 9px 10px; text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; }
+        tbody tr:nth-child(even) { background: #f8fafc; }
+        tbody tr { border-bottom: 1px solid #e2e8f0; }
+        tbody td { padding: 8px 10px; font-size: 11px; vertical-align: top; }
+
+        /* ── Étoiles ── */
+        .stars { color: #f59e0b; font-size: 13px; }
+        .stars-empty { color: #cbd5e1; font-size: 13px; }
+
+        /* ── Badge statut ── */
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
+        .badge-pos  { background: #dcfce7; color: #166534; }
+        .badge-neg  { background: #fee2e2; color: #991b1b; }
+        .badge-neu  { background: #f1f5f9; color: #475569; }
+
+        /* ── Pied de page ── */
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px 32px;
+                  border-top: 1px solid #e2e8f0; font-size: 9px; color: #94a3b8;
+                  display: flex; justify-content: space-between; background: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-top">
+        <div>
+            <h1>Rapport des Avis — Nexus Platform</h1>
+            <p>Export PDF généré le {{ "now"|date('d/m/Y à H:i') }}</p>
+        </div>
+        <div class="header-meta">
+            <strong>{{ reviews|length }}</strong> avis exportés<br>
+            Période : {{ "now"|date('Y') }}
+        </div>
+    </div>
+</div>
+
+<div class="stats-row">
+    <div class="stat-box">
+        <div class="val">{{ reviews|length }}</div>
+        <div class="lbl">Total avis</div>
+    </div>
+    <div class="stat-box">
+        <div class="val">
+            {% set total = 0 %}{% for r in reviews %}{% if r.rating %}{% set total = total + r.rating %}{% endif %}{% endfor %}
+            {% if reviews|length > 0 %}{{ (total / reviews|length)|number_format(1) }}{% else %}—{% endif %} / 5
+        </div>
+        <div class="lbl">Note moyenne</div>
+    </div>
+    <div class="stat-box">
+        <div class="val" style="color:#dc2626;">
+            {% set neg = 0 %}{% for r in reviews %}{% if r.rating and r.rating <= 2 %}{% set neg = neg + 1 %}{% endif %}{% endfor %}{{ neg }}
+        </div>
+        <div class="lbl">Avis négatifs (≤ 2)</div>
+    </div>
+    <div class="stat-box">
+        <div class="val" style="color:#16a34a;">
+            {% set pos = 0 %}{% for r in reviews %}{% if r.rating and r.rating >= 4 %}{% set pos = pos + 1 %}{% endif %}{% endfor %}{{ pos }}
+        </div>
+        <div class="lbl">Avis positifs (≥ 4)</div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title">Détail des avis</div>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Événement</th>
+                <th>Date</th>
+                <th>Note</th>
+                <th>Commentaire</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for review in reviews %}
+            <tr>
+                <td style="color:#94a3b8;font-size:10px;">#{{ review.id }}</td>
+                <td>
+                    {% if review.planification %}
+                        <strong>{{ review.planification.typeEvent|capitalize }}</strong><br>
+                        <span style="font-size:9px;color:#64748b;">
+                            {{ review.planification.date ? review.planification.date|date('d/m/Y') : '—' }}
+                        </span>
+                    {% else %}—{% endif %}
+                </td>
+                <td style="white-space:nowrap;">{{ review.createdAt ? review.createdAt|date('d/m/Y') : '—' }}</td>
+                <td style="white-space:nowrap;">
+                    {% if review.rating %}
+                        {% for i in 1..5 %}
+                            {% if i <= review.rating %}<span class="stars">★</span>{% else %}<span class="stars-empty">★</span>{% endif %}
+                        {% endfor %}
+                        <span style="font-size:10px;color:#64748b;"> {{ review.rating }}/5</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td style="max-width:220px;color:#475569;">{{ review.commentaire|default('—')|slice(0, 120) }}{{ review.commentaire|length > 120 ? '…' : '' }}</td>
+                <td>
+                    {% if review.rating %}
+                        {% if review.rating <= 2 %}
+                            <span class="badge badge-neg">Négatif</span>
+                        {% elseif review.rating >= 4 %}
+                            <span class="badge badge-pos">Positif</span>
+                        {% else %}
+                            <span class="badge badge-neu">Neutre</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">Aucun avis trouvé.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="footer">
+    <span>Nexus Platform — Confidentiel</span>
+    <span>{{ reviews|length }} avis — {{ "now"|date('d/m/Y') }}</span>
+</div>
+
+</body>
+</html>

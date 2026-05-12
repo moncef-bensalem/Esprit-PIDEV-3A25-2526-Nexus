@@ -1,0 +1,225 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Talents - NEXUS{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="top-bar">
+        <h1>Gestion des Talents</h1>
+        <div class="top-actions">
+            <a href="{{ path('app_talent_classements') }}" class="btn"><i class="fa-solid fa-chart-bar"></i> Classements</a>
+            <a href="{{ path('app_talent_statistiques') }}" class="btn"><i class="fa-solid fa-chart-pie"></i> Statistiques</a>
+            <a href="{{ path('app_talent_index') }}" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Actualiser</a>
+            <a href="{{ path('app_talent_new') }}" class="btn"><i class="fa-solid fa-plus"></i> Ajouter un talent</a>
+            <div class="export-group">
+                <a href="{{ path('app_talent_export_excel') }}" class="btn btn-excel" title="Exporter en Excel">
+                    <i class="fa-solid fa-file-excel"></i> Excel
+                </a>
+                <a href="{{ path('app_talent_export_pdf') }}" class="btn btn-pdf" title="Exporter en PDF">
+                    <i class="fa-solid fa-file-pdf"></i> PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Barre de recherche simple #}
+    <form method="get" action="{{ path('app_talent_index') }}" class="search-bar-form">
+        <input type="hidden" name="departement" value="{{ filter_dept }}">
+        <input type="hidden" name="poste" value="{{ filter_poste }}">
+        <input type="hidden" name="experience" value="{{ filter_exp }}">
+        <div class="search-inline">
+            <input type="text" name="q" value="{{ search }}" placeholder="Rechercher un talent (nom, poste, département)…" class="search-input">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-search"></i> Rechercher</button>
+            {% if search or filter_dept or filter_poste or filter_exp %}
+            <a href="{{ path('app_talent_index') }}" class="btn">Réinitialiser</a>
+            {% endif %}
+        </div>
+    </form>
+
+    {# Recherche avancée via <details> (toggle HTML natif, sans JS) #}
+    <details class="advanced-search" {% if filter_dept or filter_poste or filter_exp %}open{% endif %}>
+        <summary><i class="fa-solid fa-sliders"></i> Recherche Avancée</summary>
+        <form method="get" action="{{ path('app_talent_index') }}" class="advanced-form">
+            <input type="hidden" name="q" value="{{ search }}">
+            <div class="advanced-fields">
+                <div class="field-group">
+                    <label>Département</label>
+                    <select name="departement" class="form-select">
+                        <option value="">Tous</option>
+                        {% for dept in departements %}
+                            <option value="{{ dept }}" {% if filter_dept == dept %}selected{% endif %}>{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>Poste</label>
+                    <select name="poste" class="form-select">
+                        <option value="">Tous</option>
+                        {% for poste in postes %}
+                            <option value="{{ poste }}" {% if filter_poste == poste %}selected{% endif %}>{{ poste }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>Expérience</label>
+                    <select name="experience" class="form-select">
+                        <option value="">Toutes</option>
+                        <option value="0-2"  {% if filter_exp == '0-2'  %}selected{% endif %}>0 – 2 ans</option>
+                        <option value="3-5"  {% if filter_exp == '3-5'  %}selected{% endif %}>3 – 5 ans</option>
+                        <option value="6-10" {% if filter_exp == '6-10' %}selected{% endif %}>6 – 10 ans</option>
+                        <option value="10+"  {% if filter_exp == '10+'  %}selected{% endif %}>10+ ans</option>
+                    </select>
+                </div>
+                <div class="field-group field-group--actions">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrer</button>
+                    <a href="{{ path('app_talent_index') }}" class="btn">Réinitialiser</a>
+                </div>
+            </div>
+        </form>
+    </details>
+
+    <div class="filters-bar">
+        <div style="margin-left: auto; color: var(--text-muted); align-self: center;">
+            {{ talents_affiches }} talent{{ talents_affiches != 1 ? 's' : '' }} trouvé{{ talents_affiches != 1 ? 's' : '' }}
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Talents</h3>
+            <p>{{ total_talents }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Talents Affichés</h3>
+            <p>{{ talents_affiches }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Départements</h3>
+            <p>{{ departements_count }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Compétences</h3>
+            <p>{{ competences_count }}</p>
+        </div>
+    </div>
+
+    <div class="talents-grid">
+        {% for t in talent %}
+            {% set theme = loop.index % 2 == 0 ? 'theme-purple' : 'theme-blue' %}
+            <div class="talent-card">
+                <div class="avatar-circle {{ theme }}">
+                    {{ t.prenom|slice(0,1)|upper }}{{ t.nom|slice(0,1)|upper }}
+                </div>
+                <h2 class="talent-name">{{ t.prenom }} {{ t.nom }}</h2>
+                <p class="talent-poste">{{ t.poste }}</p>
+                <div class="badge {{ theme }}">{{ t.departement|upper }}</div>
+
+                <div class="talent-info">
+                    <div><i class="fa-solid fa-envelope"></i> {{ t.email }}</div>
+                    <div><i class="fa-solid fa-briefcase"></i> {{ t.anneesExperience }} ans exp.</div>
+                </div>
+
+                {# QR Code mini #}
+                <a href="{{ path('app_talent_profil_public', {'id': t.id}) }}" class="qr-mini-wrap" title="Voir le profil public">
+                    <img src="{{ path('app_talent_qrcode', {'id': t.id}) }}" alt="QR Code {{ t.prenom }}" class="qr-mini-img">
+                    <span class="qr-mini-label"><i class="fa-solid fa-qrcode"></i> Profil public</span>
+                </a>
+
+                <div class="talent-actions">
+                    <a href="{{ path('app_talent_show', {'id': t.id}) }}" class="btn-icon" title="Voir"><i class="fa-solid fa-eye"></i></a>
+                    <a href="{{ path('app_talent_profil_public', {'id': t.id}) }}" class="btn-icon" title="Profil public"><i class="fa-solid fa-qrcode"></i></a>
+                    <a href="{{ path('app_talent_edit', {'id': t.id}) }}" class="btn-icon" title="Éditer"><i class="fa-solid fa-pen"></i></a>
+                    <form method="post" action="{{ path('app_talent_delete', {'id': t.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce talent ?');" class="delete-form">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ t.id) }}">
+                        <button class="btn-icon btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+
+        {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: var(--card-bg); border-radius: 1rem; color: var(--text-muted); border: 1px solid var(--border-color);">
+                Aucun talent trouvé. Commencez par en ajouter un !
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.search-bar-form { margin: 1rem 0 0.5rem; }
+.search-inline { display: flex; gap: 0.5rem; align-items: center; }
+.search-input {
+    flex: 1;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #1a2f45);
+    background: var(--card-bg, #0d1b2a);
+    color: var(--text-primary, #e0f0ff);
+    font-size: 0.9rem;
+}
+.search-input:focus { outline: none; border-color: #4fc3f7; }
+
+.advanced-search {
+    margin: 0.75rem 0;
+    background: var(--card-bg, #0d1b2a);
+    border: 1px solid var(--border-color, #1a2f45);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+}
+.advanced-search summary {
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: #4fc3f7;
+    font-weight: 600;
+    list-style: none;
+    user-select: none;
+}
+.advanced-search summary::-webkit-details-marker { display: none; }
+.advanced-form { margin-top: 0.75rem; }
+.advanced-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+.field-group { display: flex; flex-direction: column; gap: 0.3rem; min-width: 160px; }
+.field-group label { font-size: 0.78rem; color: var(--text-muted, #5a7a9a); }
+.field-group--actions { flex-direction: row; align-items: flex-end; gap: 0.5rem; }
+
+/* Export buttons */
+.export-group { display: flex; gap: 8px; align-items: center; border-left: 1px solid rgba(32,178,170,.2); padding-left: 12px; margin-left: 4px; }
+.btn-excel {
+    background: linear-gradient(135deg, #1d6f42, #2ea04f) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+.btn-excel:hover { opacity: .88; color: #fff !important; }
+.btn-pdf {
+    background: linear-gradient(135deg, #c0392b, #e74c3c) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+.btn-pdf:hover { opacity: .88; color: #fff !important; }
+/* QR Code mini on card */
+.qr-mini-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    margin: 10px 0 6px;
+    text-decoration: none;
+    opacity: .6; transition: opacity .2s, transform .2s;
+    cursor: pointer;
+}
+.qr-mini-wrap:hover { opacity: 1; transform: scale(1.04); }
+.qr-mini-img {
+    width: 72px; height: 72px;
+    border-radius: 8px; padding: 4px;
+    background: #fff;
+    border: 1px solid rgba(32,178,170,.25);
+    box-shadow: 0 0 12px rgba(32,178,170,.12);
+}
+.qr-mini-label {
+    font-size: .68rem; color: rgba(32,178,170,.7);
+    margin-top: 4px; font-weight: 500;
+    display: flex; align-items: center; gap: 4px;
+}
+
+</style>
+{% endblock %}

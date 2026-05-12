@@ -1,0 +1,47 @@
+{% if evaluations is empty %}
+    <div class="empty-state">Aucune evaluation trouvee.</div>
+{% else %}
+{% set bestId = null %}
+{% set bestScore = null %}
+{% for e in evaluations %}
+    {% set s = averageScoresById[e.idEvaluation]|default(null) %}
+    {% if s is not null and (bestScore is null or s > bestScore) %}
+        {% set bestScore = s %}
+        {% set bestId = e.idEvaluation %}
+    {% endif %}
+{% endfor %}
+<div class="cards-grid">
+    {% for evaluation in evaluations %}
+        {% set decisionClass = evaluation.decisionPreliminaire == 'FAVORABLE' ? 'decision-favorable' : (evaluation.decisionPreliminaire == 'DEFAVORABLE' ? 'decision-defavorable' : 'decision-arevoir') %}
+        {% set avgScore = averageScoresById[evaluation.idEvaluation]|default(null) %}
+        {% set isBest = bestId is not null and evaluation.idEvaluation == bestId %}
+        <div class="evaluation-card {{ decisionClass }}{{ isBest ? ' best-score' : '' }}" ondblclick="window.location.href='{{ path('evaluation_show', {idEvaluation: evaluation.idEvaluation}) }}'">
+            <div class="card-title">
+                Evaluation #{{ evaluation.idEvaluation }}
+                {% if isBest %}
+                    <span class="best-score-badge" title="Meilleur score">✨ Meilleur score ✨</span>
+                {% endif %}
+            </div>
+            <div class="card-meta">
+                <div>📅 Date creation: {{ evaluation.dateCreation|date('Y-m-d H:i') }}</div>
+                <div>⭐ Score: {{ avgScore is null ? 'N/A' : (avgScore | number_format(2, '.', ',')) }}</div>
+                <div>👤 Candidat: {{ evaluation.candidat ? (evaluation.candidat.firstName ~ ' ' ~ evaluation.candidat.lastName) : 'Non assigne' }}</div>
+                <div>📌 Decision: {{ evaluation.decisionPreliminaire }}</div>
+            </div>
+
+            <div class="card-actions">
+                {% if is_granted(constant('App\\Security\\EvaluationVoter::EDIT'), evaluation) %}
+                    <a href="{{ path('evaluation_edit', {idEvaluation: evaluation.idEvaluation}) }}" class="btn-edit" onclick="event.stopPropagation();">Modifier</a>
+                {% endif %}
+                {% if is_granted(constant('App\\Security\\EvaluationVoter::DELETE'), evaluation) %}
+                    <form method="post" action="{{ path('evaluation_delete', {idEvaluation: evaluation.idEvaluation}) }}" onsubmit="event.stopPropagation(); return confirm('Supprimer cette evaluation ?');" style="margin:0;">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_evaluation_' ~ evaluation.idEvaluation) }}">
+                        <button type="submit" class="btn-delete">Supprimer</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
