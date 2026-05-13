@@ -20,11 +20,11 @@ class TalentCompetenceType extends AbstractType
             ->add('date_acquisition')
             ->add('talent', EntityType::class, [
                 'class' => Talent::class,
-                'choice_label' => 'id',
+                'choice_label' => 'nom',
             ])
             ->add('competence', EntityType::class, [
                 'class' => Competence::class,
-                'choice_label' => 'id',
+                'choice_label' => 'nom',
             ])
         ;
     }
