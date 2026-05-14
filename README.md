@@ -41,6 +41,8 @@ L'application se distingue par :
 - Analyse automatique des CV (PDF/DOCX) par IA : score technique, expérience, formation, langues, soft skills
 - Vue Kanban des candidatures par état (Reçu → En entretien → Offre faite → Rejeté)
 - Score de matching candidat/offre
+- Notifications automatiques : email au candidat à chaque changement d'état (Reçu → En entretien → Offre faite → Rejeté) + SMS au recruteur lorsque le score de matching dépasse 95%
+- Radar chart des compétences : visualisation graphique des compétences techniques, soft skills, langues et formation de chaque candidat sous forme de graphique radar interactif
 
 ### Évaluation des candidats
 - Création d'évaluations par les recruteurs (`ROLE_RH`)
